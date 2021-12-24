@@ -1,0 +1,3 @@
+[submodule "bindsnet"]
+	path = bindsnet
+	url = https://github.com/BindsNET/bindsnet
