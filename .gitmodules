@@ -1,3 +1,6 @@
 [submodule "bindsnet"]
 	path = bindsnet
 	url = https://github.com/BindsNET/bindsnet
+[submodule "PymoNNto"]
+	path = PymoNNto
+	url = https://github.com/trieschlab/PymoNNto
