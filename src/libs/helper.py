@@ -11,6 +11,12 @@ def reset_random_seed(seed=42):
     np.random.seed(seed)
 
 
+# ================= Array manipulator =================
+
+def re_range_binary(array):
+    return np.where(array > 0, 1, -1)
+
+
 # ================= Behaviours Maker =================
 def behaviour_generator(behaviours):
     return {index + 1: behaviour for index, behaviour in enumerate(behaviours)}
