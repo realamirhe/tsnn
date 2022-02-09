@@ -9,10 +9,16 @@ from src.libs.environment import set_dopamine, get_dopamine
 from src.libs.helper import behaviour_generator
 
 # =================   CONFIG    =================
-UI_MODE = False
+UI_MODE = True
 ITERATIONS = 50
 i_stream = stream_generator_for_character("i", noise=0.4, size=ITERATIONS)
 j_stream = stream_generator_for_character("j", noise=0.1, size=ITERATIONS)
+
+# TESTING PURPOSES
+# i_stream = np.array(['a', 'i', 'b', 'm', 'i', 'b', 'b', 'i', 'b', 'b'])
+# j_stream = np.array(['f', 'c', 'j', 'b', 'b', 'j', 'a', 'b', 'j', 'b'])
+# ITERATIONS = i_stream.shape[0]
+
 streams = {"i": i_stream, "j": j_stream}
 print({chr: "".join([i for i in stream]) for chr, stream in streams.items()})
 
@@ -39,7 +45,7 @@ class LIFMechanism(Behaviour):
 # NOTE: Test has not been managed yet
 class Delay(Behaviour):
     """
-        This module can be behavioursused to delay the input of a NeuronGroup.
+        This module can be behaviours used to delay the input of a NeuronGroup.
         delayed_spikes => [t+max_delay, ...,t+2, t+1, t]
         delays => [0..max_delay]xN
         delays_float => float32 delays
@@ -54,13 +60,7 @@ class Delay(Behaviour):
 
         self.base_weight_scale = np.ones((n.size, 2), dtype=np.float32)
         self.base_weight_scale[:, -1] = 0
-
-        # NOTE: TODO: update this whenever the delay need to be update
-        self.base_weight_scale[:, 0] = self.delays_float % 1.0
-        t_times_scale = self.base_weight_scale[:, 0]
-        t_times_scale[t_times_scale == 0] = 1.0
-        self.base_weight_scale[:, 0] = t_times_scale
-        self.base_weight_scale[:, -1] = 1 - self.base_weight_scale[:, 0]
+        self.update_delays(n)
 
         self.init_delays(n)
         self.update_delay_mask()
@@ -69,10 +69,27 @@ class Delay(Behaviour):
     # TODO: affect the shared weights in related synapse
     # TODO: delay update by post-synaptic neuron
     # TODO: weight sharing mechanism is simpler now :) see the delay mechanism
+
+    def update_delays(self, n):
+        for s in n.efferent_synapses["GLUTAMATE"]:
+            self.delays_float = getattr(s, "delays_float", self.delays_float)
+            self.delays_float = np.clip(self.delays_float, 0, self.max_delay)
+            self.delays = np.ceil(self.delays_float).astype(dtype=int)
+
+        # NOTE: TODO: update this whenever the delay need to be update
+        self.base_weight_scale[:, 0] = self.delays_float % 1.0
+        t_times_scale = self.base_weight_scale[:, 0]
+        t_times_scale[t_times_scale == 0] = 1.0
+        self.base_weight_scale[:, 0] = t_times_scale
+        self.base_weight_scale[:, -1] = 1 - self.base_weight_scale[:, 0]
+
     def new_iteration(self, n):
         if self.max_delay == 0:
             return
 
+        print(f"delays_float={self.delays_float}")
+
+        self.update_delays(n)
         new_spikes = n.fired.copy()
 
         n.fired = self.delayed_spikes[:, -1].copy()
@@ -97,14 +114,15 @@ class Delay(Behaviour):
             if hasattr(s, "weight_scale"):
                 # accumulative shift
                 weight_scale_temp[:, 0] += s.weights_scale[:, -1]
-
             s.weights_scale = weight_scale_temp
+            # pass delays to synapse
+            s.delays_float = self.delays_float
 
     def init_delays(self, n):
         self.delay_method = self.get_init_attr("delay_method", "random", n)
         if self.delay_method == "zero":
             self.delays = 0
-            self.delays_float = 0
+            self.delays_float[:] = 0
 
         elif self.delay_method == "random":
             self.delays = np.random.randint(0, self.max_delay + 1, n.size)
@@ -182,31 +200,43 @@ class STDP(Behaviour):
         # TODO: necessitate for stdp on non glutamate synapse type
         self.syn_type = self.get_init_attr("syn_type", "GLUTAMATE", n)
         n.voltage_old = n.get_neuron_vec()
+        for s in n.afferent_synapses[self.syn_type]:
+            s.weights_scale = getattr(s, "weights_scale", np.ones((n.size, 2)))
+            s.delays_float = getattr(
+                s, "delays_float", np.ones(n.size, dtype=np.float32)
+            )
 
     def new_iteration(self, n):
         for s in n.afferent_synapses[self.syn_type]:
             pre_post = s.dst.v[:, np.newaxis] * s.src.voltage_old[np.newaxis, :]
             stimulus = s.dst.v[:, np.newaxis] * s.src.v[np.newaxis, :]
             post_pre = s.dst.voltage_old[:, np.newaxis] * s.src.v[np.newaxis, :]
-            try:
-                w_scale = s.weights_scale[:, 0]
-            except AttributeError as e:
-                print("errors", n.tags, e)
-                w_scale = 1
+            w_scale = s.weights_scale[:, 0]
             dw = (
                     get_dopamine()  # from global environment
                     * w_scale  # for delayed connection only
                     * n.stdp_factor  # learning stdp factor
                     * (pre_post - post_pre + stimulus)  # stdp mechanism
             )
-            print(f"{dw=}")
-            # TODO: soft bound
-            s.W = np.clip(s.W + dw * s.enabled, 0.0, 10.0)  # TODO: Do not hardcode
 
-        n.voltage_old = n.v.copy()
+            # TODO: 0.5 is minimum epsilon threshold must be changed
+
+            if (s.delays_float > 0.5).all():
+                learnable_mask = np.min(dw, axis=0) < 0.5
+                s.delays_float = np.round(
+                    s.delays_float - np.sum(np.where(learnable_mask, dw, 0), axis=1), 1,
+                )
+
+                # TODO: Update synapse only where pre-synaptic mimium update of a one post-synapse neuron is gt some threshold
+                print(f"{dw=}")
+                # TODO: soft bound
+                s.W = np.clip(s.W + dw * s.enabled, 0.0, 10.0)  # TODO: Do not hardcode
+
+            n.voltage_old = n.v.copy()
+
+    # ================= NETWORK  =================
 
 
-# ================= NETWORK  =================
 def main():
     network = Network()
     neuron_i = NeuronGroup(
@@ -287,17 +317,17 @@ def main():
     else:
         Network_UI(
             network,
-            modules=get_default_UI_modules(["activity"], ["W"]),
+            modules=get_default_UI_modules(["v"], ["W"]),
             label="my_network_ui",
             group_display_count=1,
         ).show()
 
+    # 💁 neuron default start is not from its rest is far up from threshold
+    # 🙏 make them same as LIF setup of bindsnet
+    # 💁 TODO: neuron doesn't spike and reset to its reset after it reaches the threshold
+    # 🙏 Yeah they do, but plot is for trace after spikes so it doesn't show the increases
+    # 💁 TODO: read gym documentation and bindsnet.libs/environment
 
-# 💁 neuron default start is not from its rest is far up from threshold
-# 🙏 make them same as LIF setup of bindsnet
-# 💁 TODO: neuron doesn't spike and reset to its reset after it reaches the threshold
-# 🙏 Yeah they do, but plot is for trace after spikes so it doesn't show the increases
-# 💁 TODO: read gym documentation and bindsnet.libs/environment
 
 if __name__ == "__main__":
     main()

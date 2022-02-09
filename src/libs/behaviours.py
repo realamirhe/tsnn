@@ -31,6 +31,7 @@ class LIFInput(Behaviour):
             s.W = s.get_synapse_mat("uniform")
 
         n.I = n.get_neuron_vec()
+        n.I[:] = 0
 
     def new_iteration(self, n):
         n.I = 90 * n.get_neuron_vec("uniform")
@@ -54,6 +55,7 @@ class ForceSpikeOnLetters(Behaviour):
 class STDP(Behaviour):
     def set_variables(self, n):
         self.add_tag("STDP")
+
         n.stdp_factor = self.get_init_attr("stdp_factor", 0.0015, n)
         # TODO: necessitate for stdp on non glutamate synapse type
         self.syn_type = self.get_init_attr("syn_type", "GLUTAMATE", n)
