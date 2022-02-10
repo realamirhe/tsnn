@@ -1,11 +1,11 @@
 import itertools
 import random
 
-import numpy as np
+import tensorflow as tf
+import tensorflow.experimental.numpy as tnp
 from scipy import spatial
 
 from PymoNNto import Behaviour, SynapseGroup, Recorder, NeuronGroup, Network
-
 # from PymoNNto.Exploration.Network_UI import get_default_UI_modules, Network_UI
 # from src.libs import behaviours
 # from src.libs.data_generator_numpy import stream_generator_for_character
@@ -19,18 +19,20 @@ from src.libs.helper import (
 )
 
 # =================   CONFIG    =================
+print("Using TensorFlow version %s" % tf.__version__)
+tnp.experimental_enable_numpy_behavior()
 reset_random_seed(42)
 language = "abc "
 
 
 def spike_stream_j(characters):
-    spikes = np.zeros(1, dtype=bool)
+    spikes = tnp.zeros(1, dtype=bool)
     spikes[0] = characters
     return spikes
 
 
 def spike_stream_i(characters):
-    spikes = np.zeros(len(language), dtype=bool)
+    spikes = tnp.zeros(len(language), dtype=bool)
     for char in characters:
         spikes[language.index(char)] = 1
     return spikes
@@ -38,10 +40,10 @@ def spike_stream_i(characters):
 
 letters = language.strip()
 streams = (
-        ["".join(permutation) for permutation in itertools.permutations(letters, 1)]
-        + ["".join(permutation) for permutation in itertools.permutations(letters, 2)]
-        + ["".join(permutation) for permutation in itertools.permutations(letters, 3)]
-        + ["".join(permutation) for permutation in itertools.permutations(letters, 4)]
+    ["".join(permutation) for permutation in itertools.permutations(letters, 1)]
+    + ["".join(permutation) for permutation in itertools.permutations(letters, 2)]
+    + ["".join(permutation) for permutation in itertools.permutations(letters, 3)]
+    + ["".join(permutation) for permutation in itertools.permutations(letters, 4)]
 )
 streams += ["abc"] * 50  # true neurons
 streams = [(characters, characters == "abc") for characters in streams]
@@ -49,11 +51,11 @@ random.shuffle(streams)
 character_streams_i = []
 character_streams_j = []
 for (letters_neurons, words_neurons) in streams:
-    character_spikes = [np.array([False])] * len(letters_neurons)
+    character_spikes = [tnp.array([False])] * len(letters_neurons)
     if words_neurons:
-        character_spikes[-1] = np.array([True])
+        character_spikes[-1] = tnp.array([True])
     character_streams_j.extend(character_spikes)
-    character_streams_j.append(np.array([False]))  # for space
+    character_streams_j.append(tnp.array([False]))  # for space
     character_streams_i.append(letters_neurons)
 
 character_streams_i = " ".join(character_streams_i)
@@ -109,7 +111,7 @@ class Supervisor(Behaviour):
         # print(stream_i[neurons.iteration - 1], output, prediction)
 
         print(f"iteration={neurons.iteration} {output=} {prediction=}")
-        # assert np.shape(output) == np.shape(prediction)
+        # assert tnp.shape(output) == tnp.shape(prediction)
 
         cosine_similarity = 1 - spatial.distance.cosine(
             re_range_binary(output), re_range_binary(prediction)
@@ -139,15 +141,15 @@ class LIFNeuron(Behaviour):
         else:
             n.fired = n.v > n.v_threshold
 
-        if np.sum(n.fired) > 0:
+        if tnp.sum(n.fired) > 0:
             n.v[n.fired] = n.v_reset
 
         n.I = 90 * n.get_neuron_vec("uniform")
         for s in getattr(n.afferent_synapses, "GLUTAMATE", []):
-            n.I += np.sum(s.W[:, s.src.fired], axis=1)
+            n.I += tnp.sum(s.W[:, s.src.fired], axis=1)
 
         for s in getattr(n.afferent_synapses, "GABA", []):
-            n.I -= np.sum(s.W[:, s.src.fired], axis=1)
+            n.I -= tnp.sum(s.W[:, s.src.fired], axis=1)
 
 
 class SynapseSTDP(Behaviour):
@@ -166,32 +168,29 @@ class SynapseSTDP(Behaviour):
         synapse.dst.voltage_old = synapse.dst.get_neuron_vec(mode="zeros")
 
     def new_iteration(self, synapse):
-        pre_post = synapse.dst.v[:, np.newaxis] * synapse.src.voltage_old[np.newaxis, :]
+        pre_post = (
+            synapse.dst.v[:, tnp.newaxis] * synapse.src.voltage_old[tnp.newaxis, :]
+        )
 
-        stimulus = synapse.dst.v[:, np.newaxis] * synapse.src.v[np.newaxis, :]
-        post_pre = synapse.dst.voltage_old[:, np.newaxis] * synapse.src.v[np.newaxis, :]
+        stimulus = synapse.dst.v[:, tnp.newaxis] * synapse.src.v[tnp.newaxis, :]
+        post_pre = (
+            synapse.dst.voltage_old[:, tnp.newaxis] * synapse.src.v[tnp.newaxis, :]
+        )
 
         dw = (
-                DopamineEnvironment.get()  # from global environment
-                * (pre_post - post_pre + stimulus)  # stdp mechanism
-                * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
-                * self.stdp_factor  # stdp scale factor
-                * synapse.enabled  # activation of synapse itself (todo)!!
+            DopamineEnvironment.get()  # from global environment
+            * (pre_post - post_pre + stimulus)  # stdp mechanism
+            * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
+            * self.stdp_factor  # stdp scale factor
+            * synapse.enabled  # activation of synapse itself (todo)!!
         )
         # print("dw => ", dw)
         synapse.W = synapse.W * self.weight_decay + dw
-        synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
+        synapse.W = tnp.clip(synapse.W, self.w_min, self.w_max)
 
         """ stop condition for delay learning """
-        update_delay_mask = np.min(synapse.delay, axis=1) > self.delay_epsilon
-
-        # Update whole delay matrix when the delay is shared between the states
-        if update_delay_mask.size == 1:
-            if update_delay_mask[0]:
-                synapse.delay -= np.mean(dw, axis=0, keepdims=True)
-        else:
-            synapse.delay[update_delay_mask] -= dw[update_delay_mask]
-
+        update_delay_mask = tnp.min(synapse.delay, axis=1) > self.delay_epsilon
+        synapse.delay[update_delay_mask] -= dw[update_delay_mask]
         # This will differ from the original stdp mechanism and must be added to the latest synapse
         synapse.src.voltage_old = synapse.src.v.copy()
         synapse.dst.voltage_old = synapse.dst.v.copy()
@@ -204,16 +203,19 @@ class SynapseDelay(Behaviour):
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
         synapse.delay = (
-                np.random.random((depth_size, synapse.src.size)) * self.max_delay
+            tnp.random.random((depth_size, synapse.src.size)) * self.max_delay
         )
         """ History or neuron memory for storing the spiked activity over times """
-        self.delayed_spikes = np.zeros(
+        self.delayed_spikes = tnp.zeros(
             (depth_size, synapse.src.size, self.max_delay), dtype=bool
         )
-        self.weight_share = np.ones((depth_size, synapse.src.size, 2), dtype=np.float32)
+        self.weight_share = tnp.ones(
+            (depth_size, synapse.src.size, 2), dtype=tnp.float32
+        )
         self.weight_share[:, :, -1] = 0.0
 
         self.update_delay_float(synapse)
+        print()
 
     def new_iteration(self, synapse):
         # TBD: check if this is correct
@@ -227,25 +229,26 @@ class SynapseDelay(Behaviour):
         """ TBD: neurons activity is based on one of its own delayed activity """
         """ Spike immediately for neurons with zero delay """
         t_spikes = self.delayed_spikes[:, :, -1]
-        t_spikes = np.where(
+        t_spikes = tnp.where(
             self.int_delay == 0,
-            new_spikes[np.newaxis, :] * np.ones_like(t_spikes),
+            new_spikes[tnp.newaxis, :] * tnp.ones_like(t_spikes),
             t_spikes,
         )
-        synapse.src.fired = np.max(t_spikes, axis=0)
+        synapse.src.fired = tnp.max(t_spikes, axis=0)
 
         """ Go ahead one time step (t+1), [shift right with zero] """
         self.delayed_spikes[:, :, -1] = 0
-        self.delayed_spikes = np.roll(self.delayed_spikes, 1, axis=2)
+        self.delayed_spikes = tnp.roll(self.delayed_spikes, 1, axis=2)
 
         """" Insert newly received spikes to their latest delayed position """
-        self.delayed_spikes = np.where(
+        self.delayed_spikes = tnp.where(
             self.delay_mask,
-            new_spikes[np.newaxis, :, np.newaxis] * np.ones_like(self.delayed_spikes),
+            new_spikes[tnp.newaxis, :, tnp.newaxis]
+            * tnp.ones_like(self.delayed_spikes),
             self.delayed_spikes,
         )
 
-        weight_scale = t_spikes[:, :, np.newaxis] * self.weight_share
+        weight_scale = t_spikes[:, :, tnp.newaxis] * self.weight_share
         if hasattr(synapse, "weight_scale"):
             """ accumulative shift of weight_share """
             weight_scale[:, :, 0] += synapse.weights_scale[:, :, -1]
@@ -253,12 +256,12 @@ class SynapseDelay(Behaviour):
 
     def update_delay_float(self, synapse):
         # TODO: synapse.delay = synapse.delay - dw; # {=> in somewhere else}
-        synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
+        synapse.delay = tnp.clip(tnp.round(synapse.delay, 1), 0, self.max_delay)
         # print("synapse.delay => ", synapse.delay)
         """ int_delay: (src.size, dst.size) """
-        self.int_delay = np.ceil(synapse.delay).astype(dtype=int)
+        self.int_delay = tnp.ceil(synapse.delay).astype(dtype=int)
         """ update delay mask (dst.size, src.size, max_delay) """
-        self.delay_mask = np.zeros_like(self.delayed_spikes, dtype=bool)
+        self.delay_mask = tnp.zeros_like(self.delayed_spikes, dtype=bool)
         for n_idx in range(self.int_delay.shape[0]):
             """ Set neurons in delay index to True """
             for delay, row in zip(self.int_delay[n_idx], self.delay_mask[n_idx]):
@@ -284,7 +287,7 @@ def main():
         behaviour=behaviour_generator(
             [
                 LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-52, stream=stream_i),
-                Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
+                # Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
             ]
         ),
     )
@@ -292,7 +295,7 @@ def main():
     words_ng = NeuronGroup(
         net=network,
         tag="words",
-        size=10,
+        size=2,
         behaviour=behaviour_generator(
             [
                 LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-52),
@@ -309,7 +312,7 @@ def main():
         tag="GLUTAMATE",
         behaviour=behaviour_generator(
             [
-                SynapseDelay(max_delay=3, use_shared_weights=False),
+                SynapseDelay(max_delay=3),
                 SynapseSTDP(weight_decay=0.1, stdp_factor=0.00015, delay_epsilon=0.15),
             ]
         ),
