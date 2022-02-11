@@ -38,10 +38,10 @@ def spike_stream_i(characters):
 
 letters = language.strip()
 streams = (
-        ["".join(permutation) for permutation in itertools.permutations(letters, 1)]
-        + ["".join(permutation) for permutation in itertools.permutations(letters, 2)]
-        + ["".join(permutation) for permutation in itertools.permutations(letters, 3)]
-        + ["".join(permutation) for permutation in itertools.permutations(letters, 4)]
+    ["".join(permutation) for permutation in itertools.permutations(letters, 1)]
+    + ["".join(permutation) for permutation in itertools.permutations(letters, 2)]
+    + ["".join(permutation) for permutation in itertools.permutations(letters, 3)]
+    + ["".join(permutation) for permutation in itertools.permutations(letters, 4)]
 )
 streams += ["abc"] * 50  # true neurons
 streams = [(characters, characters == "abc") for characters in streams]
@@ -166,17 +166,20 @@ class SynapseSTDP(Behaviour):
         synapse.dst.voltage_old = synapse.dst.get_neuron_vec(mode="zeros")
 
     def new_iteration(self, synapse):
+        if not synapse.recording:
+            return
+
         pre_post = synapse.dst.v[:, np.newaxis] * synapse.src.voltage_old[np.newaxis, :]
 
         stimulus = synapse.dst.v[:, np.newaxis] * synapse.src.v[np.newaxis, :]
         post_pre = synapse.dst.voltage_old[:, np.newaxis] * synapse.src.v[np.newaxis, :]
 
         dw = (
-                DopamineEnvironment.get()  # from global environment
-                * (pre_post - post_pre + stimulus)  # stdp mechanism
-                * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
-                * self.stdp_factor  # stdp scale factor
-                * synapse.enabled  # activation of synapse itself (todo)!!
+            DopamineEnvironment.get()  # from global environment
+            * (pre_post - post_pre + stimulus)  # stdp mechanism
+            * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
+            * self.stdp_factor  # stdp scale factor
+            * synapse.enabled  # activation of synapse itself (todo)!!
         )
         # print("dw => ", dw)
         synapse.W = synapse.W * self.weight_decay + dw
@@ -197,6 +200,30 @@ class SynapseSTDP(Behaviour):
         synapse.dst.voltage_old = synapse.dst.v.copy()
 
 
+class STDPET(Behaviour):
+    def set_variables(self, synapses):
+        self.add_tag("STDP")
+        self.set_init_attrs_as_variables(synapses)
+        synapses.src.trace = synapses.src.get_neuron_vec()
+        synapses.dst.trace = synapses.dst.get_neuron_vec()
+
+    def new_iteration(self, synapses):
+        dx = -synapses.src.trace / synapses.tau_plus + synapses.src.fired
+        dy = -synapses.dst.trace / synapses.tau_minus + synapses.dst.fired
+        synapses.src.trace += dx * synapses.src.dt
+        synapses.dst.trace += dy * synapses.dst.dt
+        dw_minus = -synapses.a_minus * synapses.dst.trace * synapses.src.fired
+        dw_plus = synapses.a_plus * synapses.src.trace * synapses.dst.fired
+        synapses.W = (
+            np.clip(
+                synapses.W + (dw_plus + dw_minus) * synapses.src.dt,
+                synapses.w_min,
+                synapses.w_max,
+            )
+            * synapses.mask
+        )
+
+
 class SynapseDelay(Behaviour):
     def set_variables(self, synapse):
         self.max_delay = self.get_init_attr("max_delay", 0.0, synapse)
@@ -204,7 +231,7 @@ class SynapseDelay(Behaviour):
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
         synapse.delay = (
-                np.random.random((depth_size, synapse.src.size)) * self.max_delay
+            np.random.random((depth_size, synapse.src.size)) * self.max_delay
         )
         """ History or neuron memory for storing the spiked activity over times """
         self.delayed_spikes = np.zeros(
@@ -335,6 +362,11 @@ def main():
         network["word-recorder", 0]["n.fired", 0, "np"].transpose(),
         title="words spike activity",
     )
+
+    # Testing purposes
+    network.recording_off()
+    network.iteration = 0
+    network.simulate_iterations(ITERATIONS, measure_block_time=True)
 
 
 if __name__ == "__main__":
