@@ -12,8 +12,6 @@ def reset_random_seed(seed=42):
 
 
 # ================= Array manipulator =================
-
-
 def re_range_binary(array):
     return np.where(array > 0, 1, -1)
 
@@ -51,6 +49,5 @@ def raster_plots(network, ngs=["letters", "words"]):
 def voltage_plots(network, ngs=["letters", "words"]):
     for ng in ngs:
         voltage_visualizer(
-            network[f"{ng}-recorder", 0]["n.fired", 0, "np"].transpose(),
-            title=f"{ng} spike activity",
+            network[f"{ng}-recorder", 0]["n.v", 0], title=f"{ng} spike activity",
         )
