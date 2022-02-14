@@ -13,6 +13,7 @@ def reset_random_seed(seed=42):
 
 # ================= Array manipulator =================
 
+
 def re_range_binary(array):
     return np.where(array > 0, 1, -1)
 
@@ -37,3 +38,19 @@ def spike_visualizer(spikes, title="spike_trace", labels=("iteration", "spike"))
     plt.xlabel(labels[0])
     plt.ylabel(labels[1])
     plt.show()
+
+
+def raster_plots(network, ngs=["letters", "words"]):
+    for ng in ngs:
+        spike_visualizer(
+            network[f"{ng}-recorder", 0]["n.fired", 0, "np"].transpose(),
+            title=f"{ng} spike activity",
+        )
+
+
+def voltage_plots(network, ngs=["letters", "words"]):
+    for ng in ngs:
+        voltage_visualizer(
+            network[f"{ng}-recorder", 0]["n.fired", 0, "np"].transpose(),
+            title=f"{ng} spike activity",
+        )

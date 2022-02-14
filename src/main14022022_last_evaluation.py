@@ -1,17 +1,24 @@
 import string
 
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy import spatial
-from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    f1_score,
+    recall_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+)
 
 from PymoNNto import Behaviour, SynapseGroup, Recorder, NeuronGroup, Network
 from src.libs.data_generator_numpy import gen_corpus
 from src.libs.helper import (
     behaviour_generator,
-    voltage_visualizer,
-    spike_visualizer,
     reset_random_seed,
     re_range_binary,
+    raster_plots, voltage_plots,
 )
 
 # =================   CONFIG    =================
@@ -28,11 +35,6 @@ def spike_stream_i(char):
     return spikes
 
 
-# z = np.empty(len(words))[:] = np.NaN
-# xor abc omn
-# zzz zz1 zz2
-
-
 def get_data(size, prob=0.7):
     corpus = gen_corpus(
         size,
@@ -43,14 +45,18 @@ def get_data(size, prob=0.7):
         letters_to_use=letters,
         words_to_use=words,
     )
-
+    if size < 10:
+        print(corpus)
     joined_corpus = " ".join(corpus) + " "
     stream_i = [spike_stream_i(char) for char in joined_corpus]
     stream_j = []
 
+    empty_spike = np.empty(len(words))
+    empty_spike[:] = np.NaN
+
     for word in corpus:
         for char in range(len(word) - 1):
-            stream_j.append(np.zeros(len(words), dtype=bool))
+            stream_j.append(empty_spike)
 
         word_spike = np.zeros(len(words), dtype=bool)
         if word in words:
@@ -58,7 +64,7 @@ def get_data(size, prob=0.7):
             word_spike[word_index] = 1
         stream_j.append(word_spike)  # spike when see hole word!
 
-        stream_j.append(np.zeros(len(words), dtype=bool))  # space between words
+        stream_j.append(empty_spike)  # space between words
 
     assert len(stream_i) == len(stream_j), "stream length mismatch"
     return stream_i, stream_j
@@ -91,6 +97,7 @@ class DopamineEnvironment:
 # ================= BEHAVIOURS  =================
 class Supervisor(Behaviour):
     def set_variables(self, neurons):
+        self.add_tag("Supervisor")
         self.dopamine_decay = 1 - self.get_init_attr("dopamine_decay", 0.0, neurons)
         self.outputs = self.get_init_attr("outputs", [], neurons)
 
@@ -98,30 +105,29 @@ class Supervisor(Behaviour):
         output = self.outputs[neurons.iteration - 1]
         prediction = neurons.fired
 
-        # print(stream_i[neurons.iteration - 1], output, prediction)
-
-        # print(f"iteration={neurons.iteration} {output=} {prediction=}")
-        # assert np.shape(output) == np.shape(prediction)
+        if np.isnan(output).any():
+            DopamineEnvironment.decay(self.dopamine_decay)
+            return
 
         cosine_similarity = 1 - spatial.distance.cosine(
             re_range_binary(output), re_range_binary(prediction)
         )
-
-        # print(f"{cosine_similarity=}")
-        DopamineEnvironment.set(cosine_similarity)
-        DopamineEnvironment.decay(self.dopamine_decay)
+        DopamineEnvironment.set(cosine_similarity or -1)  # replace 0.o effect with -1
 
 
 class LIFNeuron(Behaviour):
     def set_variables(self, neurons):
         self.add_tag("LIFNeuron")
-        self.set_init_attrs_as_variables(neurons)
+        neurons.v_rest = self.get_init_attr("v_rest", -65, neurons)
+        neurons.v_reset = self.get_init_attr("v_reset", -65, neurons)
+        neurons.v_threshold = self.get_init_attr("v_threshold", -32, neurons)
+        neurons.dt = self.get_init_attr("dt", 1.0, neurons)
+        self.stream = self.get_init_attr("stream", None, neurons)
+
         # TODO: default voltage
         neurons.v = neurons.v_rest + neurons.get_neuron_vec("uniform") * 10
         neurons.fired = neurons.get_neuron_vec("zeros") > 0
-        neurons.dt = getattr(neurons, "dt", 0.1)  # TODO: default dt
         neurons.I = neurons.get_neuron_vec(mode="zeros")
-        self.stream = self.get_init_attr("stream", None, neurons)
 
     def new_iteration(self, n):
         n.v += ((n.v_rest - n.v) + n.I) * n.dt
@@ -140,21 +146,6 @@ class LIFNeuron(Behaviour):
 
         for s in getattr(n.afferent_synapses, "GABA", []):
             n.I -= np.sum(s.W[:, s.src.fired], axis=1)
-
-
-class LIF(Behaviour):
-    def set_variables(self, neurons):
-        self.add_tag("LIF")
-        self.set_init_attrs_as_variables(neurons)
-        neurons.v = neurons.get_neuron_vec() * neurons.v_rest
-        neurons.s = neurons.get_neuron_vec() > neurons.threshold
-        neurons.dt = 1.0
-
-    def new_iteration(self, neurons):
-        dv_dt = neurons.v_rest - neurons.v + neurons.R * neurons.I
-        neurons.v += dv_dt * neurons.dt / neurons.tau
-        neurons.s = neurons.v >= neurons.threshold
-        neurons.v[neurons.s] = neurons.v_reset
 
 
 class SynapseSTDP(Behaviour):
@@ -233,6 +224,7 @@ class STDPET(Behaviour):
 
 class SynapseDelay(Behaviour):
     def set_variables(self, synapse):
+        self.add_tag("Delay")
         self.max_delay = self.get_init_attr("max_delay", 0.0, synapse)
         use_shared_weights = self.get_init_attr("use_shared_weights", False, synapse)
         depth_size = 1 if use_shared_weights else synapse.dst.size
@@ -307,9 +299,9 @@ class SynapseDelay(Behaviour):
         self.weight_share[:, :, 1] = 1 - self.weight_share[:, :, 0]
 
 
-class AccuracyMetrics(Behaviour):
+class Metrics(Behaviour):
     def set_variables(self, neurons):
-        self.add_tag("AccuracyMetrics")
+        self.add_tag("Metrics")
 
         self.recording_phase = self.get_init_attr("recording_phase", None, neurons)
         self.outputs = self.get_init_attr("outputs", [], neurons)
@@ -322,43 +314,73 @@ class AccuracyMetrics(Behaviour):
             self.predictions = []
             self.old_recording = neurons.recording
 
+        # recording is different from input
         if (
             self.recording_phase is not None
             and self.recording_phase != neurons.recording
         ):
             return
 
-        self.predictions.append(neurons.fired)
+        if not np.isnan(self.outputs[neurons.iteration - 1]).any():
+            self.predictions.append(neurons.fired)
 
+        UNK = len(words)
+        presentation_words = words + ["UNK"]
         if neurons.iteration == len(self.outputs):
+            outputs = [o for o in self.outputs if not np.isnan(o).any()]
+            outputs = [o.argmax(axis=0) if o.any() else UNK for o in outputs]
+            predictions = [
+                p.argmax(axis=0) if p.any() else UNK for p in self.predictions
+            ]
+
             network_phase = "Training" if neurons.recording else "Testing"
-            accuracy = accuracy_score(self.outputs, self.predictions)
-            precision = precision_score(self.outputs, self.predictions, average="micro")
-            f1 = f1_score(self.outputs, self.predictions, average="micro")
-            recall = recall_score(self.outputs, self.predictions, average="micro")
+            accuracy = accuracy_score(outputs, predictions)
+            precision = precision_score(outputs, predictions, average="micro")
+            f1 = f1_score(outputs, predictions, average="micro")
+            recall = recall_score(outputs, predictions, average="micro")
+            # confusion matrix
+            cm = confusion_matrix(outputs, predictions)
+            cm_sum = cm.sum(axis=1)
+
+            (unique, counts) = np.unique(outputs, return_counts=True)
+            frequencies = np.asarray((unique, counts), dtype=object).T
+            frequencies[:, 0] = np.array(presentation_words)[
+                frequencies[:, 0].astype(int)
+            ]
+
             print(
                 "---" * 15,
-                f"{network_phase} \n",
-                f"accuracy: {accuracy}\n",
-                f"precision: {precision}\n",
-                f"f1: {f1}\n",
-                f"recall: {recall}\n",
+                f"{network_phase}",
+                f"accuracy: {accuracy}",
+                f"precision: {precision}",
+                f"f1: {f1}",
+                f"recall: {recall}",
+                f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
                 "---" * 15,
-                "\n\n",
+                f"frequencies {frequencies}",
+                sep="\n",
+                end="\n\n",
             )
+
+            cm_display = ConfusionMatrixDisplay(
+                confusion_matrix=cm, display_labels=presentation_words
+            )
+            cm_display.plot()
+            plt.title(f"{network_phase} Confusion Matrix")
+            plt.show()
 
 
 # ================= NETWORK  =================
 def main():
     network = Network()
-    stream_i, stream_j = get_data(1000)
+    stream_i, stream_j = get_data(1000, prob=0.85)
     letters_ng = NeuronGroup(
         net=network,
         tag="letters",
         size=len(letters),
         behaviour=behaviour_generator(
             [
-                LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-52, stream=stream_i),
+                LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-12, stream=stream_i),
                 Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
             ]
         ),
@@ -372,8 +394,8 @@ def main():
             [
                 LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-52),
                 Supervisor(dopamine_decay=0.1, outputs=stream_j),
-                AccuracyMetrics(outputs=stream_j),
-                Recorder(tag="word-recorder", variables=["n.v", "n.fired"]),
+                Metrics(outputs=stream_j),
+                Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
             ]
         ),
     )
@@ -396,41 +418,48 @@ def main():
             ]
         ),
     )
-    # Training accuracy: 0.4945
-    # Testing accuracy: 0.4921875
+
     network.initialize()
     print("start")
     print(np.sum(network.SynapseGroups[0].W))
-    network.simulate_iterations(len(stream_i), measure_block_time=True)
+    network.simulate_iterations(len(stream_i), measure_block_time=False)
     print("finished")
     print(np.sum(network.SynapseGroups[0].W))
 
-    voltage_visualizer(
-        network["letters-recorder", 0]["n.v", 0], title="letters.voltage (trace)"
-    )
-    voltage_visualizer(
-        network["word-recorder", 0]["n.v", 0], title="words.voltage (trace)"
-    )
-    spike_visualizer(
-        network["letters-recorder", 0]["n.fired", 0, "np"].transpose(),
-        title="letters spike activity",
-    )
-    spike_visualizer(
-        network["word-recorder", 0]["n.fired", 0, "np"].transpose(),
-        title="words spike activity",
-    )
+    voltage_plots(network, ngs=['letters', 'words'])
+    raster_plots(network, ngs=["letters", "words"])
 
     # Testing purposes
-    stream_i, stream_j = get_data(500)
+    stream_i, stream_j = get_data(800, prob=0.6)
     network.recording_off()
     network.iteration = 0
-    network.NeuronGroups[0].behaviour[1].stream = stream_i
-    network.NeuronGroups[1].behaviour[2].outputs = stream_j
-    network.NeuronGroups[1].behaviour[3].outputs = stream_j
 
-    network.simulate_iterations(len(stream_i), measure_block_time=True)
+    network["letters", 0].behaviour[1].stream = stream_i  # LIFNeuron
+    network["letters", 0].stream = stream_i
+    network["letters", 0].recording = True
+
+    network["letters", 0]["letters-recorder", 0].clear_cache()
+    network["letters", 0]["letters-recorder", 0].variables = {"n.v": [], "n.fired": []}
+
+    network["words", 0].behaviour[2].outputs = stream_j  # supervisor
+    network["words", 0].behaviour[3].outputs = stream_j  # metrics
+
+    network.simulate_iterations(len(stream_i), measure_block_time=False)
+    raster_plots(network, ngs=["letters", "words"])
 
 
 if __name__ == "__main__":
     main()
-    # pass
+
+
+# Recorder(tag="letters-recorder:test", variables=["n.v", "n.fired"]),
+# network.deactivate_mechanisms(['STDP'])
+# network.activate_mechanisms(['letter-recorder:test'])
+# network['letters', 0].behaviour[2].clear_recorder()
+# network['letters', 0].behaviour[2].__init__(tag="letters-recorder", variables=["n.v", "n.fired"])
+# network['letters', 0].v = network['letters', 0].v_rest + network['letters', 0].get_neuron_vec("uniform") * 10
+# network['letters', 0].fired = network['letters', 0].get_neuron_vec("zeros") > 0
+# network['letters', 0].behaviour[2].reset()
+# network['letters', 0].recording = True
+# network['letters', 0].behaviour[2].variables = {"n.v": [], "n.fired": []}
+# network['letters', 0].behaviour[2] = Recorder(tag="letters-recorder", variables=["n.v", "n.fired"])
