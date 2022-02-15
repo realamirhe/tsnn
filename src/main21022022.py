@@ -3,6 +3,7 @@ import string
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy import spatial
+from scipy.spatial.distance import jaccard
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -110,12 +111,26 @@ class Supervisor(Behaviour):
             DopamineEnvironment.decay(self.dopamine_decay)
             return
 
-        cosine_similarity = 1 - spatial.distance.cosine(
-            re_range_binary(output), re_range_binary(prediction)
-        )
-        # [abc, omn]
-        # TODO: talk about this
-        DopamineEnvironment.set(cosine_similarity or -1)  # replace 0.o effect with -1
+        """ Cosine similarity """
+        # DopamineEnvironment.set(
+        #     (
+        #         1
+        #         - spatial.distance.cosine(
+        #             re_range_binary(output), re_range_binary(prediction)
+        #         )
+        #     )
+        #     or -1
+        # ) # replace 0.o effect with -1
+
+        """ mismatch similarity """
+        # if (output == prediction).all():
+        #     DopamineEnvironment.set(1.0)
+        # else:
+        #     DopamineEnvironment.set(-1.0)
+
+        """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
+        distance = jaccard(output, prediction)
+        DopamineEnvironment.set(-distance or 1 - distance)
 
 
 class LIFNeuron(Behaviour):
@@ -149,10 +164,6 @@ class LIFNeuron(Behaviour):
 
         for s in n.afferent_synapses.get("GABA", []):
             n.I -= np.sum(s.W[:, s.src.fired], axis=1)
-
-
-# a b c -> abc
-# 1 1 1 000
 
 
 class SynapseSTDP(Behaviour):
@@ -347,12 +358,10 @@ class Metrics(Behaviour):
         self.old_recording = neurons.recording
         self.predictions = []
 
-    def new_iteration(self, neurons):
-        # reset prediction in recording state switch!
-        if self.old_recording != neurons.recording:
-            self.predictions = []
-            self.old_recording = neurons.recording
+    def reset(self):
+        self.predictions = []
 
+    def new_iteration(self, neurons):
         # recording is different from input
         if (
             self.recording_phase is not None
@@ -378,11 +387,8 @@ class Metrics(Behaviour):
         UNK = len(words)
         presentation_words = words + ["UNK"]
         if neurons.iteration == len(self.outputs):
-            outputs = [o for o in self.outputs if not np.isnan(o).any()]
-            outputs = [o.argmax(axis=0) if o.any() else UNK for o in outputs]
-            predictions = [
-                p.argmax(axis=0) if p.any() else UNK for p in self.predictions
-            ]
+            outputs = [str(o) for o in self.outputs if not np.isnan(o).any()]
+            predictions = [str(p) for p in self.predictions]
 
             network_phase = "Training" if neurons.recording else "Testing"
             accuracy = accuracy_score(outputs, predictions)
@@ -394,10 +400,10 @@ class Metrics(Behaviour):
             cm_sum = cm.sum(axis=1)
 
             (unique, counts) = np.unique(outputs, return_counts=True)
-            frequencies = np.asarray((unique, counts), dtype=object).T
-            frequencies[:, 0] = np.array(presentation_words)[
-                frequencies[:, 0].astype(int)
-            ]
+            # frequencies = np.asarray((unique, counts), dtype=object).T
+            # frequencies[:, 0] = np.array(presentation_words)[
+            #     frequencies[:, 0].astype(int)
+            # ]
 
             print(
                 "---" * 15,
@@ -408,13 +414,15 @@ class Metrics(Behaviour):
                 f"recall: {recall}",
                 f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
                 "---" * 15,
-                f"frequencies {frequencies}",
+                # f"frequencies {frequencies}",
                 sep="\n",
                 end="\n\n",
             )
 
             cm_display = ConfusionMatrixDisplay(
-                confusion_matrix=cm, display_labels=presentation_words
+                # confusion_matrix=cm, display_labels=presentation_words
+                confusion_matrix=cm,
+                # display_labels=np.unique(predictions),
             )
             cm_display.plot()
             plt.title(f"{network_phase} Confusion Matrix")
@@ -479,7 +487,7 @@ def main():
     print("finished")
     print(np.sum(network.SynapseGroups[0].W))
 
-    voltage_plots(network, ngs=["letters", "words"])
+    # voltage_plots(network, ngs=["letters", "words"])
     raster_plots(network, ngs=["letters", "words"])
 
     # Testing purposes
@@ -488,14 +496,18 @@ def main():
     network.iteration = 0
 
     network["letters", 0].behaviour[1].stream = stream_i  # LIFNeuron
-    network["letters", 0].stream = stream_i
-    network["letters", 0].recording = True
 
+    network["letters", 0].recording = True
     network["letters", 0]["letters-recorder", 0].clear_cache()
     network["letters", 0]["letters-recorder", 0].variables = {"n.v": [], "n.fired": []}
 
     network["words", 0].behaviour[2].outputs = stream_j  # supervisor
     network["words", 0].behaviour[3].outputs = stream_j  # metrics
+    network["words", 0].behaviour[3].reset()  # metrics
+
+    network["words", 0].recording = True
+    network["words", 0]["words-recorder", 0].clear_cache()
+    network["words", 0]["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
 
     network.simulate_iterations(len(stream_i), measure_block_time=False)
     raster_plots(network, ngs=["letters", "words"])
@@ -503,16 +515,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# Recorder(tag="letters-recorder:test", variables=["n.v", "n.fired"]),
-# network.deactivate_mechanisms(['STDP'])
-# network.activate_mechanisms(['letter-recorder:test'])
-# network['letters', 0].behaviour[2].clear_recorder()
-# network['letters', 0].behaviour[2].__init__(tag="letters-recorder", variables=["n.v", "n.fired"])
-# network['letters', 0].v = network['letters', 0].v_rest + network['letters', 0].get_neuron_vec("uniform") * 10
-# network['letters', 0].fired = network['letters', 0].get_neuron_vec("zeros") > 0
-# network['letters', 0].behaviour[2].reset()
-# network['letters', 0].recording = True
-# network['letters', 0].behaviour[2].variables = {"n.v": [], "n.fired": []}
-# network['letters', 0].behaviour[2] = Recorder(tag="letters-recorder", variables=["n.v", "n.fired"])
