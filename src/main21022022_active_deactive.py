@@ -2,7 +2,6 @@ import string
 
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy import spatial
 from scipy.spatial.distance import jaccard
 from sklearn.metrics import (
     accuracy_score,
@@ -18,9 +17,6 @@ from src.libs.data_generator_numpy import gen_corpus
 from src.libs.helper import (
     behaviour_generator,
     reset_random_seed,
-    re_range_binary,
-    raster_plots,
-    voltage_plots,
 )
 
 # =================   CONFIG    =================
@@ -135,7 +131,6 @@ class Supervisor(Behaviour):
 
 class LIFNeuron(Behaviour):
     def set_variables(self, neurons):
-        self.add_tag("LIFNeuron")
         neurons.v_rest = self.get_init_attr("v_rest", -65, neurons)
         neurons.v_reset = self.get_init_attr("v_reset", -65, neurons)
         neurons.v_threshold = self.get_init_attr("v_threshold", -32, neurons)
@@ -168,7 +163,6 @@ class LIFNeuron(Behaviour):
 
 class SynapseSTDP(Behaviour):
     def set_variables(self, synapse):
-        self.add_tag("STDP")
         synapse.W = synapse.get_synapse_mat("uniform")
 
         self.weight_decay = 1 - self.get_init_attr("weight_decay", 0.0, synapse)
@@ -194,21 +188,22 @@ class SynapseSTDP(Behaviour):
             * (pre_post - post_pre + stimulus)  # stdp mechanism
             * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
             * self.stdp_factor  # stdp scale factor
-            * synapse.enabled  # activation of synapse itself (todo)!!
+            * synapse.enabled  # activation of synapse itself
         )
-        # print("dw => ", dw)
+
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
         """ stop condition for delay learning """
-        update_delay_mask = np.min(synapse.delay, axis=1) > self.delay_epsilon
+        use_shared_delay = dw.shape != synapse.delay.shape
+        if use_shared_delay:
+            dw = np.mean(dw, axis=0, keepdims=True)
 
-        # Update whole delay matrix when the delay is shared between the states
-        if update_delay_mask.size == 1:
-            if update_delay_mask[0]:
-                synapse.delay -= np.mean(dw, axis=0, keepdims=True)
-        else:
-            synapse.delay[update_delay_mask] -= dw[update_delay_mask]
+        non_zero_dw = dw != 0
+        if non_zero_dw.any():
+            should_update = np.min(synapse.delay[non_zero_dw]) > self.delay_epsilon
+            if should_update:
+                synapse.delay[non_zero_dw] -= dw[non_zero_dw]
 
         # This will differ from the original stdp mechanism and must be added to the latest synapse
         synapse.src.voltage_old = synapse.src.v.copy()
@@ -217,7 +212,6 @@ class SynapseSTDP(Behaviour):
 
 class STDPET(Behaviour):
     def set_variables(self, synapses):
-        self.add_tag("STDP")
         self.set_init_attrs_as_variables(synapses)
         synapses.src.trace = synapses.src.get_neuron_vec()
         synapses.dst.trace = synapses.dst.get_neuron_vec()
@@ -351,8 +345,6 @@ class SynapseSTDPWithOutDelay(Behaviour):
 
 class Metrics(Behaviour):
     def set_variables(self, neurons):
-        self.add_tag("Metrics")
-
         self.recording_phase = self.get_init_attr("recording_phase", None, neurons)
         self.outputs = self.get_init_attr("outputs", [], neurons)
         self.old_recording = neurons.recording
@@ -372,26 +364,15 @@ class Metrics(Behaviour):
         if not np.isnan(self.outputs[neurons.iteration - 1]).any():
             self.predictions.append(neurons.fired)
 
-        # [1, 1] -> 0
-        # OUTPUT
-        # [1, 0] -> 0 :abc:
-        # [0, 0] -> 0 :xyw:
-        # [0, 1] -> 1 :omn:
-
-        # // -----------
-        # TODO:
-        # [0, 1] -> 0
-        # [1, 0] -> 0 :abc:
-        # [0, 0] -> 0 :xyw:
-        # [0, 1] -> 1 :omn:
-        UNK = len(words)
-        presentation_words = words + ["UNK"]
+        UNK = str(len(words))
+        presentation_words = words + [UNK]
         if neurons.iteration == len(self.outputs):
             outputs = [str(o) for o in self.outputs if not np.isnan(o).any()]
             predictions = [str(p) for p in self.predictions]
 
             network_phase = "Training" if neurons.recording else "Testing"
             accuracy = accuracy_score(outputs, predictions)
+
             precision = precision_score(outputs, predictions, average="micro")
             f1 = f1_score(outputs, predictions, average="micro")
             recall = recall_score(outputs, predictions, average="micro")
@@ -429,19 +410,32 @@ class Metrics(Behaviour):
             plt.show()
 
 
-# [1, 0] [0, 1], [0, 0], [1,1]
-
 # ================= NETWORK  =================
 def main():
     network = Network()
-    stream_i, stream_j = get_data(1000, prob=0.85)
+    stream_i_train, stream_j_train = get_data(1000, prob=0.85)
+    stream_i_test, stream_j_test = get_data(800, prob=0.6)
+
     letters_ng = NeuronGroup(
         net=network,
         tag="letters",
         size=len(letters),
         behaviour=behaviour_generator(
             [
-                LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-12, stream=stream_i),
+                LIFNeuron(
+                    tag="lif:train",
+                    v_rest=-65,
+                    v_reset=-65,
+                    v_threshold=-12,
+                    stream=stream_i_train,
+                ),
+                LIFNeuron(
+                    tag="lif:test",
+                    v_rest=-65,
+                    v_reset=-65,
+                    v_threshold=-12,
+                    stream=stream_i_test,
+                ),
                 Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
             ]
         ),
@@ -454,8 +448,14 @@ def main():
         behaviour=behaviour_generator(
             [
                 LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-52),
-                Supervisor(dopamine_decay=0.1, outputs=stream_j),
-                Metrics(outputs=stream_j),
+                Supervisor(
+                    tag="supervisor:train", dopamine_decay=0.1, outputs=stream_j_train
+                ),
+                Supervisor(
+                    tag="supervisor:test", dopamine_decay=0.1, outputs=stream_j_test
+                ),
+                Metrics(tag="metrics:train", outputs=stream_j_train),
+                Metrics(tag="metrics:test", outputs=stream_j_test),
                 Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
             ]
         ),
@@ -470,10 +470,11 @@ def main():
             [
                 SynapseDelay(max_delay=3, use_shared_weights=False),
                 SynapseSTDP(
+                    tag="stdp",
                     weight_decay=0.1,
                     stdp_factor=0.0015,
                     delay_epsilon=0.15,
-                    w_min=0,
+                    w_min=-10.0,
                     w_max=10.0,
                 ),
             ]
@@ -481,37 +482,48 @@ def main():
     )
 
     network.initialize()
-    print("start")
-    print(np.sum(network.SynapseGroups[0].W))
-    network.simulate_iterations(len(stream_i), measure_block_time=False)
-    print("finished")
-    print(np.sum(network.SynapseGroups[0].W))
+    network.activate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
+    network.deactivate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
+    epochs = 1
+    for episode in range(epochs):
+        network.iteration = 0
+        network.simulate_iterations(len(stream_i_train), measure_block_time=False)
+        W = network.SynapseGroups[0].W
+        print(
+            f"episode={episode} sum={np.sum(W):.1f}, max={np.max(W):.1f}, min={np.min(W):.1f}"
+        )
 
-    # voltage_plots(network, ngs=["letters", "words"])
-    raster_plots(network, ngs=["letters", "words"])
+        network["letters-recorder", 0].reset()
+        network["words-recorder", 0].reset()
+        network["metrics:train", 0].reset()
 
-    # Testing purposes
-    stream_i, stream_j = get_data(800, prob=0.6)
-    network.recording_off()
+    network.activate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
+    network.deactivate_mechanisms(
+        ["lif:train", "supervisor:train", "metrics:train", "stdp"]
+    )
     network.iteration = 0
-
-    network["letters", 0].behaviour[1].stream = stream_i  # LIFNeuron
-
-    network["letters", 0].recording = True
-    network["letters", 0]["letters-recorder", 0].clear_cache()
-    network["letters", 0]["letters-recorder", 0].variables = {"n.v": [], "n.fired": []}
-
-    network["words", 0].behaviour[2].outputs = stream_j  # supervisor
-    network["words", 0].behaviour[3].outputs = stream_j  # metrics
-    network["words", 0].behaviour[3].reset()  # metrics
-
-    network["words", 0].recording = True
-    network["words", 0]["words-recorder", 0].clear_cache()
-    network["words", 0]["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
-
-    network.simulate_iterations(len(stream_i), measure_block_time=False)
-    raster_plots(network, ngs=["letters", "words"])
+    network.simulate_iterations(len(stream_i_test), measure_block_time=False)
 
 
 if __name__ == "__main__":
     main()
+
+    # Testing purposes
+    # network.recording_off()
+
+    # raster_plots(network, ngs=["letters", "words"])
+    # network["letters", 0].behaviour[1].stream = stream_i  # LIFNeuron
+    #
+    # network["letters", 0].recording = True
+    # network["letters", 0]["letters-recorder", 0].clear_cache()
+    # network["letters", 0]["letters-recorder", 0].variables = {"n.v": [], "n.fired": []}
+    #
+    # network["words", 0].behaviour[2].outputs = stream_j  # supervisor
+    # network["words", 0].behaviour[3].outputs = stream_j  # metrics
+    # network["words", 0].behaviour[3].reset()  # metrics
+    #
+    # network["words", 0].recording = True
+    # network["words", 0]["words-recorder", 0].clear_cache()
+    # network["words", 0]["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
+    #
+    # network.simulate_iterations(len(stream_i), measure_block_time=False)
