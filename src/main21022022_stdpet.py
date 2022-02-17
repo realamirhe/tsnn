@@ -1,3 +1,4 @@
+import random
 import string
 
 import numpy as np
@@ -43,8 +44,7 @@ def get_data(size, prob=0.7):
         letters_to_use=letters,
         words_to_use=words,
     )
-    if size < 10:
-        print(corpus)
+    random.shuffle(corpus)
     joined_corpus = " ".join(corpus) + " "
     stream_i = [spike_stream_i(char) for char in joined_corpus]
     stream_j = []
@@ -65,7 +65,7 @@ def get_data(size, prob=0.7):
         stream_j.append(empty_spike)  # space between words
 
     assert len(stream_i) == len(stream_j), "stream length mismatch"
-    return stream_i, stream_j
+    return stream_i, stream_j, corpus
 
 
 # ================= ENVIRONMENT  =================
@@ -307,6 +307,12 @@ class SynapseSTDPET(Behaviour):
             if should_update:
                 synapse.delay[non_zero_dw] -= dw[non_zero_dw]
 
+        del dx
+        del dy
+        del dw_minus
+        del dw_plus
+        del dw
+
 
 class SynapseDelay(Behaviour):
     __slots__ = [
@@ -323,7 +329,7 @@ class SynapseDelay(Behaviour):
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
         synapse.delay = (
-            np.random.random((depth_size, synapse.src.size)) * self.max_delay
+            np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
         )
         """ History or neuron memory for storing the spiked activity over times """
         self.delayed_spikes = np.zeros(
@@ -450,11 +456,13 @@ class Metrics(Behaviour):
         if not np.isnan(self.outputs[neurons.iteration - 1]).any():
             self.predictions.append(neurons.fired)
 
-        UNK = str(len(words))
-        presentation_words = words + [UNK]
         if neurons.iteration == len(self.outputs):
-            outputs = [str(o) for o in self.outputs if not np.isnan(o).any()]
-            predictions = [str(p) for p in self.predictions]
+            UNK = "unk"
+            bit_range = 1 << np.arange(self.outputs[0].size)
+
+            presentation_words = words + [UNK]
+            outputs = [o.dot(bit_range) for o in self.outputs if not np.isnan(o).any()]
+            predictions = [p.dot(bit_range) for p in self.predictions]
 
             network_phase = "Training" if neurons.recording else "Testing"
             accuracy = accuracy_score(outputs, predictions)
@@ -466,11 +474,8 @@ class Metrics(Behaviour):
             cm = confusion_matrix(outputs, predictions)
             cm_sum = cm.sum(axis=1)
 
-            (unique, counts) = np.unique(outputs, return_counts=True)
-            # frequencies = np.asarray((unique, counts), dtype=object).T
-            # frequencies[:, 0] = np.array(presentation_words)[
-            #     frequencies[:, 0].astype(int)
-            # ]
+            frequencies = np.asarray(np.unique(outputs, return_counts=True)).T
+            frequencies_p = np.asarray(np.unique(predictions, return_counts=True)).T
 
             print(
                 "---" * 15,
@@ -481,16 +486,13 @@ class Metrics(Behaviour):
                 f"recall: {recall}",
                 f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
                 "---" * 15,
-                # f"frequencies {frequencies}",
+                f"[Output] frequencies::\n{frequencies}",
+                f"[Prediction] frequencies::\n{frequencies_p}",
                 sep="\n",
                 end="\n\n",
             )
 
-            cm_display = ConfusionMatrixDisplay(
-                # confusion_matrix=cm, display_labels=presentation_words
-                confusion_matrix=cm,
-                # display_labels=np.unique(predictions),
-            )
+            cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
             cm_display.plot()
             plt.title(f"{network_phase} Confusion Matrix")
             plt.show()
@@ -499,8 +501,8 @@ class Metrics(Behaviour):
 # ================= NETWORK  =================
 def main():
     network = Network()
-    stream_i_train, stream_j_train = get_data(1000, prob=0.85)
-    stream_i_test, stream_j_test = get_data(800, prob=0.6)
+    stream_i_train, stream_j_train, corpus_train = get_data(1000, prob=0.6)
+    stream_i_test, stream_j_test, corpus_test = get_data(800, prob=0.6)
 
     letters_ng = NeuronGroup(
         net=network,
@@ -534,11 +536,12 @@ def main():
         behaviour=behaviour_generator(
             [
                 LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-52),
+                #  dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
                 Supervisor(
-                    tag="supervisor:train", dopamine_decay=0.1, outputs=stream_j_train
+                    tag="supervisor:train", dopamine_decay=1 / 3, outputs=stream_j_train
                 ),
                 Supervisor(
-                    tag="supervisor:test", dopamine_decay=0.1, outputs=stream_j_test
+                    tag="supervisor:test", dopamine_decay=1 / 3, outputs=stream_j_test
                 ),
                 Metrics(tag="metrics:train", outputs=stream_j_train),
                 Metrics(tag="metrics:test", outputs=stream_j_test),
@@ -572,6 +575,7 @@ def main():
                     dt=1.0,
                     w_min=-10.0,
                     w_max=10.0,
+                    weight_decay=0.05,
                 ),
             ]
         ),
@@ -580,7 +584,7 @@ def main():
     network.initialize()
     network.activate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
     network.deactivate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
-    epochs = 5
+    epochs = 1
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train), measure_block_time=True)
@@ -603,23 +607,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # Testing purposes
-    # network.recording_off()
-
-    # raster_plots(network, ngs=["letters", "words"])
-    # network["letters", 0].behaviour[1].stream = stream_i  # LIFNeuron
-    #
-    # network["letters", 0].recording = True
-    # network["letters", 0]["letters-recorder", 0].clear_cache()
-    # network["letters", 0]["letters-recorder", 0].variables = {"n.v": [], "n.fired": []}
-    #
-    # network["words", 0].behaviour[2].outputs = stream_j  # supervisor
-    # network["words", 0].behaviour[3].outputs = stream_j  # metrics
-    # network["words", 0].behaviour[3].reset()  # metrics
-    #
-    # network["words", 0].recording = True
-    # network["words", 0]["words-recorder", 0].clear_cache()
-    # network["words", 0]["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
-    #
-    # network.simulate_iterations(len(stream_i), measure_block_time=False)
