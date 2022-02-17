@@ -94,8 +94,9 @@ class DopamineEnvironment:
 
 # ================= BEHAVIOURS  =================
 class Supervisor(Behaviour):
+    __slots__ = ["dopamine_decay", "outputs"]
+
     def set_variables(self, neurons):
-        self.add_tag("Supervisor")
         self.dopamine_decay = 1 - self.get_init_attr("dopamine_decay", 0.0, neurons)
         self.outputs = self.get_init_attr("outputs", [], neurons)
 
@@ -130,11 +131,13 @@ class Supervisor(Behaviour):
 
 
 class LIFNeuron(Behaviour):
+    __slots__ = ["stream", "dt"]
+
     def set_variables(self, neurons):
         neurons.v_rest = self.get_init_attr("v_rest", -65, neurons)
         neurons.v_reset = self.get_init_attr("v_reset", -65, neurons)
         neurons.v_threshold = self.get_init_attr("v_threshold", -32, neurons)
-        neurons.dt = self.get_init_attr("dt", 1.0, neurons)
+        self.dt = self.get_init_attr("dt", 1.0, neurons)
         self.stream = self.get_init_attr("stream", None, neurons)
 
         # TODO: default voltage
@@ -143,7 +146,7 @@ class LIFNeuron(Behaviour):
         neurons.I = neurons.get_neuron_vec(mode="zeros")
 
     def new_iteration(self, n):
-        n.v += ((n.v_rest - n.v) + n.I) * n.dt
+        n.v += ((n.v_rest - n.v) + n.I) * self.dt
         if self.stream is not None:
             # todo: if problem in j stream replace [:] with something else
             n.fired[:] = self.stream[n.iteration - 1]
@@ -162,6 +165,8 @@ class LIFNeuron(Behaviour):
 
 
 class SynapseSTDP(Behaviour):
+    __slots__ = ["weight_decay", "stdp_factor", "delay_epsilon", "w_min", "w_max"]
+
     def set_variables(self, synapse):
         synapse.W = synapse.get_synapse_mat("uniform")
 
@@ -210,7 +215,19 @@ class SynapseSTDP(Behaviour):
         synapse.dst.voltage_old = synapse.dst.v.copy()
 
 
-class STDP(Behaviour):
+class SynapseSTDPET(Behaviour):
+    __slots__ = [
+        "tau_plus",
+        "tau_minus",
+        "a_plus",
+        "a_minus",
+        "dt",
+        "weight_decay",
+        "stdp_factor",
+        "delay_epsilon",
+        "w_min",
+        "w_max",
+    ]
     """
     Let x and y be the spike trace variables of pre- and post-synaptic neurons.
     These trace variables are modified through time with:
@@ -230,10 +247,20 @@ class STDP(Behaviour):
     """
 
     def set_variables(self, synapse):
-        self.set_init_attrs_as_variables(synapse)
         synapse.src.v = synapse.src.get_neuron_vec()
         synapse.dst.v = synapse.dst.get_neuron_vec()
         synapse.W = synapse.get_synapse_mat("uniform")
+
+        self.tau_plus = self.get_init_attr("tau_plus", 3.0, synapse)
+        self.tau_minus = self.get_init_attr("tau_minus", 3.0, synapse)
+        self.a_plus = self.get_init_attr("a_plus", 0.01, synapse)
+        self.a_minus = self.get_init_attr("a_minus", 2.0, synapse)
+        self.dt = self.get_init_attr("dt", 1.0, synapse)
+        self.weight_decay = 1 - self.get_init_attr("weight_decay", 0.0, synapse)
+        self.stdp_factor = self.get_init_attr("stdp_factor", 1.0, synapse)
+        self.delay_epsilon = self.get_init_attr("delay_epsilon", 0.15, synapse)
+        self.w_min = self.get_init_attr("w_min", 0.0, synapse)
+        self.w_max = self.get_init_attr("w_max", 10.0, synapse)
 
     def new_iteration(self, synapse):
         """
@@ -241,29 +268,56 @@ class STDP(Behaviour):
         Args:
             synapse (SynapseGroup): the synapse to which STDP is applied.
         """
-        dx = -synapse.src.v / synapse.tau_plus + synapse.src.fired
-        dy = -synapse.dst.v / synapse.tau_minus + synapse.dst.fired
-        synapse.src.v += dx * synapse.dt
-        synapse.dst.v += dy * synapse.dt
+        dx = -synapse.src.v / self.tau_plus + synapse.src.fired
+        dy = -synapse.dst.v / self.tau_minus + synapse.dst.fired
+        synapse.src.v += dx * self.dt
+        synapse.dst.v += dy * self.dt
 
         dw_minus = (
-            -synapse.a_minus
+            -self.a_minus
             * synapse.src.fired[np.newaxis, :]
             * synapse.dst.v[:, np.newaxis]
         )
         dw_plus = (
-            synapse.a_plus
+            self.a_plus
             * synapse.src.v[np.newaxis, :]
             * synapse.dst.fired[:, np.newaxis]
         )
 
-        dw = (dw_plus + dw_minus) * synapse.dt
-        synapse.W = np.clip(synapse.W + dw, synapse.w_min, synapse.w_max)
+        dw = (
+            DopamineEnvironment.get()  # from global environment
+            * (dw_plus + dw_minus)  # stdp mechanism
+            * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
+            * self.stdp_factor  # stdp scale factor
+            * synapse.enabled  # activation of synapse itself
+            * self.dt
+        )
+
+        synapse.W = synapse.W * self.weight_decay + dw
+        synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
+
+        """ stop condition for delay learning """
+        use_shared_delay = dw.shape != synapse.delay.shape
+        if use_shared_delay:
+            dw = np.mean(dw, axis=0, keepdims=True)
+
+        non_zero_dw = dw != 0
+        if non_zero_dw.any():
+            should_update = np.min(synapse.delay[non_zero_dw]) > self.delay_epsilon
+            if should_update:
+                synapse.delay[non_zero_dw] -= dw[non_zero_dw]
 
 
 class SynapseDelay(Behaviour):
+    __slots__ = [
+        "max_delay",
+        "delayed_spikes",
+        "weight_share",
+        "int_delay",
+        "delay_mask",
+    ]
+
     def set_variables(self, synapse):
-        self.add_tag("Delay")
         self.max_delay = self.get_init_attr("max_delay", 0.0, synapse)
         use_shared_weights = self.get_init_attr("use_shared_weights", False, synapse)
         depth_size = 1 if use_shared_weights else synapse.dst.size
@@ -335,6 +389,8 @@ class SynapseDelay(Behaviour):
 
 
 class SynapseSTDPWithOutDelay(Behaviour):
+    __slots__ = ["weight_decay", "stdp_factor", "w_min", "w_max"]
+
     def set_variables(self, synapse):
         self.add_tag("STDPWithOutDelay")
         synapse.W = synapse.get_synapse_mat("uniform")
@@ -372,6 +428,8 @@ class SynapseSTDPWithOutDelay(Behaviour):
 
 
 class Metrics(Behaviour):
+    __slots__ = ["recording_phase", "outputs", "old_recording", "predictions"]
+
     def set_variables(self, neurons):
         self.recording_phase = self.get_init_attr("recording_phase", None, neurons)
         self.outputs = self.get_init_attr("outputs", [], neurons)
@@ -505,7 +563,7 @@ def main():
                 #     w_min=-10.0,
                 #     w_max=10.0,
                 # ),
-                STDP(
+                SynapseSTDPET(
                     tag="stdp",
                     tau_plus=3.0,
                     tau_minus=3.0,
@@ -522,10 +580,10 @@ def main():
     network.initialize()
     network.activate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
     network.deactivate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
-    epochs = 1
+    epochs = 5
     for episode in range(epochs):
         network.iteration = 0
-        network.simulate_iterations(len(stream_i_train), measure_block_time=False)
+        network.simulate_iterations(len(stream_i_train), measure_block_time=True)
         W = network.SynapseGroups[0].W
         print(
             f"episode={episode} sum={np.sum(W):.1f}, max={np.max(W):.1f}, min={np.min(W):.1f}"
@@ -540,7 +598,7 @@ def main():
         ["lif:train", "supervisor:train", "metrics:train", "stdp"]
     )
     network.iteration = 0
-    network.simulate_iterations(len(stream_i_test), measure_block_time=False)
+    network.simulate_iterations(len(stream_i_test), measure_block_time=True)
 
 
 if __name__ == "__main__":
