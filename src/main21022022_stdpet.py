@@ -109,22 +109,16 @@ class Supervisor(Behaviour):
             return
 
         """ Cosine similarity """
-        # DopamineEnvironment.set(
-        #     (
-        #         1
-        #         - spatial.distance.cosine(
-        #             re_range_binary(output), re_range_binary(prediction)
-        #         )
-        #     )
-        #     or -1
-        # ) # replace 0.o effect with -1
+        # distance = 1 - spatial.distance.cosine(
+        #     re_range_binary(output), re_range_binary(prediction)
+        # )
+        # DopamineEnvironment.set(distance or -1)  # replace 0.o effect with -1
 
         """ mismatch similarity """
-        # if (output == prediction).all():
-        #     DopamineEnvironment.set(1.0)
-        # else:
-        #     DopamineEnvironment.set(-1.0)
+        # distance = [-1.0, 1.0][int((output == prediction).all())]
+        # DopamineEnvironment.set(distance)
 
+        # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
         distance = jaccard(output, prediction)
         DopamineEnvironment.set(-distance or 1.0)
@@ -570,12 +564,12 @@ def main():
                     tag="stdp",
                     tau_plus=3.0,
                     tau_minus=3.0,
-                    a_plus=0.01,
-                    a_minus=2.0,
+                    a_plus=20.0,
+                    a_minus=30.0,
                     dt=1.0,
-                    w_min=-10.0,
-                    w_max=10.0,
-                    weight_decay=0.05,
+                    w_min=-300.0,
+                    w_max=20.0,
+                    weight_decay=0,  # 🙅
                 ),
             ]
         ),
