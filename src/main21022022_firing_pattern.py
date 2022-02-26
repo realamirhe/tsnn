@@ -3,7 +3,6 @@ import string
 
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy import spatial
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -18,8 +17,6 @@ from src.libs.data_generator_numpy import gen_corpus
 from src.libs.helper import (
     behaviour_generator,
     reset_random_seed,
-    raster_plots,
-    re_range_binary,
 )
 
 # =================   CONFIG    =================
@@ -555,7 +552,7 @@ def main():
                 DerivedILIFNeuron(**lif_base),
                 #  dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
                 Supervisor(
-                    tag="supervisor:train", dopamine_decay=0.89, outputs=stream_j_train
+                    tag="supervisor:train", dopamine_decay=1/3, outputs=stream_j_train
                 ),
                 Supervisor(
                     tag="supervisor:test", dopamine_decay=1 / 3, outputs=stream_j_test
@@ -574,7 +571,7 @@ def main():
         tag="GLUTAMATE",
         behaviour=behaviour_generator(
             [
-                SynapseDelay(max_delay=3, use_shared_weights=False),
+                SynapseDelay(max_delay=3, use_shared_weights=True),
                 # SynapseSTDP(
                 #     tag="stdp",
                 #     weight_decay=0.1,
@@ -587,12 +584,12 @@ def main():
                     tag="stdp",
                     tau_plus=3.0,
                     tau_minus=3.0,
-                    a_plus=20.0,
+                    a_plus=30.0,
                     a_minus=30.0,
                     dt=1.0,
-                    w_min=0.0,
-                    w_max=90.0,
-                    weight_decay=0,  # 🙅
+                    w_min=-20.0,
+                    w_max=100.0,
+                    weight_decay=0.1,  # 🙅
                 ),
             ]
         ),
@@ -601,7 +598,7 @@ def main():
     network.initialize()
     network.activate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
     network.deactivate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
-    epochs = 1
+    epochs = 5
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train), measure_block_time=True)
