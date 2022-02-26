@@ -68,10 +68,10 @@ class STDP(Behaviour):
             post_pre = s.dst.voltage_old[:, np.newaxis] * s.src.v[np.newaxis, :]
             w_scale = getattr(s, "weights_scale", 1)
             dw = (
-                    get_dopamine()  # from global environment
-                    * w_scale  # for delayed connection only
-                    * n.stdp_factor  # learning stdp factor
-                    * (pre_post - post_pre + stimulus)  # stdp mechanism
+                get_dopamine()  # from global environment
+                * w_scale  # for delayed connection only
+                * n.stdp_factor  # learning stdp factor
+                * (pre_post - post_pre + stimulus)  # stdp mechanism
             )
             print(f"{dw=}")
             # TODO: soft bound
@@ -81,14 +81,13 @@ class STDP(Behaviour):
 
 
 class Homeostasis(Behaviour):
+    __slots__ = ["max_ta", "min_ta", "eta_ip"]
     """
         This mechanism can be used to stabilize the neurons activity.
         https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Homeostasis/
     """
 
     def set_variables(self, n):
-        self.add_tag("Homeostatic_Mechanism")
-
         target_act = self.get_init_attr("target_voltage", 0.05, n)
 
         self.max_ta = self.get_init_attr("max_ta", target_act, n)
@@ -133,7 +132,7 @@ class Normalization(Behaviour):
 
         for s in neurons.afferent_synapses[self.syn_type]:
             s.W = s.W / (
-                    s.dst.temp_weight_sum[:, None] + (s.dst.temp_weight_sum[:, None] == 0)
+                s.dst.temp_weight_sum[:, None] + (s.dst.temp_weight_sum[:, None] == 0)
             )
 
 
@@ -165,7 +164,7 @@ class Delay(Behaviour):
         for neuron_idx in range(n.size):
             delay = self.delayed_spikes[neuron_idx, 0]
             # in a case of zero delay we want all history starts from index 1
-            self.filling_mask[neuron_idx, delay or 1:] = True
+            self.filling_mask[neuron_idx, delay or 1 :] = True
             self.indexing_mask[neuron_idx, delay or 1] = True
 
     def new_iteration(self, n):
