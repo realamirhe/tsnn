@@ -178,11 +178,11 @@ class SynapseSTDP(Behaviour):
         post_pre = synapse.dst.voltage_old[:, np.newaxis] * synapse.src.v[np.newaxis, :]
 
         dw = (
-            DopamineEnvironment.get()  # from global environment
-            * (pre_post - post_pre + stimulus)  # stdp mechanism
-            * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
-            * self.stdp_factor  # stdp scale factor
-            * synapse.enabled  # activation of synapse itself
+                DopamineEnvironment.get()  # from global environment
+                * (pre_post - post_pre + stimulus)  # stdp mechanism
+                * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
+                * self.stdp_factor  # stdp scale factor
+                * synapse.enabled  # activation of synapse itself
         )
 
         synapse.W = synapse.W * self.weight_decay + dw
@@ -252,7 +252,7 @@ class SynapseSTDPET(Behaviour):
         self.w_max = self.get_init_attr("w_max", 10.0, synapse)
 
     def new_iteration(self, synapse):
-        # need for making some variants in fucking model!
+        # need for making some variants in bad-behaviour model!
         stimulus_tweak = np.sum(synapse.W * synapse.src.fired, axis=0)
         synapse.src.I = 90 * synapse.src.get_neuron_vec("uniform") + stimulus_tweak
 
@@ -266,23 +266,23 @@ class SynapseSTDPET(Behaviour):
         synapse.dst.v += dy * self.dt
 
         dw_minus = (
-            -self.a_minus
-            * synapse.src.fired[np.newaxis, :]
-            * synapse.dst.v[:, np.newaxis]
+                -self.a_minus
+                * synapse.src.fired[np.newaxis, :]
+                * synapse.dst.v[:, np.newaxis]
         )
         dw_plus = (
-            self.a_plus
-            * synapse.src.v[np.newaxis, :]
-            * synapse.dst.fired[:, np.newaxis]
+                self.a_plus
+                * synapse.src.v[np.newaxis, :]
+                * synapse.dst.fired[:, np.newaxis]
         )
 
         dw = (
-            DopamineEnvironment.get()  # from global environment
-            * (dw_plus + dw_minus)  # stdp mechanism
-            * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
-            * self.stdp_factor  # stdp scale factor
-            * synapse.enabled  # activation of synapse itself
-            * self.dt
+                DopamineEnvironment.get()  # from global environment
+                * (dw_plus + dw_minus)  # stdp mechanism
+                * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
+                * self.stdp_factor  # stdp scale factor
+                * synapse.enabled  # activation of synapse itself
+                * self.dt
         )
 
         synapse.W = synapse.W * self.weight_decay + dw
@@ -326,7 +326,7 @@ class SynapseDelay(Behaviour):
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
         synapse.delay = (
-            np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
+                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
         )
         """ History or neuron memory for storing the spiked activity over times """
         self.delayed_spikes = np.zeros(
@@ -418,10 +418,10 @@ class SynapseSTDPWithOutDelay(Behaviour):
         post_pre = synapse.dst.voltage_old[:, np.newaxis] * synapse.src.v[np.newaxis, :]
 
         dw = (
-            DopamineEnvironment.get()  # from global environment
-            * (pre_post - post_pre + stimulus)  # stdp mechanism
-            * self.stdp_factor  # stdpbaba scale factor
-            * synapse.enabled  # activation of synapse itself (todo)!!
+                DopamineEnvironment.get()  # from global environment
+                * (pre_post - post_pre + stimulus)  # stdp mechanism
+                * self.stdp_factor  # stdpbaba scale factor
+                * synapse.enabled  # activation of synapse itself (todo)!!
         )
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
@@ -446,8 +446,8 @@ class Metrics(Behaviour):
     # recording is different from input
     def new_iteration(self, neurons):
         if (
-            self.recording_phase is not None
-            and self.recording_phase != neurons.recording
+                self.recording_phase is not None
+                and self.recording_phase != neurons.recording
         ):
             return
 
