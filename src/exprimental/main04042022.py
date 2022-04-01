@@ -6,19 +6,12 @@ from src.exprimental.core.learning.reinforcement import Supervisor
 from src.exprimental.core.learning.stdp import SynapsePairWiseSTDP
 from src.exprimental.core.metrics.metrics import Metrics
 from src.exprimental.core.neurons.neurons import StreamableLIFNeurons, Fire
+from src.exprimental.core.stabilizer.homeostasis import Homeostasis
 from src.exprimental.data.constants import letters, words
 from src.exprimental.data.spike_generator import get_data
-from src.libs.behaviours import Homeostasis
-from src.libs.helper import (
-    behaviour_generator,
-    reset_random_seed,
-    raster_plots,
-)
+from src.exprimental.helpers.base import reset_random_seed, behaviour_generator
 
 reset_random_seed(42)
-
-
-# ================= BEHAVIOURS  =================
 
 
 # ================= NETWORK  =================
@@ -93,7 +86,7 @@ def main():
                     w_max=4.33,
                     stdp_factor=1.1,
                     delay_epsilon=0.15,
-                    weight_decay=0.0,  # 🙅
+                    weight_decay=0.0,
                 ),
             ]
         ),
@@ -105,7 +98,7 @@ def main():
     epochs = 2
     for episode in range(epochs):
         network.iteration = 0
-        network.simulate_iterations(len(stream_i_train), measure_block_time=True)
+        network.simulate_iterations(len(stream_i_train))
         W = network.SynapseGroups[0].W
         print(
             f"episode={episode} sum={np.sum(W):.1f}, max={np.max(W):.1f}, min={np.min(W):.1f}"
@@ -114,8 +107,8 @@ def main():
         network["letters-recorder", 0].reset()
         network["words-recorder", 0].reset()
         network["metrics:train", 0].reset()
-        raster_plots(network, ngs=["letters"])
-        raster_plots(network, ngs=["words"])
+        # raster_plots(network, ngs=["letters"])
+        # raster_plots(network, ngs=["words"])
 
     network.activate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
     network.deactivate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
@@ -125,8 +118,8 @@ def main():
     network.iteration = 0
     network["words-recorder", 0].clear_cache()
     network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
-    network.simulate_iterations(len(stream_i_test), measure_block_time=True)
-    raster_plots(network, ngs=["words"])
+    network.simulate_iterations(len(stream_i_test))
+    # raster_plots(network, ngs=["words"])
 
 
 if __name__ == "__main__":
