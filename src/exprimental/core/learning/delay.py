@@ -4,27 +4,23 @@ from PymoNNto import Behaviour
 
 
 class SynapseDelay(Behaviour):
-    __slots__ = [
-        "max_delay",
-        "delayed_spikes",
-        "weight_share",
-        "int_delay",
-        "delay_mask",
-    ]
+    # fmt: off
+    __slots__ = ["max_delay", "delayed_spikes", "weight_share", "int_delay", "delay_mask"]
 
+    # fmt: on
     def set_variables(self, synapse):
         self.max_delay = self.get_init_attr("max_delay", 0.0, synapse)
         use_shared_weights = self.get_init_attr("use_shared_weights", False, synapse)
         mode = self.get_init_attr("mode", "random", synapse)
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
-        if mode == "random":
-            synapse.delay = (
-                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
-            )
         if isinstance(mode, float):
             assert mode != 0, "mode can not be zero"
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
+        elif mode == "random":
+            synapse.delay = (
+                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
+            )
 
         """ History or neuron memory for storing the spiked activity over times """
         self.delayed_spikes = np.zeros(
@@ -37,9 +33,7 @@ class SynapseDelay(Behaviour):
 
     def new_iteration(self, synapse):
         self.update_delay_float(synapse)
-
         new_spikes = synapse.src.fired.copy()
-
         """ TBD: neurons activity is based on one of its own delayed activity """
         """ Spike immediately for neurons with zero delay """
         t_spikes = self.delayed_spikes[:, :, -1]
