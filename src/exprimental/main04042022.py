@@ -5,7 +5,7 @@ from src.exprimental.core.learning.delay import SynapseDelay
 from src.exprimental.core.learning.reinforcement import Supervisor
 from src.exprimental.core.learning.stdp import SynapsePairWiseSTDP
 from src.exprimental.core.metrics.metrics import Metrics
-from src.exprimental.core.neurons.neurons import LIFNeuron, Fire, DerivedLIFNeuron
+from src.exprimental.core.neurons.neurons import StreamableLIFNeurons, Fire
 from src.exprimental.data.constants import letters, words
 from src.exprimental.data.spike_generator import get_data
 from src.libs.behaviours import Homeostasis
@@ -42,8 +42,10 @@ def main():
         size=len(letters),
         behaviour=behaviour_generator(
             [
-                LIFNeuron(tag="lif:train", stream=stream_i_train, **lif_base),
-                LIFNeuron(tag="lif:test", stream=stream_i_test, **lif_base),
+                StreamableLIFNeurons(
+                    tag="lif:train", stream=stream_i_train, **lif_base
+                ),
+                StreamableLIFNeurons(tag="lif:test", stream=stream_i_test, **lif_base),
                 Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
             ]
         ),
@@ -55,7 +57,7 @@ def main():
         size=len(words),
         behaviour=behaviour_generator(
             [
-                DerivedLIFNeuron(**lif_base),
+                StreamableLIFNeurons(**lif_base),
                 Homeostasis(tag="homeostasis", max_ta=-55, min_ta=-70, eta_ip=0.001),
                 Fire(),
                 #  dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
