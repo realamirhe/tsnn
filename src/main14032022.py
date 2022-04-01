@@ -3,6 +3,7 @@ import string
 
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy import spatial
 from scipy.spatial.distance import jaccard
 from sklearn.metrics import (
     accuracy_score,
@@ -20,6 +21,7 @@ from src.libs.helper import (
     behaviour_generator,
     reset_random_seed,
     raster_plots,
+    re_range_binary,
 )
 
 # =================   CONFIG    =================
@@ -113,13 +115,13 @@ class Supervisor(Behaviour):
         # DopamineEnvironment.set(distance or -1)  # replace 0.o effect with -1
 
         """ mismatch similarity """
-        # distance = [-1.0, 1.0][int((output == prediction).all())]
-        # DopamineEnvironment.set(distance)
+        distance = [-1.0, 1.0][int((output == prediction).all())]
+        DopamineEnvironment.set(distance)
 
         # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
-        distance = jaccard(output, prediction)
-        DopamineEnvironment.set(-distance or 1.0)
+        # distance = jaccard(output, prediction)
+        # DopamineEnvironment.set(-distance or 1.0)
 
 
 class LIFNeuron(Behaviour):
@@ -149,57 +151,6 @@ class LIFNeuron(Behaviour):
         n.fired = n.v >= n.threshold
         if np.sum(n.fired) > 0:
             n.v[n.fired] = n.v_reset
-
-
-class SynapseSTDP(Behaviour):
-    __slots__ = ["weight_decay", "stdp_factor", "delay_epsilon", "w_min", "w_max"]
-
-    def set_variables(self, synapse):
-        synapse.W = synapse.get_synapse_mat("uniform")
-
-        self.weight_decay = 1 - self.get_init_attr("weight_decay", 0.0, synapse)
-        self.stdp_factor = self.get_init_attr("stdp_factor", 1.0, synapse)
-        self.delay_epsilon = self.get_init_attr("delay_epsilon", 0.15, synapse)
-
-        self.w_min = self.get_init_attr("w_min", 0.0, synapse)
-        self.w_max = self.get_init_attr("w_max", 10.0, synapse)
-
-        synapse.src.voltage_old = synapse.src.get_neuron_vec(mode="zeros")
-        synapse.dst.voltage_old = synapse.dst.get_neuron_vec(mode="zeros")
-
-    def new_iteration(self, synapse):
-        if not synapse.recording:
-            return
-
-        pre_post = synapse.dst.v[:, np.newaxis] * synapse.src.voltage_old[np.newaxis, :]
-        stimulus = synapse.dst.v[:, np.newaxis] * synapse.src.v[np.newaxis, :]
-        post_pre = synapse.dst.voltage_old[:, np.newaxis] * synapse.src.v[np.newaxis, :]
-
-        dw = (
-                DopamineEnvironment.get()  # from global environment
-                * (pre_post - post_pre + stimulus)  # stdp mechanism
-                * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
-                * self.stdp_factor  # stdp scale factor
-                * synapse.enabled  # activation of synapse itself
-        )
-
-        synapse.W = synapse.W * self.weight_decay + dw
-        synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
-
-        """ stop condition for delay learning """
-        use_shared_delay = dw.shape != synapse.delay.shape
-        if use_shared_delay:
-            dw = np.mean(dw, axis=0, keepdims=True)
-
-        non_zero_dw = dw != 0
-        if non_zero_dw.any():
-            should_update = np.min(synapse.delay[non_zero_dw]) > self.delay_epsilon
-            if should_update:
-                synapse.delay[non_zero_dw] -= dw[non_zero_dw]
-
-        # This will differ from the original stdp mechanism and must be added to the latest synapse
-        synapse.src.voltage_old = synapse.src.v.copy()
-        synapse.dst.voltage_old = synapse.dst.v.copy()
 
 
 class SynapsePairWiseSTDP(Behaviour):
@@ -241,30 +192,30 @@ class SynapsePairWiseSTDP(Behaviour):
         # dx = -synapse.src.trace / self.tau_plus + synapse.src.fired
         # dy = -synapse.dst.trace / self.tau_minus + synapse.dst.fired
         synapse.src.trace += (
-                                     -synapse.src.trace / self.tau_plus + synapse.src.fired
-                             ) * self.dt
+            -synapse.src.trace / self.tau_plus + synapse.src.fired
+        ) * self.dt
         synapse.dst.trace += (
-                                     -synapse.dst.trace / self.tau_minus + synapse.dst.fired
-                             ) * self.dt
+            -synapse.dst.trace / self.tau_minus + synapse.dst.fired
+        ) * self.dt
 
         dw_minus = (
-                -self.a_minus
-                * synapse.src.fired[np.newaxis, :]
-                * synapse.dst.trace[:, np.newaxis]
+            -self.a_minus
+            * synapse.src.fired[np.newaxis, :]
+            * synapse.dst.trace[:, np.newaxis]
         )
         dw_plus = (
-                self.a_plus
-                * synapse.src.trace[np.newaxis, :]
-                * synapse.dst.fired[:, np.newaxis]
+            self.a_plus
+            * synapse.src.trace[np.newaxis, :]
+            * synapse.dst.fired[:, np.newaxis]
         )
 
         dw = (
-                DopamineEnvironment.get()  # from global environment
-                * (dw_plus + dw_minus)  # stdp mechanism
-                * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
-                * self.stdp_factor  # stdp scale factor
-                * synapse.enabled  # activation of synapse itself
-                * self.dt
+            DopamineEnvironment.get()  # from global environment
+            * (dw_plus + dw_minus)  # stdp mechanism
+            * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
+            * self.stdp_factor  # stdp scale factor
+            * synapse.enabled  # activation of synapse itself
+            * self.dt
         )
 
         synapse.W = synapse.W * self.weight_decay + dw
@@ -281,8 +232,8 @@ class SynapsePairWiseSTDP(Behaviour):
             if should_update:
                 synapse.delay[non_zero_dw] -= dw[non_zero_dw]
 
-        synapse.dst.I = 900000000 * synapse.W.dot(synapse.src.fired)
-        print(np.average(synapse.W))
+        synapse.dst.I = 1e4 * synapse.W.dot(synapse.src.fired)
+        # print(np.average(synapse.W))
         # TODO: hardcoded value must be replaced!
         # put clipping mechanism on the neuron itself
         # synapse.dst.I = np.clip(synapse.dst.I, 0, 15)
@@ -305,7 +256,7 @@ class SynapseDelay(Behaviour):
 
         if mode == "random":
             synapse.delay = (
-                    np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
+                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
             )
         if isinstance(mode, float):
             assert mode != 0, "mode can not be zero"
@@ -391,8 +342,8 @@ class Metrics(Behaviour):
     # recording is different from input
     def new_iteration(self, neurons):
         if (
-                self.recording_phase is not None
-                and self.recording_phase != neurons.recording
+            self.recording_phase is not None
+            and self.recording_phase != neurons.recording
         ):
             return
 
@@ -528,14 +479,6 @@ def main():
         behaviour=behaviour_generator(
             [
                 SynapseDelay(max_delay=3, mode="random", use_shared_weights=False),
-                # SynapseSTDP(
-                #     tag="stdp",
-                #     weight_decay=0.1,
-                #     stdp_factor=0.0015,
-                #     delay_epsilon=0.15,
-                #     w_min=-10.0,
-                #     w_max=10.0,
-                # ),
                 SynapsePairWiseSTDP(
                     tag="stdp",
                     tau_plus=3.0,
@@ -547,7 +490,7 @@ def main():
                     w_max=4.33,
                     stdp_factor=1.1,
                     delay_epsilon=0.15,
-                    weight_decay=0.00,  # 🙅
+                    weight_decay=0.0,  # 🙅
                 ),
             ]
         ),
@@ -556,7 +499,7 @@ def main():
     network.initialize()
     network.activate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
     network.deactivate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
-    epochs = 1
+    epochs = 2
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train), measure_block_time=True)
@@ -568,8 +511,8 @@ def main():
         network["letters-recorder", 0].reset()
         network["words-recorder", 0].reset()
         network["metrics:train", 0].reset()
-        # raster_plots(network, ngs=["words"])
-        return
+        raster_plots(network, ngs=["letters"])
+        raster_plots(network, ngs=["words"])
 
     network.activate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
     network.deactivate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
@@ -580,7 +523,7 @@ def main():
     network["words-recorder", 0].clear_cache()
     network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
     network.simulate_iterations(len(stream_i_test), measure_block_time=True)
-    # raster_plots(network, ngs=["words"])
+    raster_plots(network, ngs=["words"])
 
 
 if __name__ == "__main__":

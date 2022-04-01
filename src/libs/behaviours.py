@@ -7,7 +7,7 @@ from src.libs.environment import get_dopamine, set_dopamine
 
 # ================= behaviors  =================
 # TODO: add (bindsnet/network/nodes.py) options
-# TODO: consider ALIF nuerons for better results
+# TODO: consider ALIF neurons for better results
 # TODO: It may not be need for the voltage scale to hardcoded (10) / bindsnet initialize all with rest
 class LIFMechanism(Behaviour):
     def set_variables(self, n):
