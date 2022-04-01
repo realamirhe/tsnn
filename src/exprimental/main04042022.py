@@ -7,6 +7,7 @@ from PymoNNto import Behaviour, SynapseGroup, Recorder, NeuronGroup, Network
 from src.exprimental.core.behaviours.learning import SynapsePairWiseSTDP
 from src.exprimental.core.environement.dopamine import DopamineEnvironment
 from src.exprimental.core.metrics.metrics import Metrics
+from src.exprimental.core.neurons.neurons import LIFNeuron
 from src.libs.behaviours import Homeostasis
 from src.libs.data_generator_numpy import gen_corpus
 from src.libs.helper import (
@@ -27,9 +28,10 @@ words = ["abc", "omn"]
 
 
 def spike_stream_i(char):
-    spikes = np.zeros(len(letters), dtype=bool)
+    spikes = np.zeros(len(letters), dtype=int)
     if char in letters:
-        spikes[letters.index(char)] = 1
+        # TODO: this must not be hardcoded, best is bool and 1
+        spikes[letters.index(char)] = 90
     return spikes
 
 
@@ -99,35 +101,6 @@ class Supervisor(Behaviour):
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
         # distance = jaccard(output, prediction)
         # DopamineEnvironment.set(-distance or 1.0)
-
-
-class LIFNeuron(Behaviour):
-    __slots__ = ["stream", "dt"]
-
-    def set_variables(self, n):
-        self.dt = self.get_init_attr("dt", 0.1, n)
-        self.stream = self.get_init_attr("stream", None, n)
-        n.v_rest = self.get_init_attr("v_rest", -65, n)
-        n.v_reset = self.get_init_attr("v_reset", -65, n)
-        n.threshold = self.get_init_attr("threshold", -52, n)
-        n.v = n.get_neuron_vec(mode="ones") * n.v_rest
-        n.fired = n.get_neuron_vec(mode="zeros") > 0
-        n.I = n.get_neuron_vec(mode="zeros")
-        n.R = self.get_init_attr("R", 1, n)
-        n.tau = self.get_init_attr("tau", 3, n)
-
-        # self.set_init_attrs_as_variables(n)
-        # n.v = n.get_neuron_vec() * n.v_rest
-        # n.spikes = n.get_neuron_vec() > n.threshold
-        # n.dt = 1.0
-
-    def new_iteration(self, n):
-        n.I = 90 * self.stream[n.iteration - 1]
-        dv_dt = (n.v_rest - n.v) + n.R * n.I
-        n.v += dv_dt * self.dt / n.tau
-        n.fired = n.v >= n.threshold
-        if np.sum(n.fired) > 0:
-            n.v[n.fired] = n.v_reset
 
 
 class SynapseDelay(Behaviour):
