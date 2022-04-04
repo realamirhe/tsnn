@@ -10,11 +10,16 @@ class Homeostasis(Behaviour):
 
     def set_variables(self, n):
         target_act = self.get_init_attr("target_voltage", 0.05, n)
+        configure = {
+            "has_long_term_effect": False,
+            "max_ta": target_act,
+            "min_ta": -target_act,
+            "eta_ip": 0.001,  # adjust_strength
+        }
 
-        self.max_ta = self.get_init_attr("max_ta", target_act, n)
-        self.min_ta = self.get_init_attr("min_ta", -target_act, n)
-
-        self.adj_strength = -self.get_init_attr("eta_ip", 0.001, n)
+        for attr, value in configure.items():
+            setattr(self, attr, self.get_init_attr(attr, value, n))
+        self.eta_ip *= -1
 
         n.exhaustion = n.get_neuron_vec()
 
@@ -25,7 +30,10 @@ class Homeostasis(Behaviour):
         greater *= neurons.v - self.max_ta
         smaller *= self.min_ta - neurons.v
 
-        change = (greater + smaller) * self.adj_strength
+        change = (greater + smaller) * self.eta_ip
         neurons.exhaustion += change
 
-        neurons.v -= neurons.exhaustion
+        if self.has_long_term_effect:
+            neurons.threshold += neurons.exhaustion
+        else:
+            neurons.v -= neurons.exhaustion

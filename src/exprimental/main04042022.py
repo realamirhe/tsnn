@@ -5,7 +5,7 @@ from src.exprimental.core.learning.delay import SynapseDelay
 from src.exprimental.core.learning.reinforcement import Supervisor
 from src.exprimental.core.learning.stdp import SynapsePairWiseSTDP
 from src.exprimental.core.metrics.metrics import Metrics
-from src.exprimental.core.neurons.neurons import StreamableLIFNeurons, Fire
+from src.exprimental.core.neurons.neurons import StreamableLIFNeurons
 from src.exprimental.core.stabilizer.homeostasis import Homeostasis
 from src.exprimental.data.constants import letters, words
 from src.exprimental.data.spike_generator import get_data
@@ -50,9 +50,15 @@ def main():
         size=len(words),
         behaviour=behaviour_generator(
             [
-                StreamableLIFNeurons(**lif_base),
-                Homeostasis(tag="homeostasis", max_ta=-55, min_ta=-70, eta_ip=0.001),
-                Fire(),
+                StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
+                Homeostasis(
+                    tag="homeostasis",
+                    max_ta=-55,
+                    min_ta=-70,
+                    eta_ip=0.001,
+                    has_long_term_effect=True,
+                ),
+                # Fire(),
                 #  dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
                 Supervisor(
                     tag="supervisor:train", dopamine_decay=1 / 3, outputs=stream_j_train
@@ -95,13 +101,13 @@ def main():
     network.initialize()
     network.activate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
     network.deactivate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
-    epochs = 2
+    epochs = 1
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
-        W = network.SynapseGroups[0].W
+        weights = network.SynapseGroups[0].W
         print(
-            f"episode={episode} sum={np.sum(W):.1f}, max={np.max(W):.1f}, min={np.min(W):.1f}"
+            f"episode={episode} sum={np.sum(weights):.1f}, max={np.max(weights):.1f}, min={np.min(weights):.1f}"
         )
         # raster_plots(network, ngs=["words"])
         network["letters-recorder", 0].reset()
