@@ -10,7 +10,7 @@ from sklearn.metrics import (
 )
 
 from PymoNNto import Behaviour
-from src.exprimental.core.nlp.constants import UNK
+from exprimental.core.nlp.constants import UNK
 
 
 class Metrics(Behaviour):

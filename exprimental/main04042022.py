@@ -1,16 +1,16 @@
 import numpy as np
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
-from src.exprimental.core.learning.delay import SynapseDelay
-from src.exprimental.core.learning.reinforcement import Supervisor
-from src.exprimental.core.learning.stdp import SynapsePairWiseSTDP
-from src.exprimental.core.metrics.metrics import Metrics
-from src.exprimental.core.neurons.neurons import StreamableLIFNeurons
-from src.exprimental.core.stabilizer.homeostasis import Homeostasis
-from src.exprimental.core.stabilizer.spike_rate import SpikeRate
-from src.exprimental.data.constants import letters, words
-from src.exprimental.data.spike_generator import get_data
-from src.exprimental.helpers.base import reset_random_seed, behaviour_generator
+from exprimental.core.learning.delay import SynapseDelay
+from exprimental.core.learning.reinforcement import Supervisor
+from exprimental.core.learning.stdp import SynapsePairWiseSTDP
+from exprimental.core.metrics.metrics import Metrics
+from exprimental.core.neurons.neurons import StreamableLIFNeurons
+from exprimental.core.stabilizer.homeostasis import Homeostasis
+from exprimental.core.stabilizer.spike_rate import SpikeRate
+from exprimental.data.constants import letters, words
+from exprimental.data.spike_generator import get_data
+from exprimental.helpers.base import reset_random_seed, behaviour_generator
 
 reset_random_seed(42)
 

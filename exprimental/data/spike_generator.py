@@ -2,8 +2,8 @@ import random
 
 import numpy as np
 
-from src.exprimental.data.corpus_generator import gen_corpus
-from src.exprimental.data.constants import letters, words
+from exprimental.data.corpus_generator import gen_corpus
+from exprimental.data.constants import letters, words
 
 
 def spike_stream_i(char):

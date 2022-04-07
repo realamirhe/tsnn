@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.exprimental.core.environement.dopamine import DopamineEnvironment
+from exprimental.core.environement.dopamine import DopamineEnvironment
 
 
 class Supervisor(Behaviour):

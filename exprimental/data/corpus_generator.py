@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from src.exprimental.data.constants import letters, words
+from exprimental.data.constants import letters, words
 
 
 def gen_corpus(
