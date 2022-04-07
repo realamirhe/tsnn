@@ -7,6 +7,7 @@ from src.exprimental.core.learning.stdp import SynapsePairWiseSTDP
 from src.exprimental.core.metrics.metrics import Metrics
 from src.exprimental.core.neurons.neurons import StreamableLIFNeurons
 from src.exprimental.core.stabilizer.homeostasis import Homeostasis
+from src.exprimental.core.stabilizer.spike_rate import SpikeRate
 from src.exprimental.data.constants import letters, words
 from src.exprimental.data.spike_generator import get_data
 from src.exprimental.helpers.base import reset_random_seed, behaviour_generator
@@ -55,11 +56,20 @@ def main():
                     tag="homeostasis",
                     max_ta=-55,
                     min_ta=-70,
-                    eta_ip=0.001,
+                    eta_ip=0.1,
                     has_long_term_effect=True,
+                ),
+                # Hamming-distance
+                # differences must become 0 after some time => similar
+                SpikeRate(
+                    tag="spike-rate:train", interval_size=5, outputs=stream_j_train
+                ),
+                SpikeRate(
+                    tag="spike-rate:train", interval_size=5, outputs=stream_j_test
                 ),
                 # Fire(),
                 #  dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
+                # distance 0 => dopamine release
                 Supervisor(
                     tag="supervisor:train", dopamine_decay=1 / 3, outputs=stream_j_train
                 ),
@@ -99,9 +109,22 @@ def main():
     )
 
     network.initialize()
-    network.activate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
-    network.deactivate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
-    epochs = 1
+    train_mechanising = [
+        "lif:train",
+        "supervisor:train",
+        "metrics:train",
+        "spike-rate:train",
+    ]
+    test_mechanising = [
+        "lif:test",
+        "supervisor:test",
+        "metrics:test",
+        "spike-rate:test",
+    ]
+
+    network.activate_mechanisms(train_mechanising)
+    network.deactivate_mechanisms(test_mechanising)
+    epochs = 2
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
@@ -116,8 +139,8 @@ def main():
         # raster_plots(network, ngs=["letters"])
         # raster_plots(network, ngs=["words"])
 
-    network.activate_mechanisms(["lif:test", "supervisor:test", "metrics:test"])
-    network.deactivate_mechanisms(["lif:train", "supervisor:train", "metrics:train"])
+    network.activate_mechanisms(test_mechanising)
+    network.deactivate_mechanisms(train_mechanising)
     # Hacky integration, preventing another weight copy!
     network["stdp", 0].recording = False
 
