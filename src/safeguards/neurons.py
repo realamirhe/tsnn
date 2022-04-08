@@ -43,7 +43,7 @@ def make_custom_network(corpus, use_stream=True, use_long_term_effect=True):
     return network
 
 
-class MyTestCase(unittest.TestCase):
+class NeuronGroupTestCase(unittest.TestCase):
     def test_network_force_fire_mechanism(self):
         corpus = "abcabab"
         net = make_custom_network(corpus)
