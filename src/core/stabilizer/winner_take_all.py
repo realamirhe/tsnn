@@ -16,4 +16,7 @@ class WinnerTakeAll(Behaviour):
             temp_fired = neurons.get_neuron_vec(mode="zeros") > 0
             temp_fired[np.argmax(self.old_v * fired)] = True
             neurons.fired = temp_fired
+
+        # testing purposes
+        # assert np.sum(neurons.fired) <= 1, "More than one neuron fired"
         self.old_v = neurons.v
