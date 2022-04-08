@@ -13,7 +13,7 @@ from src.data.spike_generator import get_data
 from src.helpers.base import reset_random_seed, behaviour_generator
 from src.helpers.network import FeatureSwitch
 
-reset_random_seed()
+reset_random_seed(1230)
 
 
 # ================= NETWORK  =================
@@ -114,7 +114,8 @@ def main():
     features = FeatureSwitch(network, ["lif", "supervisor", "metrics", "spike-rate"])
     features.switch_train()
 
-    epochs = 2
+    """ TRAINING """
+    epochs = 1
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
@@ -122,22 +123,18 @@ def main():
         print(
             f"episode={episode} sum={np.sum(weights):.1f}, max={np.max(weights):.1f}, min={np.min(weights):.1f}"
         )
-        # raster_plots(network, ngs=["words"])
         network["letters-recorder", 0].reset()
         network["words-recorder", 0].reset()
         network["metrics:train", 0].reset()
-        # raster_plots(network, ngs=["letters"])
-        # raster_plots(network, ngs=["words"])
 
-    features.switch_test()
-
-    # Hacky integration, preventing another weight copy!
-    network["stdp", 0].recording = False
-    network.iteration = 0
-    network["words-recorder", 0].clear_cache()
-    network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
-    network.simulate_iterations(len(stream_i_test))
-    # raster_plots(network, ngs=["words"])
+    """ TESTING """
+    # features.switch_test()
+    # # Hacky integration, preventing another weight copy!
+    # network["stdp", 0].recording = False
+    # network.iteration = 0
+    # network["words-recorder", 0].clear_cache()
+    # network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
+    # network.simulate_iterations(len(stream_i_test))
 
 
 if __name__ == "__main__":
