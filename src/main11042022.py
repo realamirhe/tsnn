@@ -8,6 +8,7 @@ from src.core.metrics.metrics import Metrics
 from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.stabilizer.homeostasis import Homeostasis
 from src.core.stabilizer.spike_rate import SpikeRate
+from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.constants import letters, words
 from src.data.spike_generator import get_data
 from src.helpers.base import reset_random_seed, behaviour_generator
@@ -62,12 +63,13 @@ def main():
                 ),
                 # Hamming-distance
                 # differences must become 0 after some time => similar
-                SpikeRate(
-                    tag="spike-rate:train", interval_size=5, outputs=stream_j_train
-                ),
-                SpikeRate(
-                    tag="spike-rate:train", interval_size=5, outputs=stream_j_test
-                ),
+                # SpikeRate(
+                #     tag="spike-rate:train", interval_size=5, outputs=stream_j_train
+                # ),
+                # SpikeRate(
+                #     tag="spike-rate:train", interval_size=5, outputs=stream_j_test
+                # ),
+                WinnerTakeAll(),
                 # Fire(),
                 #  dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
                 # distance 0 => dopamine release
