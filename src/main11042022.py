@@ -11,8 +11,9 @@ from src.core.stabilizer.spike_rate import SpikeRate
 from src.data.constants import letters, words
 from src.data.spike_generator import get_data
 from src.helpers.base import reset_random_seed, behaviour_generator
+from src.helpers.network import FeatureSwitch
 
-reset_random_seed(42)
+reset_random_seed()
 
 
 # ================= NETWORK  =================
@@ -51,7 +52,7 @@ def main():
         size=len(words),
         behaviour=behaviour_generator(
             [
-                StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
+                StreamableLIFNeurons(**lif_base),
                 Homeostasis(
                     tag="homeostasis",
                     max_ta=-55,
@@ -109,21 +110,10 @@ def main():
     )
 
     network.initialize()
-    train_mechanising = [
-        "lif:train",
-        "supervisor:train",
-        "metrics:train",
-        "spike-rate:train",
-    ]
-    test_mechanising = [
-        "lif:test",
-        "supervisor:test",
-        "metrics:test",
-        "spike-rate:test",
-    ]
 
-    network.activate_mechanisms(train_mechanising)
-    network.deactivate_mechanisms(test_mechanising)
+    features = FeatureSwitch(network, ["lif", "supervisor", "metrics", "spike-rate"])
+    features.switch_train()
+
     epochs = 2
     for episode in range(epochs):
         network.iteration = 0
@@ -139,11 +129,10 @@ def main():
         # raster_plots(network, ngs=["letters"])
         # raster_plots(network, ngs=["words"])
 
-    network.activate_mechanisms(test_mechanising)
-    network.deactivate_mechanisms(train_mechanising)
+    features.switch_test()
+
     # Hacky integration, preventing another weight copy!
     network["stdp", 0].recording = False
-
     network.iteration = 0
     network["words-recorder", 0].clear_cache()
     network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
