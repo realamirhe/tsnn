@@ -14,6 +14,6 @@ class WinnerTakeAll(Behaviour):
 
         if np.sum(fired) > 1:
             temp_fired = neurons.get_neuron_vec(mode="zeros") > 0
-            temp_fired[np.argmax(self.old_v * fired)]
+            temp_fired[np.argmax(self.old_v * fired)] = True
             neurons.fired = temp_fired
         self.old_v = neurons.v

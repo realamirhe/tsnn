@@ -7,7 +7,6 @@ from src.core.learning.stdp import SynapsePairWiseSTDP
 from src.core.metrics.metrics import Metrics
 from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.stabilizer.homeostasis import Homeostasis
-from src.core.stabilizer.spike_rate import SpikeRate
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.constants import letters, words
 from src.data.spike_generator import get_data
