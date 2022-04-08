@@ -6,7 +6,8 @@ from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
 from src.core.metrics.metrics import Metrics
 from src.core.neurons.neurons import StreamableLIFNeurons
-from src.core.stabilizer.homeostasis import Homeostasis
+from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
+from src.core.stabilizer.voltage_base_homeostasis import VoltageBaseHomeostasis
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.constants import letters, words
 from src.data.spike_generator import get_data
@@ -53,12 +54,13 @@ def main():
         behaviour=behaviour_generator(
             [
                 StreamableLIFNeurons(**lif_base),
-                Homeostasis(
+                ActivityBaseHomeostasis(
                     tag="homeostasis",
-                    max_ta=-55,
-                    min_ta=-70,
-                    eta_ip=0.1,
-                    has_long_term_effect=True,
+                    min_activity=30,
+                    max_activity=70,
+                    window_size=100,
+                    updating_rate=0.1,
+                    activity_rate=60,
                 ),
                 # Hamming-distance
                 # differences must become 0 after some time => similar

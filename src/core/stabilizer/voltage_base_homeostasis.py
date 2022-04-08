@@ -1,7 +1,14 @@
 from PymoNNto import def_dtype, Behaviour
 
 
-class Homeostasis(Behaviour):
+# Hamming distance between two vectors must be zero output and prediction
+# Activity 1000 20times
+# 1000 / 20 => -1/50 or +1
+# max_activity
+# min_activity
+
+
+class VoltageBaseHomeostasis(Behaviour):
     __slots__ = ["max_ta", "min_ta", "eta_ip"]
     """
         This mechanism can be used to stabilize the neurons activity.

@@ -6,7 +6,7 @@ from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
 from src.core.metrics.metrics import Metrics
 from src.core.neurons.neurons import StreamableLIFNeurons
-from src.core.stabilizer.homeostasis import Homeostasis
+from src.core.stabilizer.voltage_base_homeostasis import VoltageBaseHomeostasis
 from src.core.stabilizer.spike_rate import SpikeRate
 from src.data.constants import letters, words
 from src.data.spike_generator import get_data
@@ -52,7 +52,7 @@ def main():
         behaviour=behaviour_generator(
             [
                 StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
-                Homeostasis(
+                VoltageBaseHomeostasis(
                     tag="homeostasis",
                     max_ta=-55,
                     min_ta=-70,
