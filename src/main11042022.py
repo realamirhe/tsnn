@@ -7,7 +7,6 @@ from src.core.learning.stdp import SynapsePairWiseSTDP
 from src.core.metrics.metrics import Metrics
 from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
-from src.core.stabilizer.voltage_base_homeostasis import VoltageBaseHomeostasis
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.constants import letters, words
 from src.data.spike_generator import get_data
@@ -53,13 +52,13 @@ def main():
         size=len(words),
         behaviour=behaviour_generator(
             [
-                StreamableLIFNeurons(**lif_base),
+                StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
                 ActivityBaseHomeostasis(
                     tag="homeostasis",
-                    min_activity=30,
-                    max_activity=70,
-                    window_size=100,
-                    updating_rate=0.1,
+                    min_activity=5,
+                    max_activity=10,
+                    window_size=10,
+                    updating_rate=0.8,
                     activity_rate=60,
                 ),
                 # Hamming-distance
@@ -94,7 +93,7 @@ def main():
         tag="GLUTAMATE",
         behaviour=behaviour_generator(
             [
-                SynapseDelay(max_delay=3, mode="random", use_shared_weights=False),
+                SynapseDelay(max_delay=4, mode="random", use_shared_weights=False),
                 SynapsePairWiseSTDP(
                     tag="stdp",
                     tau_plus=3.0,
@@ -107,6 +106,7 @@ def main():
                     stdp_factor=1.1,
                     delay_epsilon=0.15,
                     weight_decay=0.0,
+                    stimulus_scale_factor=1e1,
                 ),
             ]
         ),

@@ -21,15 +21,14 @@ class ActivityBaseHomeostasis(Behaviour):
         self.exhaustion = neurons.get_neuron_vec()
 
     def new_iteration(self, neurons):
-        changes = np.where(neurons.fired, 1, self.activity_step)
-        self.activities += changes
+        self.activities += np.where(neurons.fired, 1, self.activity_step)
 
         if (neurons.iteration % self.window_size) == 0:
             greater = ((self.activities > self.max_activity) * -1).astype(def_dtype)
             smaller = ((self.activities < self.min_activity) * 1).astype(def_dtype)
             greater *= self.activities - self.max_activity
-            smaller *= self.max_activity - self.activities
+            smaller *= self.min_activity - self.activities
 
             change = (greater + smaller) * self.updating_rate
             self.exhaustion += change
-            neurons.threshold += self.exhaustion
+            neurons.threshold -= self.exhaustion
