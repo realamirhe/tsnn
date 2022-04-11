@@ -30,17 +30,17 @@ class VoltageBaseHomeostasis(Behaviour):
 
         n.exhaustion = n.get_neuron_vec()
 
-    def new_iteration(self, neurons):
-        greater = ((neurons.v > self.max_ta) * -1).astype(def_dtype)
-        smaller = ((neurons.v < self.min_ta) * 1).astype(def_dtype)
+    def new_iteration(self, n):
+        greater = ((n.v > self.max_ta) * -1).astype(def_dtype)
+        smaller = ((n.v < self.min_ta) * 1).astype(def_dtype)
 
-        greater *= neurons.v - self.max_ta
-        smaller *= self.min_ta - neurons.v
+        greater *= n.v - self.max_ta
+        smaller *= self.min_ta - n.v
 
         change = (greater + smaller) * self.eta_ip
-        neurons.exhaustion += change
+        n.exhaustion += change
 
         if self.has_long_term_effect:
-            neurons.threshold += neurons.exhaustion
+            n.threshold += n.exhaustion
         else:
-            neurons.v -= neurons.exhaustion
+            n.v -= n.exhaustion

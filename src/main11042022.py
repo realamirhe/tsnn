@@ -104,7 +104,7 @@ def main():
                     a_minus=6.0,
                     dt=1.0,
                     w_min=0,
-                    w_max=4.33,
+                    w_max=4.5,  # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
                     stdp_factor=1.1,
                     delay_epsilon=0.15,
                     weight_decay=0.0,

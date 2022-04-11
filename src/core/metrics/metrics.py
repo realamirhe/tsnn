@@ -18,30 +18,27 @@ class Metrics(Behaviour):
     __slots__ = ["recording_phase", "outputs", "_old_recording", "_predictions", "words"]
 
     # fmt: on
-    def set_variables(self, neurons):
+    def set_variables(self, n):
         configure = {"recording_phase": None, "outputs": [], "words": []}
         for attr, value in configure.items():
-            setattr(self, attr, self.get_init_attr(attr, value, neurons))
+            setattr(self, attr, self.get_init_attr(attr, value, n))
 
-        self._old_recording = neurons.recording
+        self._old_recording = n.recording
         self._predictions = []
 
     def reset(self):
         self._predictions = []
 
     # recording is different from input
-    def new_iteration(self, neurons):
-        if (
-            self.recording_phase is not None
-            and self.recording_phase != neurons.recording
-        ):
+    def new_iteration(self, n):
+        if self.recording_phase is not None and self.recording_phase != n.recording:
             return
 
-        if not np.isnan(self.outputs[neurons.iteration - 1]).any():
+        if not np.isnan(self.outputs[n.iteration - 1]).any():
             # TODO: can append the int here also
-            self._predictions.append(neurons.fired)
+            self._predictions.append(n.fired)
 
-        if neurons.iteration == len(self.outputs):
+        if n.iteration == len(self.outputs):
             bit_range = 1 << np.arange(self.outputs[0].size)
 
             presentation_words = self.words + [UNK]

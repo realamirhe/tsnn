@@ -8,13 +8,13 @@ from src.core.environement.dopamine import DopamineEnvironment
 class Supervisor(Behaviour):
     __slots__ = ["dopamine_decay", "outputs"]
 
-    def set_variables(self, neurons):
-        self.dopamine_decay = 1 - self.get_init_attr("dopamine_decay", 0.0, neurons)
-        self.outputs = self.get_init_attr("outputs", [], neurons)
+    def set_variables(self, n):
+        self.dopamine_decay = 1 - self.get_init_attr("dopamine_decay", 0.0, n)
+        self.outputs = self.get_init_attr("outputs", [], n)
 
-    def new_iteration(self, neurons):
-        output = self.outputs[neurons.iteration - 1]
-        prediction = neurons.fired
+    def new_iteration(self, n):
+        output = self.outputs[n.iteration - 1]
+        prediction = n.fired
 
         if np.isnan(output).any():
             DopamineEnvironment.decay(self.dopamine_decay)
