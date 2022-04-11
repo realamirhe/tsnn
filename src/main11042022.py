@@ -52,7 +52,9 @@ def main():
         size=len(words),
         behaviour=behaviour_generator(
             [
-                StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
+                StreamableLIFNeurons(
+                    **lif_base, has_long_term_effect=True, capture_old_v=True
+                ),
                 ActivityBaseHomeostasis(
                     tag="homeostasis",
                     min_activity=5,

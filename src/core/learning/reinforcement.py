@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.distance import jaccard
 
 from PymoNNto import Behaviour
 from src.core.environement.dopamine import DopamineEnvironment
@@ -26,10 +27,10 @@ class Supervisor(Behaviour):
         # DopamineEnvironment.set(distance or -1)  # replace 0.o effect with -1
 
         """ mismatch similarity """
-        distance = [-1.0, 1.0][int((output == prediction).all())]
-        DopamineEnvironment.set(distance)
+        # distance = [-1.0, 1.0][int((output == prediction).all())]
+        # DopamineEnvironment.set(distance)
 
         # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
-        # distance = jaccard(output, prediction)
-        # DopamineEnvironment.set(-distance or 1.0)
+        distance = jaccard(output, prediction)
+        DopamineEnvironment.set(-distance or 1.0)

@@ -10,6 +10,7 @@ class StreamableLIFNeurons(Behaviour):
         # NOTE: this is best for scope privilege principle but make code more difficult to config
         self.dt = self.get_init_attr("dt", 0.1, n)
         self.stream = self.get_init_attr("stream", None, n)
+        self.capture_old_v = self.get_init_attr("capture_old_v", False, n)
         has_long_term_effect = self.get_init_attr("has_long_term_effect", False, n)
 
         configure = {
@@ -38,6 +39,8 @@ class StreamableLIFNeurons(Behaviour):
 
         dv_dt = (n.v_rest - n.v) + n.R * n.I
         n.v += dv_dt * self.dt / n.tau
+        if self.capture_old_v:
+            n.old_v = n.v.copy()
 
         n.fired = n.v >= n.threshold
         if np.sum(n.fired) > 0:
