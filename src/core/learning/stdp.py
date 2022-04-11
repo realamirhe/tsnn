@@ -82,10 +82,11 @@ class SynapsePairWiseSTDP(Behaviour):
 
         next_layer_stimulus = synapse.W.dot(synapse.src.fired)
         # TODO: need to investigate more for diagonal feature
-        synapse.dst.I = (
-            np.random.random(next_layer_stimulus.shape) * self.stimulus_scale_factor
-        ) + next_layer_stimulus
+        synapse.dst.I = next_layer_stimulus * self.stimulus_scale_factor + (
+            np.random.random(next_layer_stimulus.shape)
+        )
+
+    # NOTE: We might need the add clamping mechanism to the 'I' for the dst layer
 
 
-# NOTE: We might need the add clamping mechanism to the 'I' for the dst layer
 # NOTE: clamping is better to be part of neurons itself

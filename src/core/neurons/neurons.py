@@ -37,13 +37,13 @@ class StreamableLIFNeurons(Behaviour):
         if is_forced_spike:
             n.I = self.stream[n.iteration - 1]
 
-        if "words" in n.tags:
-            _unused_ = 42
-
-        dv_dt = (n.v_rest - n.v) + n.R * n.I
+        dv_dt = n.v_rest - n.v + n.R * n.I
         n.v += dv_dt * self.dt / n.tau
         if self.capture_old_v:
             n.old_v = n.v.copy()
+
+        if "words" in n.tags:
+            _unused_ = 42
 
         n.fired = n.v >= n.threshold
         if np.sum(n.fired) > 0:

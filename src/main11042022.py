@@ -60,21 +60,14 @@ def main():
                     min_activity=5,
                     max_activity=10,
                     window_size=10,
-                    updating_rate=0.8,
+                    updating_rate=1,
                     activity_rate=60,
                 ),
                 # Hamming-distance
-                # differences must become 0 after some time => similar
-                # SpikeRate(
-                #     tag="spike-rate:train", interval_size=5, outputs=stream_j_train
-                # ),
-                # SpikeRate(
-                #     tag="spike-rate:train", interval_size=5, outputs=stream_j_test
-                # ),
-                WinnerTakeAll(),
-                # Fire(),
-                #  dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
                 # distance 0 => dopamine release
+                # Fire() => dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
+                # differences must become 0 after some time => similar
+                WinnerTakeAll(),
                 Supervisor(
                     tag="supervisor:train", dopamine_decay=1 / 3, outputs=stream_j_train
                 ),
@@ -105,7 +98,7 @@ def main():
                     dt=1.0,
                     w_min=0,
                     w_max=4.5,  # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
-                    stdp_factor=1.1,
+                    stdp_factor=1.0,
                     delay_epsilon=0.15,
                     weight_decay=0.0,
                     stimulus_scale_factor=1e1,
