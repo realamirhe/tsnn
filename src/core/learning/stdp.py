@@ -47,7 +47,7 @@ class SynapsePairWiseSTDP(Behaviour):
         ) * self.dt
 
         dw_minus = (
-            -self.a_minus
+            self.a_minus
             * synapse.src.fired[np.newaxis, :]
             * synapse.dst.trace[:, np.newaxis]
         )
@@ -56,6 +56,7 @@ class SynapsePairWiseSTDP(Behaviour):
             * synapse.src.trace[np.newaxis, :]
             * synapse.dst.fired[:, np.newaxis]
         )
+        # omn, abc, spiked matrix
 
         dw = (
             DopamineEnvironment.get()  # from global environment

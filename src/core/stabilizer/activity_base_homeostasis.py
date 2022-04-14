@@ -32,3 +32,6 @@ class ActivityBaseHomeostasis(Behaviour):
             change = (greater + smaller) * self.updating_rate
             self.exhaustion += change
             n.threshold -= self.exhaustion
+
+            self.activities *= 0
+            self.exhaustion *= 0

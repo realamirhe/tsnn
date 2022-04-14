@@ -36,7 +36,7 @@ class Metrics(Behaviour):
 
         if not np.isnan(self.outputs[n.iteration - 1]).any():
             # TODO: can append the int here also
-            self._predictions.append(n.fired)
+            self._predictions.append(n.fired)  # [T, F]
 
         if n.iteration == len(self.outputs):
             bit_range = 1 << np.arange(self.outputs[0].size)

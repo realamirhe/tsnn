@@ -42,9 +42,6 @@ class StreamableLIFNeurons(Behaviour):
         if self.capture_old_v:
             n.old_v = n.v.copy()
 
-        if "words" in n.tags:
-            _unused_ = 42
-
         n.fired = n.v >= n.threshold
         if np.sum(n.fired) > 0:
             n.v[n.fired] = n.v_reset

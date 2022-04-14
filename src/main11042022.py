@@ -19,7 +19,7 @@ reset_random_seed(1230)
 # ================= NETWORK  =================
 def main():
     network = Network()
-    stream_i_train, stream_j_train, corpus_train = get_data(1000, prob=0.6)
+    stream_i_train, stream_j_train, corpus_train = get_data(1000, prob=0.9)
     stream_i_test, stream_j_test, corpus_test = get_data(800, prob=0.6)
 
     lif_base = {
@@ -57,11 +57,11 @@ def main():
                 ),
                 ActivityBaseHomeostasis(
                     tag="homeostasis",
-                    min_activity=5,
-                    max_activity=10,
-                    window_size=10,
-                    updating_rate=1,
-                    activity_rate=60,
+                    min_activity=7,
+                    max_activity=8,
+                    window_size=100,
+                    updating_rate=0.001,
+                    activity_rate=7.5,  # can be calculated from the corpus
                 ),
                 # Hamming-distance
                 # distance 0 => dopamine release
@@ -86,25 +86,23 @@ def main():
         src=letters_ng,
         dst=words_ng,
         tag="GLUTAMATE",
-        behaviour=behaviour_generator(
-            [
-                SynapseDelay(max_delay=4, mode="random", use_shared_weights=False),
-                SynapsePairWiseSTDP(
-                    tag="stdp",
-                    tau_plus=3.0,
-                    tau_minus=3.0,
-                    a_plus=6.0,
-                    a_minus=6.0,
-                    dt=1.0,
-                    w_min=0,
-                    w_max=4.5,  # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
-                    stdp_factor=1.0,
-                    delay_epsilon=0.15,
-                    weight_decay=0.0,
-                    stimulus_scale_factor=1e1,
-                ),
-            ]
-        ),
+        behaviour={
+            1: SynapseDelay(max_delay=4, mode="random", use_shared_weights=False),
+            5: SynapsePairWiseSTDP(
+                tag="stdp",
+                tau_plus=4.0,
+                tau_minus=4.0,
+                a_plus=0.01,
+                a_minus=-0.01,
+                dt=1.0,
+                w_min=0,
+                w_max=4.5,  # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
+                stdp_factor=0.1,
+                delay_epsilon=0.15,
+                weight_decay=0.0,
+                stimulus_scale_factor=0.01,
+            ),
+        },
     )
 
     network.initialize()
@@ -113,7 +111,7 @@ def main():
     features.switch_train()
 
     """ TRAINING """
-    epochs = 1
+    epochs = 10
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))

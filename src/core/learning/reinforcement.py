@@ -14,7 +14,7 @@ class Supervisor(Behaviour):
 
     def new_iteration(self, n):
         output = self.outputs[n.iteration - 1]
-        prediction = n.fired
+        prediction = n.fired  # [T, F]
 
         if np.isnan(output).any():
             DopamineEnvironment.decay(self.dopamine_decay)
@@ -29,6 +29,8 @@ class Supervisor(Behaviour):
         """ mismatch similarity """
         distance = [-1.0, 1.0][int((output == prediction).all())]
         DopamineEnvironment.set(distance)
+        # [F, F]
+        # [T, F]
 
         # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
