@@ -23,11 +23,11 @@ def gen_corpus(
         valid_letters = set(valid_letters).symmetric_difference(words_character)
         valid_letters = "".join(valid_letters)
 
-    for i in range(size):
+    for _ in range(size):
         if random.random() < prob:
             word = random.choice(words_to_use)
         else:
             word_length = random.randint(min_length, max_length)
-            word = "".join(random.choice(valid_letters) for _ in range(word_length))
+            word = "".join(random.choices(valid_letters, k=word_length))
         corpus.append(word)
     return corpus
