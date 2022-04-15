@@ -2,15 +2,14 @@ import random
 
 import numpy as np
 
-from src.data.corpus_generator import gen_corpus
 from src.data.constants import letters, words
+from src.data.corpus_generator import gen_corpus
 
 
 def spike_stream_i(char):
     spikes = np.zeros(len(letters), dtype=int)
     if char in letters:
-        # TODO: this must not be hardcoded, best is bool and 1
-        spikes[letters.index(char)] = 90
+        spikes[letters.index(char)] = 1
     return spikes
 
 
@@ -25,7 +24,7 @@ def get_data(size, prob=0.7):
         words_to_use=words,
     )
     random.shuffle(corpus)
-    sparse_gap = " " * 7
+    sparse_gap = " " * 1  # TODO: When we should use more sparsity gap
     joined_corpus = sparse_gap.join(corpus) + sparse_gap
     stream_i = [spike_stream_i(char) for char in joined_corpus]
     stream_j = []
@@ -33,8 +32,11 @@ def get_data(size, prob=0.7):
     empty_spike = np.empty(len(words))
     empty_spike[:] = np.NaN
 
+    # NOTE: 🚀 it seems that shifting all spikes won't chane the flow, but has more neuro-scientific effects
+    # uncomment line 39 and comment line 49-50 to see the difference
     for word in corpus:
-        for char in range(len(word) - 1):
+        for _ in word:
+            # for _ in range(len(word) - 1):
             stream_j.append(empty_spike)
 
         word_spike = np.zeros(len(words), dtype=bool)
@@ -43,8 +45,8 @@ def get_data(size, prob=0.7):
             word_spike[word_index] = 1
         stream_j.append(word_spike)  # spike when see hole word!
 
-        for _ in range(len(sparse_gap)):
-            stream_j.append(empty_spike)  # space between words
+        # for _ in sparse_gap:
+        #     stream_j.append(empty_spike)  # space between words
 
     assert len(stream_i) == len(stream_j), "stream length mismatch"
     return stream_i, stream_j, corpus
