@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from PymoNNto import Behaviour
@@ -10,6 +12,14 @@ class StreamableLIFNeurons(Behaviour):
         # NOTE: this is best for scope privilege principle but make code more difficult to config
         self.dt = self.get_init_attr("dt", 0.1, n)
         self.stream = self.get_init_attr("stream", None, n)
+
+        # TODO: REMOVABLE
+        self.corpus = self.get_init_attr("corpus", None, n)
+        if self.corpus is not None:
+            self.corpus = " ".join(self.corpus) + " "
+            n.seen_char = ""
+        # TODO: REMOVABLE
+
         self.capture_old_v = self.get_init_attr("capture_old_v", False, n)
         has_long_term_effect = self.get_init_attr("has_long_term_effect", False, n)
 
@@ -27,11 +37,17 @@ class StreamableLIFNeurons(Behaviour):
             setattr(n, attr, self.get_init_attr(attr, value, n))
         n.v = n.v_rest + n.get_neuron_vec(mode="uniform") * (n.threshold - n.v_reset)
 
-        # For long term support, will be used in e.g. Homeostasis
+        # NOTE: 🧬 For long term support, will be used in e.g. Homeostasis
         if has_long_term_effect:
             n.threshold = np.ones_like(n.v) * n.threshold
 
     def new_iteration(self, n):
+        # TODO: REMOVABLE
+        if self.corpus is not None:
+            n.seen_char += self.corpus[n.iteration - 1]
+            n.seen_char = n.seen_char[-4:]
+        # TODO: REMOVABLE
+
         is_forced_spike = self.stream is not None
 
         if is_forced_spike:
@@ -42,18 +58,10 @@ class StreamableLIFNeurons(Behaviour):
         if self.capture_old_v:
             n.old_v = n.v.copy()
 
-        n.fired = n.v >= n.threshold
+        if is_forced_spike:
+            n.fired[n.I.astype(bool)] = True
+        else:
+            n.fired = n.v >= n.threshold
+
         if np.sum(n.fired) > 0:
             n.v[n.fired] = n.v_reset
-
-
-# class Fire(Behaviour):
-#     def set_variables(self, neurons):
-#         assert hasattr(neurons, "threshold")
-#         assert hasattr(neurons, "v")
-#         assert hasattr(neurons, "v_reset")
-#
-#     def new_iteration(self, n):
-#         n.fired = n.v >= n.threshold
-#         if np.sum(n.fired) > 0:
-#             n.v[n.fired] = n.v_reset
