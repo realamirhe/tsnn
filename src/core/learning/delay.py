@@ -17,6 +17,13 @@ class SynapseDelay(Behaviour):
         if isinstance(mode, float):
             assert mode != 0, "mode can not be zero"
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
+        elif mode == "magic":
+            synapse.delay = (
+                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
+            )
+            synapse.delay[0, 0:3] = np.array([2, 1, 0])  # abc
+            synapse.delay[1, [14, 12, 13]] = np.array([2, 1, 0])  # omn
+
         elif mode == "random":
             synapse.delay = (
                 np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
@@ -55,14 +62,17 @@ class SynapseDelay(Behaviour):
             self.delayed_spikes,
         )
 
+        """ Calculate weight share of exported spikes """
         weight_scale = t_spikes[:, :, np.newaxis] * self.weight_share
         if hasattr(synapse, "weight_scale"):
             """ accumulative shift of weight_share """
             weight_scale[:, :, 0] += synapse.weights_scale[:, :, -1]
         synapse.weights_scale = weight_scale
+        # meta fields will be removed
+        synapse.meta_delayed_spikes = self.delayed_spikes
+        synapse.meta_new_spikes = new_spikes
 
     def update_delay_float(self, synapse):
-        # TODO: synapse.delay = synapse.delay - dw; # {=> in somewhere else}
         synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
         # print("delay", synapse.delay.flatten())
         """ int_delay: (src.size, dst.size) """
@@ -75,11 +85,12 @@ class SynapseDelay(Behaviour):
                 if delay != 0:
                     row[-delay] = True
 
-        # MAYBE MOVE TO ANOTHER FUNCTION MAKE CALL PREDICTABLE
+        # TODO: maybe move to another function make call predictable
         """ Update weight share based on float delays """
         self.weight_share[:, :, 0] = synapse.delay % 1.0
+        """ Full weight share for integer delays """
         weight_share_in_time_t = self.weight_share[:, :, 0]
-        # Full weight share for integer delays
         weight_share_in_time_t[weight_share_in_time_t == 0] = 1.0
         self.weight_share[:, :, 0] = weight_share_in_time_t
+        """ forward remaining weight to the next time step """
         self.weight_share[:, :, 1] = 1 - self.weight_share[:, :, 0]

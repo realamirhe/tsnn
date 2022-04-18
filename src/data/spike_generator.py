@@ -23,6 +23,7 @@ def get_data(size, prob=0.7):
         letters_to_use=letters,
         words_to_use=words,
     )
+    # 7 with reward in reward window
     random.shuffle(corpus)
     sparse_gap = " " * 1  # TODO: When we should use more sparsity gap
     joined_corpus = sparse_gap.join(corpus) + sparse_gap

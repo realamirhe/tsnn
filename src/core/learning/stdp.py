@@ -108,7 +108,8 @@ class SynapsePairWiseSTDP(Behaviour):
 
         next_layer_stimulus = synapse.W.dot(synapse.src.fired)
         # TODO: need to investigate more for diagonal feature
-        noise = np.random.random(next_layer_stimulus.shape)
+        # TODO: check
+        noise = (np.random.random(next_layer_stimulus.shape) - 0.5) * 2
         synapse.dst.I = self.stimulus_scale_factor * next_layer_stimulus + noise
 
     # NOTE: We might need the add clamping mechanism to the 'I' for the dst layer

@@ -23,9 +23,20 @@ class Supervisor(Behaviour):
         output = self.outputs[n.iteration - 1]
         prediction = n.fired  # [T, F]
 
+        # 1, 2, 3 punish
+        # 4 reward or punish in wrong case
+        # both punish
+
         if np.isnan(output).any():
-            DopamineEnvironment.decay(self.dopamine_decay)
+            if np.sum(output) > 0:
+                DopamineEnvironment.set(-1)
+            else:
+                DopamineEnvironment.decay(self.dopamine_decay)
             return
+
+        """
+        abc omn abc kfw
+        """
 
         """ Cosine similarity """
         # distance = 1 - spatial.distance.cosine(

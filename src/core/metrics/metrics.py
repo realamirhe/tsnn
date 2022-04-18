@@ -12,6 +12,8 @@ from sklearn.metrics import (
 from PymoNNto import Behaviour
 from src.core.nlp.constants import UNK
 
+index = 0
+
 
 class Metrics(Behaviour):
     # fmt: off
@@ -19,7 +21,12 @@ class Metrics(Behaviour):
 
     # fmt: on
     def set_variables(self, n):
-        configure = {"recording_phase": None, "outputs": [], "words": []}
+        configure = {
+            "recording_phase": None,
+            "outputs": [],
+            "words": [],
+            "corpus_train": [],
+        }
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, n))
 
@@ -34,16 +41,20 @@ class Metrics(Behaviour):
         if self.recording_phase is not None and self.recording_phase != n.recording:
             return
 
-        if not np.isnan(self.outputs[n.iteration - 1]).any():
-            # TODO: can append the int here also
-            self._predictions.append(n.fired)  # [T, F]
+        # if not np.isnan(self.outputs[n.iteration - 1]).any():
+        #     # NOTE: 🚀 can append the int here also
+        self._predictions.append(n.fired.copy())
 
         if n.iteration == len(self.outputs):
             bit_range = 1 << np.arange(self.outputs[0].size)
 
             presentation_words = self.words + [UNK]
             outputs = [o.dot(bit_range) for o in self.outputs if not np.isnan(o).any()]
-            predictions = [p.dot(bit_range) for p in self._predictions]
+            predictions = [
+                p.dot(bit_range)
+                for o, p in zip(self.outputs, self._predictions)
+                if not np.isnan(o).any()
+            ]
 
             network_phase = "Testing" if "test" in self.tags[0] else "Training"
             accuracy = accuracy_score(outputs, predictions)
@@ -57,24 +68,25 @@ class Metrics(Behaviour):
 
             frequencies = np.asarray(np.unique(outputs, return_counts=True)).T
             frequencies_p = np.asarray(np.unique(predictions, return_counts=True)).T
-
-            print(
-                "---" * 15,
-                f"{network_phase}",
-                f"accuracy: {accuracy}",
-                f"precision: {precision}",
-                f"f1: {f1}",
-                f"recall: {recall}",
-                f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
-                "---" * 15,
-                f"[Output] frequencies::\n{frequencies}",
-                f"[Prediction] frequencies::\n{frequencies_p}",
-                sep="\n",
-                end="\n\n",
-            )
+            global index
+            index += 1
+            # print(
+            #     "---" * 15,
+            #     f"{network_phase}",
+            #     f"accuracy: {accuracy}",
+            #     f"precision: {precision}",
+            #     f"f1: {f1}",
+            #     f"recall: {recall}",
+            #     f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
+            #     "---" * 15,
+            #     f"[Output] frequencies::\n{frequencies}",
+            #     f"[Prediction] frequencies::\n{frequencies_p}",
+            #     sep="\n",
+            #     end="\n\n",
+            # )
 
             # display_labels=['none', 'abc', 'omn', 'both']
             cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
             cm_display.plot()
-            plt.title(f"{network_phase} Confusion Matrix")
+            plt.title(f"{network_phase} Confusion Matrix iteration={index}")
             plt.show()
