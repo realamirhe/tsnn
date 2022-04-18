@@ -59,6 +59,7 @@ class StreamableLIFNeurons(Behaviour):
             n.old_v = n.v.copy()
 
         if is_forced_spike:
+            n.fired[:] = False
             n.fired[n.I.astype(bool)] = True
         else:
             n.fired = n.v >= n.threshold
