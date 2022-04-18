@@ -5,11 +5,19 @@ from src.core.environement.dopamine import DopamineEnvironment
 
 
 class SynapsePairWiseSTDP(Behaviour):
-    # fmt: off
-    __slots__ = ["tau_plus", "tau_minus", "a_plus", "a_minus", "dt", "weight_decay", "stdp_factor", "delay_epsilon",
-                 "w_min", "w_max"]
+    __slots__ = [
+        "tau_plus",
+        "tau_minus",
+        "a_plus",
+        "a_minus",
+        "dt",
+        "weight_decay",
+        "stdp_factor",
+        "min_delay_threshold",
+        "w_min",
+        "w_max",
+    ]
 
-    # fmt: on
     def set_variables(self, synapse):
         synapse.W = synapse.get_synapse_mat("uniform")
         synapse.src.trace = synapse.src.get_neuron_vec()
@@ -19,24 +27,40 @@ class SynapsePairWiseSTDP(Behaviour):
             "tau_plus": 3.0,
             "tau_minus": 3.0,
             "a_plus": 0.1,
-            "a_minus": 0.2,
+            "a_minus": -0.2,
             "dt": 1.0,
             "weight_decay": 0.0,
             "stdp_factor": 1.0,
-            "delay_epsilon": 0.15,
+            "delay_factor": 1.0,
+            "min_delay_threshold": 0.15,
             "w_min": 0.0,
             "w_max": 10.0,
-            "stimulus_scale_factor": 1e4,
+            "stimulus_scale_factor": 1,
         }
 
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, synapse))
+        # Scale W from [0,1) to [w_min, w_max)
+        synapse.W *= (self.w_max - self.w_min) + self.w_min
+        synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
+
         self.weight_decay = 1 - self.weight_decay
 
+        assert self.a_minus < 0, "a_minus should be negative"
+
     def new_iteration(self, synapse):
+        # For testing only, we won't update synapse weights in test mode!
         if not synapse.recording:
             synapse.dst.I = synapse.W.dot(synapse.src.fired)
             return
+
+        # print("cool stuff")
+        # print("seen_char", synapse.src.seen_char)
+        # print("delay", synapse.delay[:, 23:])
+        # print("weights_scale", synapse.weights_scale[:, 23:])
+        # print("meta_delayed_spikes", synapse.meta_delayed_spikes[:, 23:])
+        # print("meta_new_spikes", synapse.meta_new_spikes)
+        # print("neuron_fired", synapse.src.fired)
 
         synapse.src.trace += (
             -synapse.src.trace / self.tau_plus + synapse.src.fired  # dx
@@ -56,7 +80,6 @@ class SynapsePairWiseSTDP(Behaviour):
             * synapse.src.trace[np.newaxis, :]
             * synapse.dst.fired[:, np.newaxis]
         )
-        # omn, abc, spiked matrix
 
         dw = (
             DopamineEnvironment.get()  # from global environment
@@ -77,15 +100,16 @@ class SynapsePairWiseSTDP(Behaviour):
 
         non_zero_dw = dw != 0
         if non_zero_dw.any():
-            should_update = np.min(synapse.delay[non_zero_dw]) > self.delay_epsilon
+            should_update = (
+                np.min(synapse.delay[non_zero_dw]) > self.min_delay_threshold
+            )
             if should_update:
-                synapse.delay[non_zero_dw] -= dw[non_zero_dw]
+                synapse.delay[non_zero_dw] -= dw[non_zero_dw] * self.delay_factor
 
         next_layer_stimulus = synapse.W.dot(synapse.src.fired)
         # TODO: need to investigate more for diagonal feature
-        synapse.dst.I = next_layer_stimulus * self.stimulus_scale_factor + (
-            np.random.random(next_layer_stimulus.shape)
-        )
+        noise = np.random.random(next_layer_stimulus.shape)
+        synapse.dst.I = self.stimulus_scale_factor * next_layer_stimulus + noise
 
     # NOTE: We might need the add clamping mechanism to the 'I' for the dst layer
 
