@@ -132,7 +132,7 @@ def main():
     features.switch_train()
 
     """ TRAINING """
-    epochs = 1
+    epochs = 10
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))

@@ -5,7 +5,7 @@ from src.core.visualizer.history_recorder import HistoryRecorder
 
 
 class HistoryRecorder1D(HistoryRecorder):
-    def plot(self, scale=None):
+    def plot(self, scale=None, should_reset=True):
         if not self.enabled:
             return
 
@@ -15,4 +15,6 @@ class HistoryRecorder1D(HistoryRecorder):
         else:
             plt.plot(self.history)
         plt.show()
-        self.reset()
+
+        if should_reset:
+            self.reset()
