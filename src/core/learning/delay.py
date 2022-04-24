@@ -1,6 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
+from src.data.plotters import delay_plotter
 
 
 class SynapseDelay(Behaviour):
@@ -17,14 +18,7 @@ class SynapseDelay(Behaviour):
         if isinstance(mode, float):
             assert mode != 0, "mode can not be zero"
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
-        elif mode == "magic":
-            synapse.delay = (
-                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
-            )
-            synapse.delay[0, 0:3] = np.array([2, 1, 0])  # abc
-            synapse.delay[1, [14, 12, 13]] = np.array([2, 1, 0])  # omn
-
-        elif mode == "random":
+        else:
             synapse.delay = (
                 np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
             )
@@ -68,9 +62,7 @@ class SynapseDelay(Behaviour):
             """ accumulative shift of weight_share """
             weight_scale[:, :, 0] += synapse.weights_scale[:, :, -1]
         synapse.weights_scale = weight_scale
-        # meta fields will be removed
-        synapse.meta_delayed_spikes = self.delayed_spikes
-        synapse.meta_new_spikes = new_spikes
+        delay_plotter.add_image(synapse.delay, vmin=0, vmax=self.max_delay)
 
     def update_delay_float(self, synapse):
         synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)

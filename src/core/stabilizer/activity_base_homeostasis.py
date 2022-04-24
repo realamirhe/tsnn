@@ -2,8 +2,10 @@ import numpy as np
 
 from PymoNNto import Behaviour, def_dtype
 
-
 # should be after or be
+from src.data.plotters import threshold_plotter
+
+
 class ActivityBaseHomeostasis(Behaviour):
     def set_variables(self, n):
         self.window_size = self.get_init_attr("window_size", 100, n)
@@ -48,10 +50,9 @@ class ActivityBaseHomeostasis(Behaviour):
             change = (greater + smaller) * self.updating_rate
             self.exhaustion += change
             n.threshold -= self.exhaustion
+            threshold_plotter.add(n.threshold.copy())
 
-            # For: Logic for adaptive updating rate
-            # self.updating_rate *= 0.5
-            # self.updating_rate = np.clip(self.updating_rate, 0.001, 100)
+            # For: Logic for adaptive updating rate (see old trunks)
 
             self.activities *= 0
             self.exhaustion *= 0

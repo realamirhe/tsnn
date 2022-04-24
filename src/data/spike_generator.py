@@ -13,12 +13,12 @@ def spike_stream_i(char):
     return spikes
 
 
-def get_data(size, prob=0.7):
+def get_data(size, prob=0.7, fixed_size=3):
     corpus = gen_corpus(
         size,
         prob,
-        min_length=3,
-        max_length=3,
+        min_length=fixed_size,
+        max_length=fixed_size,
         no_common_chars=False,
         letters_to_use=letters,
         words_to_use=words,

@@ -1,3 +1,5 @@
+# from collections import namedtuple
+#
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import (
@@ -10,7 +12,15 @@ from sklearn.metrics import (
 )
 
 from PymoNNto import Behaviour
+from src.core.environement.dopamine import DopamineEnvironment
 from src.core.nlp.constants import UNK
+from src.data.plotters import (
+    dw_plotter,
+    w_plotter,
+    dopamine_plotter,
+    threshold_plotter,
+    delay_plotter,
+)
 
 index = 0
 
@@ -25,10 +35,12 @@ class Metrics(Behaviour):
             "recording_phase": None,
             "outputs": [],
             "words": [],
-            "corpus_train": [],
+            # "corpus": [],
         }
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, n))
+
+        # self.corpus = " ".join(self.corpus) + " "
 
         self._old_recording = n.recording
         self._predictions = []
@@ -44,8 +56,17 @@ class Metrics(Behaviour):
         # if not np.isnan(self.outputs[n.iteration - 1]).any():
         #     # NOTE: 🚀 can append the int here also
         self._predictions.append(n.fired.copy())
+        dopamine_plotter.add(DopamineEnvironment.get())
 
         if n.iteration == len(self.outputs):
+            dw_plotter.plot(scale=1e2)
+            w_plotter.plot()
+            dopamine_plotter.plot()
+            threshold_plotter.plot()
+            delay_plotter.plot()
+            # tracer = list(
+            #     zip(self.outputs, self._predictions, self.corpus, self._dopamine)
+            #             # )
             bit_range = 1 << np.arange(self.outputs[0].size)
 
             presentation_words = self.words + [UNK]
@@ -55,7 +76,16 @@ class Metrics(Behaviour):
                 for o, p in zip(self.outputs, self._predictions)
                 if not np.isnan(o).any()
             ]
-
+            # self._dopamine = [
+            #     d for o, d in zip(self.outputs, self._dopamine) if not np.isnan(o).any()
+            # ]
+            # Track = namedtuple("Track", "out pred word dop")
+            # tracer = list(
+            #     map(
+            #         lambda pack: Track(*pack),
+            #         zip(outputs, predictions, self.corpus, self._dopamine),
+            #     )
+            # )
             network_phase = "Testing" if "test" in self.tags[0] else "Training"
             accuracy = accuracy_score(outputs, predictions)
 
@@ -70,20 +100,20 @@ class Metrics(Behaviour):
             frequencies_p = np.asarray(np.unique(predictions, return_counts=True)).T
             global index
             index += 1
-            # print(
-            #     "---" * 15,
-            #     f"{network_phase}",
-            #     f"accuracy: {accuracy}",
-            #     f"precision: {precision}",
-            #     f"f1: {f1}",
-            #     f"recall: {recall}",
-            #     f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
-            #     "---" * 15,
-            #     f"[Output] frequencies::\n{frequencies}",
-            #     f"[Prediction] frequencies::\n{frequencies_p}",
-            #     sep="\n",
-            #     end="\n\n",
-            # )
+            print(
+                "---" * 15,
+                f"{network_phase}",
+                f"accuracy: {accuracy}",
+                f"precision: {precision}",
+                f"f1: {f1}",
+                f"recall: {recall}",
+                f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
+                "---" * 15,
+                f"[Output] frequencies::\n{frequencies}",
+                f"[Prediction] frequencies::\n{frequencies_p}",
+                sep="\n",
+                end="\n\n",
+            )
 
             # display_labels=['none', 'abc', 'omn', 'both']
             cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)

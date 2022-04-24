@@ -8,7 +8,6 @@ from src.core.metrics.metrics import Metrics
 from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
-from src.core.visualizer.plots import raster_plots, voltage_plots
 from src.data.constants import letters, words
 from src.data.spike_generator import get_data
 from src.helpers.base import reset_random_seed, behaviour_generator
@@ -54,43 +53,46 @@ def main():
         net=network,
         tag="words",
         size=len(words),
-        behaviour=behaviour_generator(
-            [
-                StreamableLIFNeurons(
-                    **lif_base, has_long_term_effect=True, capture_old_v=True,
-                ),
-                ActivityBaseHomeostasis(
-                    tag="homeostasis",
-                    window_size=100,
-                    # NOTE: making updating_rate adaptive is not useful, because we are training model multiple time
-                    # so long term threshold must be set within one of these passes. It is useful for faster convergence
-                    updating_rate=0.01,
-                    activity_rate=15,
-                    # window_size = 100 character every word has 3 character + space, so we roughly got 25
-                    # spaced words per window; 0.6 of words are desired so 25*0.6 = 15 are expected to spike
-                    # in each window (15 can be calculated from the corpus)
-                ),
-                # Hamming-distance
-                # distance 0 => dopamine release
-                # Fire() => dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
-                # differences must become 0 after some time => similar
-                WinnerTakeAll(),
-                Supervisor(
-                    tag="supervisor:train", dopamine_decay=1 / 3, outputs=stream_j_train
-                ),
-                Supervisor(
-                    tag="supervisor:test", dopamine_decay=1 / 3, outputs=stream_j_test
-                ),
-                Metrics(
-                    tag="metrics:train",
-                    words=words,
-                    outputs=stream_j_train,
-                    corpus_train=corpus_train,
-                ),
-                Metrics(tag="metrics:test", words=words, outputs=stream_j_test),
-                Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
-            ]
-        ),
+        behaviour={
+            1: StreamableLIFNeurons(
+                **lif_base, has_long_term_effect=True, capture_old_v=True,
+            ),
+            2: ActivityBaseHomeostasis(
+                tag="homeostasis",
+                window_size=100,
+                # NOTE: making updating_rate adaptive is not useful, because we are training model multiple time
+                # so long term threshold must be set within one of these passes. It is useful for faster convergence
+                updating_rate=0.01,
+                activity_rate=15,
+                # window_size = 100 character every word has 3 character + space, so we roughly got 25
+                # spaced words per window; 0.6 of words are desired so 25*0.6 = 15 are expected to spike
+                # in each window (15 can be calculated from the corpus)
+            ),
+            # Hamming-distance
+            # distance 0 => dopamine release
+            # Fire() => dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
+            # differences must become 0 after some time => similar
+            3: WinnerTakeAll(),
+            4: Supervisor(
+                tag="supervisor:train", dopamine_decay=1 / 3, outputs=stream_j_train
+            ),
+            5: Supervisor(
+                tag="supervisor:test", dopamine_decay=1 / 3, outputs=stream_j_test
+            ),
+            7: Metrics(
+                tag="metrics:train",
+                words=words,
+                outputs=stream_j_train,
+                corpus=corpus_train,
+            ),
+            8: Metrics(
+                tag="metrics:test",
+                words=words,
+                outputs=stream_j_test,
+                corpus=corpus_test,
+            ),
+            9: Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
+        },
     )
 
     SynapseGroup(
@@ -100,7 +102,7 @@ def main():
         tag="GLUTAMATE",
         behaviour={
             # NOTE: 🚀 use max_delay to 4 and use_shared_weights=True
-            1: SynapseDelay(max_delay=3, mode="magic", use_shared_weights=False),
+            1: SynapseDelay(max_delay=3, mode="random", use_shared_weights=False),
             6: SynapsePairWiseSTDP(
                 tag="stdp",
                 tau_plus=4.0,
@@ -130,7 +132,7 @@ def main():
     features.switch_train()
 
     """ TRAINING """
-    epochs = 10
+    epochs = 1
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
@@ -147,13 +149,13 @@ def main():
         # voltage_plots(network)
 
     """ TESTING """
-    features.switch_test()
-    # Hacky integration, preventing another weight copy!
-    network["stdp", 0].recording = False
-    network.iteration = 0
-    network["words-recorder", 0].clear_cache()
-    network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
-    network.simulate_iterations(len(stream_i_test))
+    # features.switch_test()
+    # # Hacky integration, preventing another weight copy!
+    # network["stdp", 0].recording = False
+    # network.iteration = 0
+    # network["words-recorder", 0].clear_cache()
+    # network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
+    # network.simulate_iterations(len(stream_i_test))
 
 
 if __name__ == "__main__":

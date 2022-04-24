@@ -2,6 +2,7 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.core.environement.dopamine import DopamineEnvironment
+from src.data.plotters import dw_plotter, w_plotter
 
 
 class SynapsePairWiseSTDP(Behaviour):
@@ -54,14 +55,6 @@ class SynapsePairWiseSTDP(Behaviour):
             synapse.dst.I = synapse.W.dot(synapse.src.fired)
             return
 
-        # print("cool stuff")
-        # print("seen_char", synapse.src.seen_char)
-        # print("delay", synapse.delay[:, 23:])
-        # print("weights_scale", synapse.weights_scale[:, 23:])
-        # print("meta_delayed_spikes", synapse.meta_delayed_spikes[:, 23:])
-        # print("meta_new_spikes", synapse.meta_new_spikes)
-        # print("neuron_fired", synapse.src.fired)
-
         synapse.src.trace += (
             -synapse.src.trace / self.tau_plus + synapse.src.fired  # dx
         ) * self.dt
@@ -90,9 +83,10 @@ class SynapsePairWiseSTDP(Behaviour):
             * self.dt
         )
 
+        dw_plotter.add(np.max(dw))
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
-
+        w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
         """ stop condition for delay learning """
         use_shared_delay = dw.shape != synapse.delay.shape
         if use_shared_delay:

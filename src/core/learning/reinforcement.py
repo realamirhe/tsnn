@@ -23,9 +23,9 @@ class Supervisor(Behaviour):
         output = self.outputs[n.iteration - 1]
         prediction = n.fired  # [T, F]
 
-        # 1, 2, 3 punish
-        # 4 reward or punish in wrong case
-        # both punish
+        # if neurons fire on non fired output (1, 2, 3) => punish
+        # if neurons fire on fired output (4) => reward or punish intelligently
+        # if more than one neuron fire on the same single output => punish
 
         if np.isnan(output).any():
             if np.sum(output) > 0:
