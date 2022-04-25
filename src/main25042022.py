@@ -117,15 +117,16 @@ def main():
                     / np.average(list(map(len, words))),
                     decimals=1,
                 ),
-                stdp_factor=0.1,
-                delay_factor=1e1,  # episode increase
                 min_delay_threshold=0.15,
                 weight_decay=0,
-                stimulus_scale_factor=1,
+                stdp_factor=0.1,
+                noise_scale_factor=1,
+                adaptive_noise_scale=0.9,
+                delay_factor=1e1,  # episode increase
+                stimulus_scale_factor=0.1,
             ),
         },
     )
-
     network.initialize()
 
     features = FeatureSwitch(network, ["lif", "supervisor", "metrics", "spike-rate"])

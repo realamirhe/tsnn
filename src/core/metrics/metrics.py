@@ -21,6 +21,7 @@ from src.data.plotters import (
     threshold_plotter,
     delay_plotter,
     activity_plotter,
+    words_stimulus_plotter,
 )
 
 index = 0
@@ -66,6 +67,7 @@ class Metrics(Behaviour):
             threshold_plotter.plot(should_reset=False)
             delay_plotter.plot()
             activity_plotter.plot()
+            words_stimulus_plotter.plot()
             # tracer = list(
             #     zip(self.outputs, self._predictions, self.corpus, self._dopamine)
             #             # )

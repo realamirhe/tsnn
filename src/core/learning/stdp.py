@@ -2,7 +2,7 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.core.environement.dopamine import DopamineEnvironment
-from src.data.plotters import dw_plotter, w_plotter
+from src.data.plotters import dw_plotter, w_plotter, words_stimulus_plotter
 
 
 class SynapsePairWiseSTDP(Behaviour):
@@ -37,6 +37,8 @@ class SynapsePairWiseSTDP(Behaviour):
             "w_min": 0.0,
             "w_max": 10.0,
             "stimulus_scale_factor": 1,
+            "noise_scale_factor": 1,
+            "adaptive_noise_scale": 1,
         }
 
         for attr, value in configure.items():
@@ -100,11 +102,21 @@ class SynapsePairWiseSTDP(Behaviour):
             if should_update:
                 synapse.delay[non_zero_dw] -= dw[non_zero_dw] * self.delay_factor
 
+        # shrink the noise scale factor at the beginning of each episode
+        if synapse.iteration == 1:
+            self.noise_scale_factor *= self.adaptive_noise_scale
+
         next_layer_stimulus = synapse.W.dot(synapse.src.fired)
         # TODO: need to investigate more for diagonal feature
         # TODO: check
-        noise = (np.random.random(next_layer_stimulus.shape) - 0.5) * 2
+        noise = (
+            self.noise_scale_factor
+            * (np.random.random(next_layer_stimulus.shape) - 0.5)
+            * 2
+        )
         synapse.dst.I = self.stimulus_scale_factor * next_layer_stimulus + noise
+
+        words_stimulus_plotter.add(synapse.dst.I, should_copy=True)
 
     # NOTE: We might need the add clamping mechanism to the 'I' for the dst layer
 
