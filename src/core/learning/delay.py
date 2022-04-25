@@ -68,7 +68,7 @@ class SynapseDelay(Behaviour):
         synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
         # print("delay", synapse.delay.flatten())
         """ int_delay: (src.size, dst.size) """
-        self.int_delay = np.ceil(synapse.delay).astype(dtype=int)
+        self.int_delay = np.floor(synapse.delay).astype(dtype=int)
         """ update delay mask (dst.size, src.size, max_delay) """
         self.delay_mask = np.zeros_like(self.delayed_spikes, dtype=bool)
         for n_idx in range(self.int_delay.shape[0]):
