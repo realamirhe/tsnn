@@ -1,5 +1,5 @@
 # from collections import namedtuple
-#
+
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import (
@@ -37,12 +37,12 @@ class Metrics(Behaviour):
             "recording_phase": None,
             "outputs": [],
             "words": [],
-            # "corpus": [],
+            "corpus": [],
         }
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, n))
 
-        # self.corpus = " ".join(self.corpus) + " "
+        self.corpus = " ".join(self.corpus) + " "
 
         self._old_recording = n.recording
         self._predictions = []
@@ -61,16 +61,14 @@ class Metrics(Behaviour):
         dopamine_plotter.add(DopamineEnvironment.get())
 
         if n.iteration == len(self.outputs):
-            dw_plotter.plot(scale=1e2)
+            # dw_plotter.plot(scale=1e2)
+            dw_plotter.plot()
             w_plotter.plot()
             dopamine_plotter.plot()
             threshold_plotter.plot(should_reset=False)
             delay_plotter.plot()
             activity_plotter.plot()
             words_stimulus_plotter.plot()
-            # tracer = list(
-            #     zip(self.outputs, self._predictions, self.corpus, self._dopamine)
-            #             # )
             bit_range = 1 << np.arange(self.outputs[0].size)
 
             presentation_words = self.words + [UNK]
@@ -80,16 +78,9 @@ class Metrics(Behaviour):
                 for o, p in zip(self.outputs, self._predictions)
                 if not np.isnan(o).any()
             ]
-            # self._dopamine = [
-            #     d for o, d in zip(self.outputs, self._dopamine) if not np.isnan(o).any()
-            # ]
-            # Track = namedtuple("Track", "out pred word dop")
-            # tracer = list(
-            #     map(
-            #         lambda pack: Track(*pack),
-            #         zip(outputs, predictions, self.corpus, self._dopamine),
-            #     )
-            # )
+
+            # Track = namedtuple("Track", "out pred")
+            # tracer = list(map(lambda pack: Track(*pack), zip(outputs, predictions),))
             network_phase = "Testing" if "test" in self.tags[0] else "Training"
             accuracy = accuracy_score(outputs, predictions)
 

@@ -27,7 +27,7 @@ def main():
         "v_reset": -65,
         "threshold": -52,
         "dt": 1.0,
-        "R": 2,
+        "R": 3,
         "tau": 3,
     }
 
@@ -54,10 +54,10 @@ def main():
         tag="words",
         size=len(words),
         behaviour={
-            1: StreamableLIFNeurons(
+            3: StreamableLIFNeurons(
                 **lif_base, has_long_term_effect=True, capture_old_v=True,
             ),
-            2: ActivityBaseHomeostasis(
+            4: ActivityBaseHomeostasis(
                 tag="homeostasis",
                 window_size=100,
                 # NOTE: making updating_rate adaptive is not useful, because we are training model multiple time
@@ -72,26 +72,26 @@ def main():
             # distance 0 => dopamine release
             # Fire() => dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
             # differences must become 0 after some time => similar
-            3: WinnerTakeAll(),
-            4: Supervisor(
+            5: WinnerTakeAll(),
+            6: Supervisor(
                 tag="supervisor:train", dopamine_decay=1 / 3, outputs=stream_j_train
             ),
-            5: Supervisor(
+            7: Supervisor(
                 tag="supervisor:test", dopamine_decay=1 / 3, outputs=stream_j_test
             ),
-            7: Metrics(
+            8: Metrics(
                 tag="metrics:train",
                 words=words,
                 outputs=stream_j_train,
                 corpus=corpus_train,
             ),
-            8: Metrics(
+            9: Metrics(
                 tag="metrics:test",
                 words=words,
                 outputs=stream_j_test,
                 corpus=corpus_test,
             ),
-            9: Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
+            10: Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
         },
     )
 
@@ -103,7 +103,7 @@ def main():
         behaviour={
             # NOTE: 🚀 use max_delay to 4 and use_shared_weights=True
             1: SynapseDelay(max_delay=3, mode="random", use_shared_weights=False),
-            6: SynapsePairWiseSTDP(
+            2: SynapsePairWiseSTDP(
                 tag="stdp",
                 tau_plus=4.0,
                 tau_minus=4.0,
@@ -119,11 +119,11 @@ def main():
                 ),
                 min_delay_threshold=0.15,
                 weight_decay=0,
-                stdp_factor=0.1,
+                stdp_factor=0.1, # 1
                 noise_scale_factor=1,
                 adaptive_noise_scale=0.9,
                 delay_factor=1e1,  # episode increase
-                stimulus_scale_factor=0.1,
+                stimulus_scale_factor=0.1, #1
             ),
         },
     )
@@ -133,7 +133,7 @@ def main():
     features.switch_train()
 
     """ TRAINING """
-    epochs = 10
+    epochs = 20
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))

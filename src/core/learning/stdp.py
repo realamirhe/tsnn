@@ -47,6 +47,12 @@ class SynapsePairWiseSTDP(Behaviour):
         synapse.W *= (self.w_max - self.w_min) + self.w_min
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
+        # MAGIC Weight setters
+        # synapse.W[0, [0, 1, 2]] = self.w_max
+        # synapse.W[1, [0, 1, 2]] = self.w_min
+        # synapse.W[1, [12, 13, 14]] = self.w_max
+        # synapse.W[0, [12, 13, 14]] = self.w_min
+
         self.weight_decay = 1 - self.weight_decay
 
         assert self.a_minus < 0, "a_minus should be negative"
@@ -85,26 +91,26 @@ class SynapsePairWiseSTDP(Behaviour):
             * self.dt
         )
 
-        dw_plotter.add(np.max(dw))
+        dw_plotter.add_image(dw * 1e5)
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
         """ stop condition for delay learning """
-        use_shared_delay = dw.shape != synapse.delay.shape
-        if use_shared_delay:
-            dw = np.mean(dw, axis=0, keepdims=True)
-
-        non_zero_dw = dw != 0
-        if non_zero_dw.any():
-            should_update = (
-                np.min(synapse.delay[non_zero_dw]) > self.min_delay_threshold
-            )
-            if should_update:
-                synapse.delay[non_zero_dw] -= dw[non_zero_dw] * self.delay_factor
-
-        # shrink the noise scale factor at the beginning of each episode
-        if synapse.iteration == 1:
-            self.noise_scale_factor *= self.adaptive_noise_scale
+        # use_shared_delay = dw.shape != synapse.delay.shape
+        # if use_shared_delay:
+        #     dw = np.mean(dw, axis=0, keepdims=True)
+        #
+        # non_zero_dw = dw != 0
+        # if non_zero_dw.any():
+        #     should_update = (
+        #         np.min(synapse.delay[non_zero_dw]) > self.min_delay_threshold
+        #     )
+        #     if should_update:
+        #         synapse.delay[non_zero_dw] -= dw[non_zero_dw] * self.delay_factor
+        #
+        # # shrink the noise scale factor at the beginning of each episode
+        # if synapse.iteration == 1:
+        #     self.noise_scale_factor *= self.adaptive_noise_scale
 
         next_layer_stimulus = synapse.W.dot(synapse.src.fired)
         # TODO: need to investigate more for diagonal feature

@@ -16,6 +16,7 @@ class SynapseDelay(Behaviour):
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
         if isinstance(mode, float):
+
             assert mode != 0, "mode can not be zero"
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
         else:
@@ -23,6 +24,12 @@ class SynapseDelay(Behaviour):
                 np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
             )
 
+        # MAGIC Delay setters
+        # synapse.delay = (
+        #         np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
+        # )
+        # synapse.delay[0, [0, 1, 2]] = [3, 2, 1]
+        # synapse.delay[1, [14, 12, 13]] = [3, 2, 1]
         """ History or neuron memory for storing the spiked activity over times """
         self.delayed_spikes = np.zeros(
             (depth_size, synapse.src.size, self.max_delay), dtype=bool
@@ -38,6 +45,7 @@ class SynapseDelay(Behaviour):
         """ TBD: neurons activity is based on one of its own delayed activity """
         """ Spike immediately for neurons with zero delay """
         t_spikes = self.delayed_spikes[:, :, -1]
+        # NOTE: supress where in case there is no action to be done!
         t_spikes = np.where(
             self.int_delay == 0,
             new_spikes[np.newaxis, :] * np.ones_like(t_spikes),
