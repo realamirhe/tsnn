@@ -119,11 +119,11 @@ def main():
                 ),
                 min_delay_threshold=0.15,
                 weight_decay=0,
-                stdp_factor=0.1, # 1
+                stdp_factor=0.1,  # 1
                 noise_scale_factor=1,
                 adaptive_noise_scale=0.9,
                 delay_factor=1e1,  # episode increase
-                stimulus_scale_factor=0.1, #1
+                stimulus_scale_factor=0.1,  # 1
             ),
         },
     )
