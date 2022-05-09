@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.spatial.distance import jaccard
 
 from PymoNNto import Behaviour
 from src.core.environement.dopamine import DopamineEnvironment
@@ -28,7 +27,7 @@ class Supervisor(Behaviour):
         # if more than one neuron fire on the same single output => punish
 
         if np.isnan(output).any():
-            if np.sum(output) > 0:
+            if np.sum(prediction) > 0:
                 DopamineEnvironment.set(-1)
             else:
                 DopamineEnvironment.decay(self.dopamine_decay)
