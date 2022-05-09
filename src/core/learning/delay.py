@@ -1,6 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
+from src.data.feature_flags import magically_hardcode_the_delays
 from src.data.plotters import delay_plotter
 
 
@@ -24,12 +25,13 @@ class SynapseDelay(Behaviour):
                 np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
             )
 
-        # MAGIC Delay setters
-        # synapse.delay = (
-        #         np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
-        # )
-        # synapse.delay[0, [0, 1, 2]] = [3, 2, 1]
-        # synapse.delay[1, [14, 12, 13]] = [3, 2, 1]
+        if magically_hardcode_the_delays:
+            synapse.delay = (
+                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
+            )
+            synapse.delay[0, [0, 1, 2]] = [3, 2, 1]
+            synapse.delay[1, [14, 12, 13]] = [3, 2, 1]
+
         """ History or neuron memory for storing the spiked activity over times """
         self.delayed_spikes = np.zeros(
             (depth_size, synapse.src.size, self.max_delay), dtype=bool
@@ -39,6 +41,7 @@ class SynapseDelay(Behaviour):
 
         self.update_delay_float(synapse)
 
+    # NOTE: delay behaviour only update internal vars corresponding to delta delay update.
     def new_iteration(self, synapse):
         self.update_delay_float(synapse)
         new_spikes = synapse.src.fired.copy()

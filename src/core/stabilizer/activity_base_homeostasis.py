@@ -20,7 +20,6 @@ class ActivityBaseHomeostasis(Behaviour):
             [1, 1, 1, 1] // 
         """
 
-        # self.activity_step = -activity_rate / self.window_size
         self.activity_step = -activity_rate / self.window_size
 
         best_activity = activity_rate

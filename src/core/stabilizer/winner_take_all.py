@@ -30,9 +30,10 @@ class WinnerTakeAll(Behaviour):
 
         if n.iteration == 1:
             self.history.clear()
-        if n.iteration % 4000 == 0:
-            print("history:abc", np.sum([i[0] for i in self.history]), n.iteration)
-            print("history:omn", np.sum([i[1] for i in self.history]), n.iteration)
+            
+        # if n.iteration % 4000 == 0:
+        #     print("history:abc", np.sum([i[0] for i in self.history]), n.iteration)
+        #     print("history:omn", np.sum([i[1] for i in self.history]), n.iteration)
 
         # testing purposes
         # assert np.sum(n.fired) <= 1, "More than one neuron fired"

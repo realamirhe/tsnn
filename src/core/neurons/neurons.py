@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 
 from PymoNNto import Behaviour
@@ -51,10 +49,6 @@ class StreamableLIFNeurons(Behaviour):
         is_forced_spike = self.stream is not None
 
         if is_forced_spike:
-            # if n.iteration > len(self.stream) - 10:
-            #     print("finial step")
-            if n.iteration == len(self.stream):
-                print("resurrection is close")
             n.I = self.stream[n.iteration - 1]
 
         dv_dt = n.v_rest - n.v + n.R * n.I

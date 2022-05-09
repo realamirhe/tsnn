@@ -65,7 +65,7 @@ class Metrics(Behaviour):
             dw_plotter.plot()
             w_plotter.plot()
             dopamine_plotter.plot()
-            threshold_plotter.plot(should_reset=False)
+            threshold_plotter.plot()
             delay_plotter.plot()
             activity_plotter.plot()
             words_stimulus_plotter.plot()

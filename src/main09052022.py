@@ -19,7 +19,7 @@ reset_random_seed(1230)
 # ================= NETWORK  =================
 def main():
     network = Network()
-    stream_i_train, stream_j_train, corpus_train = get_data(1000, prob=0.6)
+    stream_i_train, stream_j_train, corpus_train = get_data(1000, prob=0.9)
     stream_i_test, stream_j_test, corpus_test = get_data(1000, prob=0.6)
 
     lif_base = {
@@ -43,7 +43,9 @@ def main():
                     corpus=corpus_train,
                     **lif_base,
                 ),
-                StreamableLIFNeurons(tag="lif:test", stream=stream_i_test, **lif_base),
+                StreamableLIFNeurons(
+                    tag="lif:test", stream=stream_i_test, corpus=corpus_test, **lif_base
+                ),
                 Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
             ]
         ),
@@ -102,7 +104,9 @@ def main():
         tag="GLUTAMATE",
         behaviour={
             # NOTE: 🚀 use max_delay to 4 and use_shared_weights=True
-            1: SynapseDelay(max_delay=3, mode="random", use_shared_weights=False),
+            1: SynapseDelay(
+                tag="delay", max_delay=3, mode="random", use_shared_weights=False
+            ),
             2: SynapsePairWiseSTDP(
                 tag="stdp",
                 tau_plus=4.0,
@@ -117,13 +121,13 @@ def main():
                     / np.average(list(map(len, words))),
                     decimals=1,
                 ),
-                min_delay_threshold=0.15,
+                min_delay_threshold=1,  # 0.15,
                 weight_decay=0,
-                stdp_factor=0.1,  # 1
+                stdp_factor=0.1,
                 noise_scale_factor=1,
                 adaptive_noise_scale=0.9,
                 delay_factor=1e1,  # episode increase
-                stimulus_scale_factor=0.1,  # 1
+                stimulus_scale_factor=1,  # 1
             ),
         },
     )
@@ -133,7 +137,7 @@ def main():
     features.switch_train()
 
     """ TRAINING """
-    epochs = 20
+    epochs = 10
     for episode in range(epochs):
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
@@ -152,7 +156,7 @@ def main():
     """ TESTING """
     # features.switch_test()
     # # Hacky integration, preventing another weight copy!
-    # network["stdp", 0].recording = False
+    # network.SynapseGroups[0].recording = False
     # network.iteration = 0
     # network["words-recorder", 0].clear_cache()
     # network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
