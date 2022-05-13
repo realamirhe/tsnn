@@ -6,7 +6,7 @@ dw_plotter = HistoryRecorder2D(title="dw", window_size=4, enabled=False)
 w_plotter = HistoryRecorder2D(title="w", window_size=25, enabled=False)
 delay_plotter = HistoryRecorder2D(title="delay", window_size=25, enabled=False)
 threshold_plotter = HistoryRecorder1D(title="threshold", enabled=False)
-activity_plotter = HistoryRecorder1D(title="activity", window_size=25, enabled=False)
+activity_plotter = HistoryRecorder1D(title="activity", window_size=25, enabled=True)
 words_stimulus_plotter = HistoryRecorder1D(
     title="words_stimulus", window_size=25, enabled=False
 )

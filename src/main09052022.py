@@ -1,6 +1,7 @@
 import numpy as np
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
+from src.core.learning.current import CurrentStimulus
 from src.core.learning.delay import SynapseDelay
 from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
@@ -56,6 +57,11 @@ def main():
         tag="words",
         size=len(words),
         behaviour={
+            2: CurrentStimulus(
+                noise_scale_factor=1,
+                adaptive_noise_scale=0.9,
+                synapse_lens_selector=["GLUTAMATE", 0],
+            ),
             3: StreamableLIFNeurons(
                 **lif_base, has_long_term_effect=True, capture_old_v=True,
             ),
@@ -107,7 +113,7 @@ def main():
             1: SynapseDelay(
                 tag="delay", max_delay=3, mode="random", use_shared_weights=False
             ),
-            2: SynapsePairWiseSTDP(
+            7: SynapsePairWiseSTDP(
                 tag="stdp",
                 tau_plus=4.0,
                 tau_minus=4.0,
@@ -124,8 +130,6 @@ def main():
                 min_delay_threshold=1,  # 0.15,
                 weight_decay=0,
                 stdp_factor=0.1,
-                noise_scale_factor=1,
-                adaptive_noise_scale=0.9,
                 delay_factor=1e1,  # episode increase
                 stimulus_scale_factor=1,  # 1
             ),
