@@ -17,7 +17,6 @@ class SynapseDelay(Behaviour):
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
         if isinstance(mode, float):
-
             assert mode != 0, "mode can not be zero"
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
         else:
@@ -82,9 +81,9 @@ class SynapseDelay(Behaviour):
         self.int_delay = np.floor(synapse.delay).astype(dtype=int)
         """ update delay mask (dst.size, src.size, max_delay) """
         self.delay_mask = np.zeros_like(self.delayed_spikes, dtype=bool)
-        for n_idx in range(self.int_delay.shape[0]):
+        for dst_idx in range(self.int_delay.shape[0]):
             """ Set neurons in delay index to True """
-            for delay, row in zip(self.int_delay[n_idx], self.delay_mask[n_idx]):
+            for delay, row in zip(self.int_delay[dst_idx], self.delay_mask[dst_idx]):
                 if delay != 0:
                     row[-delay] = True
 
@@ -96,4 +95,4 @@ class SynapseDelay(Behaviour):
         weight_share_in_time_t[weight_share_in_time_t == 0] = 1.0
         self.weight_share[:, :, 0] = weight_share_in_time_t
         """ forward remaining weight to the next time step """
-        self.weight_share[:, :, 1] = 1 - self.weight_share[:, :, 0]
+        self.weight_share[:, :, 1] = np.round(1 - self.weight_share[:, :, 0], 1)
