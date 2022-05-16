@@ -82,7 +82,7 @@ class SynapseDelay(Behaviour):
             self.delayed_spikes,
         )
 
-        synapse.weights_scale = t_spikes * self.weight_share[:, :, -1]
+        synapse.weights_scale *= t_spikes
         delay_plotter.add_image(synapse.delay, vmin=0, vmax=self.max_delay)
 
     def update_delay_float(self, synapse):
@@ -124,7 +124,7 @@ class SynapseDelay(Behaviour):
                 axis=2,
             )
         )
-        # TODO: might need to store the latest result before rolling
+        synapse.weights_scale = self.weight_share[:, :, -1]
         self.weight_share[:, :, -1] = 0
         self.weight_share = np.roll(self.weight_share, 1, axis=2)
         self.weight_share += weight_share_update
