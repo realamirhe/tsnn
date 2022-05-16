@@ -88,7 +88,7 @@ class SynapsePairWiseSTDP(Behaviour):
         dw = (
             DopamineEnvironment.get()  # from global environment
             * (dw_plus + dw_minus)  # stdp mechanism
-            * synapse.weights_scale[:, :, 0]  # weight scale based on the synapse delay
+            * synapse.weights_scale  # weight scale based on the synapse delay
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself
             * self.dt

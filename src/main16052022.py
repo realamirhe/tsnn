@@ -130,7 +130,7 @@ def main():
                 min_delay_threshold=1,  # 0.15,
                 weight_decay=0,
                 stdp_factor=0.1,
-                delay_factor=1e1,  # episode increase
+                delay_factor=1e2,  # episode increase
                 stimulus_scale_factor=1,  # 1
             ),
         },
@@ -146,6 +146,8 @@ def main():
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
         weights = network.SynapseGroups[0].W
+        delay = network.SynapseGroups[0].delay
+        print("delay:", delay[0, [0, 1, 2]], "**", delay[1, [14, 12, 13]])
         print(
             f"episode={episode} sum={np.sum(weights):.1f}, max={np.max(weights):.1f}, min={np.min(weights):.1f}"
         )

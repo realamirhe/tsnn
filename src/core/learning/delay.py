@@ -35,16 +35,32 @@ class SynapseDelay(Behaviour):
         self.delayed_spikes = np.zeros(
             (depth_size, synapse.src.size, self.max_delay), dtype=bool
         )
-        self.weight_share = np.ones((depth_size, synapse.src.size, 2), dtype=np.float32)
-        self.weight_share[:, :, -1] = 0.0
+        self.weight_share = np.zeros_like(self.delayed_spikes, dtype=np.float32)
 
         self.update_delay_float(synapse)
 
     # NOTE: delay behaviour only update internal vars corresponding to delta delay update.
     def new_iteration(self, synapse):
+        """
+            1. @[update_delay_float]
+            2. copy src.fired into the new_spike
+            3. get delayed spikes for current time step
+            4. bypas (immediate-spike) the new_spike if the synapse.delay is zero (see eq `@t_spikes` in notion)
+            5. override the synapse.src.fired (see `#note: max_tspike`)
+            6. roll the delayed spikes
+            7. insert the new_spike into the delayed spikes via existing mask
+            8. update the weight_share
+
+        @note:
+            max_tspike:   Imagine the following values in the final layer
+            abc:[a, b, c] = T // seen chars were abc + delay = [3,2,1]
+            omn:[] = T // seen chars were abc + delay = [2,2,1]
+            so we expect that the output fired character from the source layer to be [a,b,c]
+            despite the fact that they haven't been fired in the omn layer 🐳
+            As a quote "neurons activity is based on one of its own delayed activity"
+        """
         self.update_delay_float(synapse)
         new_spikes = synapse.src.fired.copy()
-        """ TBD: neurons activity is based on one of its own delayed activity """
         """ Spike immediately for neurons with zero delay """
         t_spikes = self.delayed_spikes[:, :, -1]
         # NOTE: supress where in case there is no action to be done!
@@ -53,7 +69,7 @@ class SynapseDelay(Behaviour):
             new_spikes[np.newaxis, :] * np.ones_like(t_spikes),
             t_spikes,
         )
-        synapse.src.fired = np.max(t_spikes, axis=0)
+        synapse.src.fired = np.max(t_spikes, axis=0)  # (see `#note: max_tspike`)
 
         """ Go ahead one time step (t+1), [shift right with zero] """
         self.delayed_spikes[:, :, -1] = 0
@@ -66,15 +82,17 @@ class SynapseDelay(Behaviour):
             self.delayed_spikes,
         )
 
-        """ Calculate weight share of exported spikes """
-        weight_scale = t_spikes[:, :, np.newaxis] * self.weight_share
-        if hasattr(synapse, "weight_scale"):
-            """ accumulative shift of weight_share """
-            weight_scale[:, :, 0] += synapse.weights_scale[:, :, -1]
-        synapse.weights_scale = weight_scale
+        synapse.weights_scale = t_spikes * self.weight_share[:, :, -1]
         delay_plotter.add_image(synapse.delay, vmin=0, vmax=self.max_delay)
 
     def update_delay_float(self, synapse):
+        """
+        @note:
+            weight_share_shape:   Note that the delay is clamped between [0, max_delay]
+            and we are getting floor for the int_delay (relative actual placement index) so the max delay
+            will cause a placement of `1` in the index 0 of that connection and zero for the next timestep
+            which can safely be ignored
+        """
         synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
         # print("delay", synapse.delay.flatten())
         """ int_delay: (src.size, dst.size) """
@@ -89,10 +107,24 @@ class SynapseDelay(Behaviour):
 
         # TODO: maybe move to another function make call predictable
         """ Update weight share based on float delays """
-        self.weight_share[:, :, 0] = synapse.delay % 1.0
-        """ Full weight share for integer delays """
-        weight_share_in_time_t = self.weight_share[:, :, 0]
-        weight_share_in_time_t[weight_share_in_time_t == 0] = 1.0
-        self.weight_share[:, :, 0] = weight_share_in_time_t
-        """ forward remaining weight to the next time step """
-        self.weight_share[:, :, 1] = np.round(1 - self.weight_share[:, :, 0], 1)
+        synapse_delayed_effected_share = synapse.delay[:, :, np.newaxis] % 1.0
+        synapse_delayed_effected_share[synapse_delayed_effected_share == 0] = 1.0
+        synapse_delayed_effected_share = (
+            synapse_delayed_effected_share
+            * np.ones_like(self.weight_share)
+            * self.delay_mask
+        )
+
+        """ accumulative update of weight_share """
+        weight_share_update = (
+            synapse_delayed_effected_share * self.delay_mask
+            + np.roll(
+                np.round((1 - synapse_delayed_effected_share) * self.delay_mask, 1),
+                -1,
+                axis=2,
+            )
+        )
+        # TODO: might need to store the latest result before rolling
+        self.weight_share[:, :, -1] = 0
+        self.weight_share = np.roll(self.weight_share, 1, axis=2)
+        self.weight_share += weight_share_update
