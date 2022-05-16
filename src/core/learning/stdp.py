@@ -40,9 +40,6 @@ class SynapsePairWiseSTDP(Behaviour):
             "min_delay_threshold": 0.15,
             "w_min": 0.0,
             "w_max": 10.0,
-            "stimulus_scale_factor": 1,
-            "noise_scale_factor": 1,
-            "adaptive_noise_scale": 1,
         }
 
         for attr, value in configure.items():

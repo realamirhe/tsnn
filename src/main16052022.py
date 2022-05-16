@@ -58,8 +58,9 @@ def main():
         size=len(words),
         behaviour={
             2: CurrentStimulus(
-                noise_scale_factor=1,
                 adaptive_noise_scale=0.9,
+                noise_scale_factor=1,
+                stimulus_scale_factor=1,
                 synapse_lens_selector=["GLUTAMATE", 0],
             ),
             3: StreamableLIFNeurons(
@@ -131,7 +132,6 @@ def main():
                 weight_decay=0,
                 stdp_factor=0.1,
                 delay_factor=1e2,  # episode increase
-                stimulus_scale_factor=1,  # 1
             ),
         },
     )
