@@ -1,6 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
+from src.data.plotters import words_stimulus_plotter
 
 
 class CurrentStimulus(Behaviour):
@@ -18,6 +19,7 @@ class CurrentStimulus(Behaviour):
             "noise_scale_factor": 1,
             "adaptive_noise_scale": 1,
             "synapse_lens_selector": ["All", 0],
+            "stimulus_scale_factor": 1,
         }
 
         for attr, value in configure.items():
@@ -40,5 +42,5 @@ class CurrentStimulus(Behaviour):
             * (np.random.random(next_layer_stimulus.shape) - 0.5)
             * 2
         )
-        synapse.dst.I = next_layer_stimulus * next_layer_stimulus + noise
-        # words_stimulus_plotter.add(synapse.dst.I, should_copy=True)
+        synapse.dst.I = next_layer_stimulus * self.stimulus_scale_factor + noise
+        words_stimulus_plotter.add(synapse.dst.I, should_copy=True)
