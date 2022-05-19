@@ -131,7 +131,7 @@ def main():
                 min_delay_threshold=1,  # 0.15,
                 weight_decay=0,
                 stdp_factor=0.1,
-                delay_factor=1e2,  # episode increase
+                delay_factor=1e1,  # episode increase
             ),
         },
     )

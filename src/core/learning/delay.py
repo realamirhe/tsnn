@@ -93,7 +93,8 @@ class SynapseDelay(Behaviour):
             will cause a placement of `1` in the index 0 of that connection and zero for the next timestep
             which can safely be ignored
         """
-        synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
+        # synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
+        synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
         # print("delay", synapse.delay.flatten())
         """ int_delay: (src.size, dst.size) """
         self.int_delay = np.floor(synapse.delay).astype(dtype=int)
@@ -107,7 +108,7 @@ class SynapseDelay(Behaviour):
 
         # TODO: maybe move to another function make call predictable
         """ Update weight share based on float delays """
-        synapse_delayed_effected_share = synapse.delay[:, :, np.newaxis] % 1.0
+        synapse_delayed_effected_share = 1 - synapse.delay[:, :, np.newaxis] % 1.0
         synapse_delayed_effected_share[synapse_delayed_effected_share == 0] = 1.0
         synapse_delayed_effected_share = (
             synapse_delayed_effected_share
@@ -124,7 +125,8 @@ class SynapseDelay(Behaviour):
                 axis=2,
             )
         )
-        synapse.weights_scale = self.weight_share[:, :, -1]
+
+        synapse.weights_scale = self.weight_share[:, :, -1].copy()
         self.weight_share[:, :, -1] = 0
         self.weight_share = np.roll(self.weight_share, 1, axis=2)
         self.weight_share += weight_share_update
