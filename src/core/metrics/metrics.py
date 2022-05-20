@@ -66,7 +66,7 @@ class Metrics(Behaviour):
             # dw_plotter.plot(scale=1e2)
             dw_plotter.plot()
             w_plotter.plot()
-            selected_delay_plotter.plot(legend=("a", "b", "c", "o", "m", "n"))
+            selected_delay_plotter.plot(legend=("abc omn".replace(" ", "").split("")))
             dopamine_plotter.plot()
             threshold_plotter.plot()
             delay_plotter.plot()
