@@ -22,6 +22,7 @@ class ActivityBaseHomeostasis(Behaviour):
 
         self.activity_step = -activity_rate / self.window_size
 
+        # rename activity_rate for the readability [same ref]
         best_activity = activity_rate
         best_activity += (self.window_size - activity_rate) * self.activity_step
 
@@ -29,7 +30,7 @@ class ActivityBaseHomeostasis(Behaviour):
         self.min_activity = self.get_init_attr("min_activity", best_activity, n)
 
         self.activities = n.get_neuron_vec(mode="zeros")
-        self.exhaustion = n.get_neuron_vec()
+        self.exhaustion = n.get_neuron_vec(mode="zeros")
 
     def new_iteration(self, n):
         # 15 + 85 * -15/100

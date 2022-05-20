@@ -45,7 +45,7 @@ class SynapsePairWiseSTDP(Behaviour):
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, synapse))
         # Scale W from [0,1) to [w_min, w_max)
-        synapse.W *= (self.w_max - self.w_min) + self.w_min
+        synapse.W = synapse.W * (self.w_max - self.w_min) + self.w_min
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
         if magically_hardcode_the_weights:

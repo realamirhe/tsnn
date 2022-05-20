@@ -2,7 +2,7 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.data.feature_flags import magically_hardcode_the_delays
-from src.data.plotters import delay_plotter
+from src.data.plotters import delay_plotter, selected_delay_plotter
 
 
 class SynapseDelay(Behaviour):
@@ -59,6 +59,7 @@ class SynapseDelay(Behaviour):
             despite the fact that they haven't been fired in the omn layer 🐳
             As a quote "neurons activity is based on one of its own delayed activity"
         """
+
         self.update_delay_float(synapse)
         new_spikes = synapse.src.fired.copy()
         """ Spike immediately for neurons with zero delay """
@@ -95,6 +96,11 @@ class SynapseDelay(Behaviour):
         """
         # synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
+        selected_delay_plotter.add(
+            np.concatenate(
+                (synapse.delay[0, [0, 1, 2]], synapse.delay[1, [14, 13, 12]]), axis=0
+            )
+        )
         # print("delay", synapse.delay.flatten())
         """ int_delay: (src.size, dst.size) """
         self.int_delay = np.floor(synapse.delay).astype(dtype=int)

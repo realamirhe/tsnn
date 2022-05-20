@@ -12,9 +12,9 @@ class HistoryRecorder(ABC):
     def add(self, value, should_copy=False):
         if not self.enabled:
             return
-        self.counter += 1
         if self.counter % self.window_size == 0:
             self.history.append(value if not should_copy else value.copy())
+        self.counter += 1
 
     def get(self):
         return self.history

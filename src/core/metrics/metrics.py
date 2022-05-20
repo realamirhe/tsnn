@@ -14,6 +14,7 @@ from sklearn.metrics import (
 from PymoNNto import Behaviour
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.nlp.constants import UNK
+from src.data.feature_flags import enable_cm_plot, enable_metrix_log
 from src.data.plotters import (
     dw_plotter,
     w_plotter,
@@ -22,6 +23,7 @@ from src.data.plotters import (
     delay_plotter,
     activity_plotter,
     words_stimulus_plotter,
+    selected_delay_plotter,
 )
 
 index = 0
@@ -64,11 +66,13 @@ class Metrics(Behaviour):
             # dw_plotter.plot(scale=1e2)
             dw_plotter.plot()
             w_plotter.plot()
+            selected_delay_plotter.plot(legend=("a", "b", "c", "o", "m", "n"))
             dopamine_plotter.plot()
             threshold_plotter.plot()
             delay_plotter.plot()
             activity_plotter.plot()
             words_stimulus_plotter.plot()
+
             bit_range = 1 << np.arange(self.outputs[0].size)
 
             presentation_words = self.words + [UNK]
@@ -95,23 +99,26 @@ class Metrics(Behaviour):
             frequencies_p = np.asarray(np.unique(predictions, return_counts=True)).T
             global index
             index += 1
-            print(
-                "---" * 15,
-                f"{network_phase}",
-                f"accuracy: {accuracy}",
-                f"precision: {precision}",
-                f"f1: {f1}",
-                f"recall: {recall}",
-                f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
-                "---" * 15,
-                f"[Output] frequencies::\n{frequencies}",
-                f"[Prediction] frequencies::\n{frequencies_p}",
-                sep="\n",
-                end="\n\n",
-            )
+
+            if enable_metrix_log:
+                print(
+                    "---" * 15,
+                    f"{network_phase}",
+                    f"accuracy: {accuracy}",
+                    f"precision: {precision}",
+                    f"f1: {f1}",
+                    f"recall: {recall}",
+                    f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
+                    "---" * 15,
+                    f"[Output] frequencies::\n{frequencies}",
+                    f"[Prediction] frequencies::\n{frequencies_p}",
+                    sep="\n",
+                    end="\n\n",
+                )
 
             # display_labels=['none', 'abc', 'omn', 'both']
-            cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
-            cm_display.plot()
-            plt.title(f"{network_phase} Confusion Matrix iteration={index}")
-            plt.show()
+            if enable_cm_plot:
+                cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
+                cm_display.plot()
+                plt.title(f"{network_phase} Confusion Matrix iteration={index}")
+                plt.show()
