@@ -108,8 +108,3 @@ class SynapsePairWiseSTDP(Behaviour):
                 )
                 if should_update:
                     synapse.delay[non_zero_dw] -= dw[non_zero_dw] * self.delay_factor
-
-    # NOTE: We might need the add clamping mechanism to the 'I' for the dst layer
-
-
-# NOTE: clamping is better to be part of neurons itself
