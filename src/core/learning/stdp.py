@@ -6,7 +6,7 @@ from src.data.feature_flags import (
     magically_hardcode_the_weights,
     prevent_delay_update_in_stdp,
 )
-from src.data.plotters import dw_plotter, w_plotter
+from src.data.plotters import dw_plotter, w_plotter, selected_dw_plotter
 
 
 class SynapsePairWiseSTDP(Behaviour):
@@ -92,6 +92,9 @@ class SynapsePairWiseSTDP(Behaviour):
         )
 
         dw_plotter.add_image(dw * 1e5)
+        selected_dw_plotter.add(
+            np.concatenate((dw[0, [0, 1, 2]], dw[1, [14, 13, 12]]), axis=0)
+        )
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)

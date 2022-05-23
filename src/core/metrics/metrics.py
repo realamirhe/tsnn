@@ -24,6 +24,7 @@ from src.data.plotters import (
     activity_plotter,
     words_stimulus_plotter,
     selected_delay_plotter,
+    selected_dw_plotter,
 )
 
 index = 0
@@ -67,6 +68,7 @@ class Metrics(Behaviour):
             dw_plotter.plot()
             w_plotter.plot()
             selected_delay_plotter.plot(legend="a b c o m n".split(" "))
+            selected_dw_plotter.plot(legend="a b c o m n".split(" "))
             dopamine_plotter.plot()
             threshold_plotter.plot()
             delay_plotter.plot()
