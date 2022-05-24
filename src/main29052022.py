@@ -1,20 +1,22 @@
 import numpy as np
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
-from src.core.neurons.current import CurrentStimulus
 from src.core.learning.delay import SynapseDelay
 from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
 from src.core.metrics.metrics import Metrics
+from src.core.neurons.current import CurrentStimulus
 from src.core.neurons.neurons import StreamableLIFNeurons
+from src.core.neurons.trace import TraceHistory
 from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.constants import letters, words
 from src.data.spike_generator import get_data
-from src.helpers.base import reset_random_seed, behaviour_generator
+from src.helpers.base import reset_random_seed
 from src.helpers.network import FeatureSwitch
 
 reset_random_seed(1230)
+max_delay = 3
 
 
 # ================= NETWORK  =================
@@ -36,20 +38,13 @@ def main():
         net=network,
         tag="letters",
         size=len(letters),
-        behaviour=behaviour_generator(
-            [
-                StreamableLIFNeurons(
-                    tag="lif:train",
-                    stream=stream_i_train,
-                    corpus=corpus_train,
-                    **lif_base,
-                ),
-                StreamableLIFNeurons(
-                    tag="lif:test", stream=stream_i_test, corpus=corpus_test, **lif_base
-                ),
-                Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
-            ]
-        ),
+        behaviour={
+            1: StreamableLIFNeurons(
+                tag="lif:train", stream=stream_i_train, corpus=corpus_train, **lif_base,
+            ),
+            2: TraceHistory(max_delay=max_delay, trace_decay_factor=0.9),
+            3: Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
+        },
     )
 
     words_ng = NeuronGroup(
@@ -66,7 +61,8 @@ def main():
             3: StreamableLIFNeurons(
                 **lif_base, has_long_term_effect=True, capture_old_v=True,
             ),
-            4: ActivityBaseHomeostasis(
+            4: TraceHistory(max_delay=max_delay, trace_decay_factor=0.9),
+            5: ActivityBaseHomeostasis(
                 tag="homeostasis",
                 window_size=100,
                 # NOTE: making updating_rate adaptive is not useful, because we are training model multiple time
@@ -81,26 +77,19 @@ def main():
             # distance 0 => dopamine release
             # Fire() => dopamine_decay should reset a word 1  by at last 3(max delay) time_steps
             # differences must become 0 after some time => similar
-            5: WinnerTakeAll(),
-            6: Supervisor(
-                tag="supervisor:train", dopamine_decay=1 / 3, outputs=stream_j_train
-            ),
+            6: WinnerTakeAll(),
             7: Supervisor(
-                tag="supervisor:test", dopamine_decay=1 / 3, outputs=stream_j_test
+                tag="supervisor:train",
+                dopamine_decay=1 / max_delay,
+                outputs=stream_j_train,
             ),
-            8: Metrics(
+            9: Metrics(
                 tag="metrics:train",
                 words=words,
                 outputs=stream_j_train,
                 corpus=corpus_train,
             ),
-            9: Metrics(
-                tag="metrics:test",
-                words=words,
-                outputs=stream_j_test,
-                corpus=corpus_test,
-            ),
-            10: Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
+            11: Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
         },
     )
 
@@ -112,9 +101,12 @@ def main():
         behaviour={
             # NOTE: 🚀 use max_delay to 4 and use_shared_weights=True
             1: SynapseDelay(
-                tag="delay", max_delay=3, mode="random", use_shared_weights=False
+                tag="delay",
+                max_delay=max_delay,
+                mode="random",
+                use_shared_weights=False,
             ),
-            7: SynapsePairWiseSTDP(
+            8: SynapsePairWiseSTDP(
                 tag="stdp",
                 tau_plus=4.0,
                 tau_minus=4.0,

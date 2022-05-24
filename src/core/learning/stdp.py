@@ -25,8 +25,6 @@ class SynapsePairWiseSTDP(Behaviour):
 
     def set_variables(self, synapse):
         synapse.W = synapse.get_synapse_mat("uniform")
-        synapse.src.trace = synapse.src.get_neuron_vec()
-        synapse.dst.trace = synapse.dst.get_neuron_vec()
 
         configure = {
             "tau_plus": 3.0,
@@ -63,22 +61,26 @@ class SynapsePairWiseSTDP(Behaviour):
         if not synapse.recording:
             return
 
-        synapse.src.trace += (
-            -synapse.src.trace / self.tau_plus + synapse.src.fired  # dx
+        # add new trace to existing src trace history
+        # we don't have an access to the latest src asar till herer
+        # should we accumilate it to the previous last layer trace or just replace that with the latest one
+        synapse.src.trace[:, -1] += (
+            -synapse.src.trace[:, -1] / self.tau_plus + synapse.src.fired  # dx
         ) * self.dt
 
-        synapse.dst.trace += (
-            -synapse.dst.trace / self.tau_minus + synapse.dst.fired  # dy
+        synapse.dst.trace[:, -1] += (
+            -synapse.dst.trace[:, -1] / self.tau_minus + synapse.dst.fired  # dy
         ) * self.dt
 
         dw_minus = (
             self.a_minus
             * synapse.src.fired[np.newaxis, :]
-            * synapse.dst.trace[:, np.newaxis]
+            * synapse.dst.trace[:, -1][:, np.newaxis]
         )
+
         dw_plus = (
             self.a_plus
-            * synapse.src.trace[np.newaxis, :]
+            * synapse.src.trace[:, -1][np.newaxis, :]
             * synapse.dst.fired[:, np.newaxis]
         )
 
