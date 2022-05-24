@@ -1,6 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
+from src.data.feature_flags import DEBUG_MODE
 
 
 class StreamableLIFNeurons(Behaviour):
@@ -11,12 +12,11 @@ class StreamableLIFNeurons(Behaviour):
         self.dt = self.get_init_attr("dt", 0.1, n)
         self.stream = self.get_init_attr("stream", None, n)
 
-        # TODO: REMOVABLE
-        self.corpus = self.get_init_attr("corpus", None, n)
-        if self.corpus is not None:
-            self.corpus = " ".join(self.corpus) + " "
-            n.seen_char = ""
-        # TODO: REMOVABLE
+        if DEBUG_MODE:
+            self.corpus = self.get_init_attr("corpus", None, n)
+            if self.corpus is not None:
+                self.corpus = " ".join(self.corpus) + " "
+                n.seen_char = ""
 
         self.capture_old_v = self.get_init_attr("capture_old_v", False, n)
         has_long_term_effect = self.get_init_attr("has_long_term_effect", False, n)
@@ -40,11 +40,10 @@ class StreamableLIFNeurons(Behaviour):
             n.threshold = np.ones_like(n.v) * n.threshold
 
     def new_iteration(self, n):
-        # TODO: REMOVABLE
-        if self.corpus is not None:
+
+        if DEBUG_MODE and self.corpus is not None:
             n.seen_char += self.corpus[n.iteration - 1]
             n.seen_char = n.seen_char[-4:]
-        # TODO: REMOVABLE
 
         is_forced_spike = self.stream is not None
 
@@ -52,7 +51,6 @@ class StreamableLIFNeurons(Behaviour):
             n.I = self.stream[n.iteration - 1]
 
         dv_dt = n.v_rest - n.v + n.R * n.I
-        # dv_dt += np.random.random(dv_dt.shape) * 0.1
         n.v += dv_dt * self.dt / n.tau
         if self.capture_old_v:
             n.old_v = n.v.copy()
