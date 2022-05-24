@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
-from src.core.learning.current import CurrentStimulus
+from src.core.neurons.current import CurrentStimulus
 from src.core.learning.delay import SynapseDelay
 from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
