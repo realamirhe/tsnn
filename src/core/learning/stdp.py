@@ -56,14 +56,19 @@ class SynapsePairWiseSTDP(Behaviour):
 
         assert self.a_minus < 0, "a_minus should be negative"
 
+        self.delay_domains = np.arange(synapse.src.size, dtype=int) * np.ones(
+            (synapse.dst.size, 1), dtype=int
+        )
+        self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
+
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
         if not synapse.recording:
             return
 
         # add new trace to existing src trace history
-        # we don't have an access to the latest src asar till herer
-        # should we accumilate it to the previous last layer trace or just replace that with the latest one
+        # we don't have access to the latest src asar till here
+        # should we accumulate it to the previous last layer trace or just replace that with the latest one
         synapse.src.trace[:, -1] += (
             -synapse.src.trace[:, -1] / self.tau_plus + synapse.src.fired  # dx
         ) * self.dt
@@ -74,20 +79,19 @@ class SynapsePairWiseSTDP(Behaviour):
 
         dw_minus = (
             self.a_minus
-            * synapse.src.fired[np.newaxis, :]
+            * synapse.src.fire_effect
             * synapse.dst.trace[:, -1][:, np.newaxis]
         )
 
         dw_plus = (
             self.a_plus
-            * synapse.src.trace[:, -1][np.newaxis, :]
+            * synapse.src.trace[self.delay_domains, self.delay_ranges]
             * synapse.dst.fired[:, np.newaxis]
         )
 
         dw = (
             DopamineEnvironment.get()  # from global environment
             * (dw_plus + dw_minus)  # stdp mechanism
-            * synapse.weights_scale  # weight scale based on the synapse delay
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself
             * self.dt
@@ -115,3 +119,5 @@ class SynapsePairWiseSTDP(Behaviour):
         should_update = np.min(synapse.delay[non_zero_dw]) > self.min_delay_threshold
         if should_update:
             synapse.delay[non_zero_dw] -= dw[non_zero_dw] * self.delay_factor
+            # NOTE: that np.floor doesn't use definition of "floor-towards-zero"
+            self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
