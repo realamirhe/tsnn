@@ -32,7 +32,7 @@ class CurrentStimulus(Behaviour):
         for lens in self.synapse_lens_selector:
             synapse = synapse[lens]
 
-        next_layer_stimulus = synapse.W.dot(synapse.src.fired)
+        next_layer_stimulus = np.sum(synapse.W * synapse.src.fire_effect, axis=1)
         # shrink the noise scale factor at the beginning of each episode
         if synapse.iteration == 1:
             self.noise_scale_factor *= self.adaptive_noise_scale
