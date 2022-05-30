@@ -42,7 +42,7 @@ def main():
             1: StreamableLIFNeurons(
                 tag="lif:train", stream=stream_i_train, corpus=corpus_train, **lif_base,
             ),
-            2: TraceHistory(max_delay=max_delay, trace_decay_factor=0.9),
+            2: TraceHistory(max_delay=max_delay, trace_decay_factor=1),
             3: Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
         },
     )

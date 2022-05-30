@@ -60,9 +60,7 @@ class SynapseDelay(Behaviour):
         """
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
         selected_delay_plotter.add(
-            np.concatenate(
-                (synapse.delay[0, [0, 1, 2]], synapse.delay[1, [14, 13, 12]]), axis=0
-            )
+            synapse.delay[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]]
         )
 
         new_spikes = synapse.src.fired
