@@ -61,7 +61,7 @@ def main():
             3: StreamableLIFNeurons(
                 **lif_base, has_long_term_effect=True, capture_old_v=True,
             ),
-            4: TraceHistory(max_delay=max_delay, trace_decay_factor=0.9),
+            4: TraceHistory(max_delay=max_delay),
             5: ActivityBaseHomeostasis(
                 tag="homeostasis",
                 window_size=100,

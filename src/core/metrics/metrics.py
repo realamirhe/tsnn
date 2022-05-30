@@ -72,7 +72,7 @@ class Metrics(Behaviour):
             )
             selected_dw_plotter.plot(legend="a b c o m n".split(" "))
             dopamine_plotter.plot()
-            threshold_plotter.plot()
+            threshold_plotter.plot(legend="abc omn".split(" "), should_reset=False)
             delay_plotter.plot()
             activity_plotter.plot()
             words_stimulus_plotter.plot()

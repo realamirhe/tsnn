@@ -14,7 +14,9 @@ selected_delay_plotter = HistoryRecorder1D(
 selected_dw_plotter = HistoryRecorder1D(
     title="selected - dw", window_size=25, enabled=False
 )
-threshold_plotter = HistoryRecorder1D(title="threshold", enabled=False)
+threshold_plotter = HistoryRecorder1D(
+    title="threshold", vertical_history_separator=True, enabled=True
+)
 activity_plotter = HistoryRecorder1D(title="activity", window_size=25, enabled=False)
 words_stimulus_plotter = HistoryRecorder1D(
     title="words_stimulus", window_size=25, enabled=False
