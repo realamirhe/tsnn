@@ -18,6 +18,11 @@ class HistoryRecorder1D(HistoryRecorder):
         if legend is not None:
             plt.gca().legend(legend)
 
+        if not should_reset and self.history_steps is not None:
+            self.history_steps.append(len(self.history))
+            for x in self.history_steps:
+                plt.axvline(x, color="b", linestyle="--", alpha=0.3)
+
         plt.show()
 
         if should_reset:

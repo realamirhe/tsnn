@@ -2,12 +2,15 @@ from abc import ABC, abstractmethod
 
 
 class HistoryRecorder(ABC):
-    def __init__(self, title, window_size=1, enabled=True):
+    def __init__(
+        self, title, window_size=1, vertical_history_separator=False, enabled=True
+    ):
         self.history = []
         self.title = title
         self.window_size = window_size
         self.counter = 0
         self.enabled = enabled
+        self.history_steps = [] if vertical_history_separator else None
 
     def add(self, value, should_copy=False):
         if not self.enabled:
