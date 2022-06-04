@@ -1,5 +1,3 @@
-# from collections import namedtuple
-
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import (
@@ -64,7 +62,6 @@ class Metrics(Behaviour):
         dopamine_plotter.add(DopamineEnvironment.get())
 
         if n.iteration == len(self.outputs):
-            # dw_plotter.plot(scale=1e2)
             dw_plotter.plot()
             w_plotter.plot()
             selected_delay_plotter.plot(
@@ -87,8 +84,6 @@ class Metrics(Behaviour):
                 if not np.isnan(o).any()
             ]
 
-            # Track = namedtuple("Track", "out pred")
-            # tracer = list(map(lambda pack: Track(*pack), zip(outputs, predictions),))
             network_phase = "Testing" if "test" in self.tags[0] else "Training"
             accuracy = accuracy_score(outputs, predictions)
 
@@ -120,7 +115,6 @@ class Metrics(Behaviour):
                     end="\n\n",
                 )
 
-            # display_labels=['none', 'abc', 'omn', 'both']
             if enable_cm_plot:
                 cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
                 cm_display.plot()
