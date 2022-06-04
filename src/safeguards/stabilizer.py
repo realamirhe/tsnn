@@ -11,9 +11,10 @@ from src.safeguards.libs.OverrideNeurons import OverrideNeurons, OVERRIDABLE_SUF
 
 
 def make_custom_network(size, overridable_params=None):
-    assert np.all(
+    if not np.all(
         [key.endswith(OVERRIDABLE_SUFFIX) for key in overridable_params.keys()]
-    ), f"All key must ends with {OVERRIDABLE_SUFFIX}"
+    ):
+        raise AssertionError(f"All key must ends with {OVERRIDABLE_SUFFIX}")
 
     network = Network()
     NeuronGroup(

@@ -7,7 +7,8 @@ class DopamineEnvironment:
 
     @classmethod
     def set(cls, new_dopamine):
-        assert -1 <= new_dopamine <= 1
+        if not -1 <= new_dopamine <= 1:
+            raise AssertionError
         cls.dopamine = new_dopamine
 
     @classmethod

@@ -54,7 +54,8 @@ class SynapsePairWiseSTDP(Behaviour):
 
         self.weight_decay = 1 - self.weight_decay
 
-        assert self.a_minus < 0, "a_minus should be negative"
+        if self.a_minus >= 0:
+            raise AssertionError("a_minus should be negative")
 
         self.delay_domains = np.arange(synapse.src.size, dtype=int) * np.ones(
             (synapse.dst.size, 1), dtype=int

@@ -17,7 +17,8 @@ class SynapseDelay(Behaviour):
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
         if isinstance(mode, float):
-            assert mode != 0, "mode can not be zero"
+            if mode == 0:
+                raise AssertionError("mode can not be zero")
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
         else:
             synapse.delay = (

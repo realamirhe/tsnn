@@ -31,14 +31,18 @@ class SpikeRate(Behaviour):
                     # neuron firing rate is below the threshold, update neuron morphology to spike sooner
                     # decrease the threshold
                     # NOTE: it will only work for two neurons now consider this action
-                    assert len(n.threshold) == 2
-                    assert 0 < diff <= 10
+                    if len(n.threshold) != 2:
+                        raise AssertionError
+                    if not 0 < diff <= 10:
+                        raise AssertionError
                     n.threshold[neuron_index - 1] -= diff
                 elif diff < 0:
                     # neuron firing rate is above the threshold, update neuron morphology to spike with lower frequency
                     # increase the threshold
-                    assert len(n.threshold) == 2
-                    assert -10 <= diff < 0
+                    if len(n.threshold) != 2:
+                        raise AssertionError
+                    if not -10 <= diff < 0:
+                        raise AssertionError
                     n.threshold[neuron_index - 1] -= diff
                 else:
                     #  diff == 0, no action is required
