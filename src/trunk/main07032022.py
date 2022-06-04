@@ -298,15 +298,6 @@ class SynapseSTDPET(Behaviour):
                 synapse.delay[non_zero_dw] -= dw[non_zero_dw]
 
         synapse.dst.I = synapse.W.dot(synapse.src.fired)
-        # TODO: hardcoded value must be replaced!
-        # put clipping mechanism on the neuron itself
-        # synapse.dst.I = np.clip(synapse.dst.I, 0, 15)
-
-        del dx
-        del dy
-        del dw_minus
-        del dw_plus
-        del dw
 
 
 class SynapseDelay(Behaviour):

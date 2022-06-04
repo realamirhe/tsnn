@@ -301,12 +301,6 @@ class SynapseSTDPET(Behaviour):
             if should_update:
                 synapse.delay[non_zero_dw] -= dw[non_zero_dw]
 
-        del dx
-        del dy
-        del dw_minus
-        del dw_plus
-        del dw
-
 
 class SynapseDelay(Behaviour):
     __slots__ = [
