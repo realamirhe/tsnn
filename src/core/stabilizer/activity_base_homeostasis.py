@@ -12,7 +12,7 @@ class ActivityBaseHomeostasis(Behaviour):
         self.updating_rate = self.get_init_attr("updating_rate", 0.001, n)
         # TODO: unsafe code need more time to digest the possibilities
         activity_rate = self.get_init_attr("activity_rate", 5, n)
-        if isinstance(activity_rate, float) or isinstance(activity_rate, int):
+        if isinstance(activity_rate, (float, int)):
             activity_rate = n.get_neuron_vec(mode="ones") * activity_rate
         """
             It must at an average spikes for at least one time in w/A range
