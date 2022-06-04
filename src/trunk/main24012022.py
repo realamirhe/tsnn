@@ -180,7 +180,6 @@ class Delay(Behaviour):
 
         self.filling_mask = np.zeros_like(self.delayed_spikes, dtype=bool)
         self.indexing_mask = np.zeros_like(self.delayed_spikes, dtype=bool)
-        # n.size == self.delay_filling_mask.shape[0] == self.delayed_spikes.shape[0]
         for neuron_idx in range(n.size):
             delay = self.delayed_spikes[neuron_idx, 0]
             # in a case of zero delay we want all history starts from index 1
@@ -250,8 +249,6 @@ def main():
                 LIFMechanism(v_rest=-65, v_reset=-80, v_threshold=-10),
                 ForceSpikeOnLetters(),
                 LIFInput(),
-                # Delay(max_delay=3, delay_method="random"),
-                # Delay(max_delay=3, delay_method="zero"),
                 Delay(max_delay=3, delay_method="constant", delay_constant=3),
                 STDP(stdp_factor=0.00015),
                 Normalization(norm_factor=10),
@@ -268,7 +265,6 @@ def main():
             [
                 LIFMechanism(v_rest=-65, v_reset=-80, v_threshold=-30),
                 LIFInput(),
-                # Homeostasis(target_voltage=0.05, max_ta=-30, min_ta=-60, eta_ip=0.001),
                 STDP(stdp_factor=0.00015),
                 Normalization(norm_factor=10),
                 DopamineProvider(dopamine_scale=0.001),
@@ -285,7 +281,6 @@ def main():
 
     plt.plot(network["letters-recorder", 0]["n.v", 0])
     plt.title("letters neurons voltage trace")
-    # plt.axhline(-30, color='black')
     plt.xlabel("iterations")
     plt.ylabel("voltage")
     plt.show()

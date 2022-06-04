@@ -141,12 +141,9 @@ def main():
             f"episode={episode} sum={np.sum(weights):.1f}, max={np.max(weights):.1f}, min={np.min(weights):.1f}"
         )
         print(f"{episode + 1}::long term threshold", network.NeuronGroups[1].threshold)
-        # print("final delay", network.SynapseGroups[0].delay)
         network["letters-recorder", 0].reset()
         network["words-recorder", 0].reset()
         network["metrics:train", 0].reset()
-        # raster_plots(network)
-        # voltage_plots(network)
 
     """ TESTING """
     features.switch_test()

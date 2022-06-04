@@ -106,19 +106,12 @@ class Supervisor(Behaviour):
             return
 
         """ Cosine similarity """
-        # distance = 1 - spatial.distance.cosine(
-        #     re_range_binary(output), re_range_binary(prediction)
-        # )
-        # DopamineEnvironment.set(distance or -1)  # replace 0.o effect with -1
 
         """ mismatch similarity """
         distance = [-1.0, 1.0][int((output == prediction).all())]
         DopamineEnvironment.set(distance)
 
-        # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
-        # distance = jaccard(output, prediction)
-        # DopamineEnvironment.set(-distance or 1.0)
 
 
 class LIFNeuron(Behaviour):
@@ -136,10 +129,6 @@ class LIFNeuron(Behaviour):
         n.R = self.get_init_attr("R", 1, n)
         n.tau = self.get_init_attr("tau", 3, n)
 
-        # self.set_init_attrs_as_variables(n)
-        # n.v = n.get_neuron_vec() * n.v_rest
-        # n.spikes = n.get_neuron_vec() > n.threshold
-        # n.dt = 1.0
 
     def new_iteration(self, n):
         n.I = 90 * self.stream[n.iteration - 1]
@@ -186,8 +175,6 @@ class SynapsePairWiseSTDP(Behaviour):
             synapse.dst.I = synapse.W.dot(synapse.src.fired)
             return
 
-        # dx = -synapse.src.trace / self.tau_plus + synapse.src.fired
-        # dy = -synapse.dst.trace / self.tau_minus + synapse.dst.fired
         synapse.src.trace += (
             -synapse.src.trace / self.tau_plus + synapse.src.fired
         ) * self.dt
@@ -303,7 +290,6 @@ class SynapseDelay(Behaviour):
     def update_delay_float(self, synapse):
         # TODO: synapse.delay = synapse.delay - dw; # {=> in somewhere else}
         synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
-        # print("delay", synapse.delay.flatten())
         """ int_delay: (src.size, dst.size) """
         self.int_delay = np.ceil(synapse.delay).astype(dtype=int)
         """ update delay mask (dst.size, src.size, max_delay) """
@@ -384,7 +370,6 @@ class Metrics(Behaviour):
                 end="\n\n",
             )
 
-            # display_labels=['none', 'abc', 'omn', 'both']
             cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
             cm_display.plot()
             plt.title(f"{network_phase} Confusion Matrix")

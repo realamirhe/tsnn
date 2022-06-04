@@ -136,8 +136,6 @@ def main():
         network["letters-recorder", 0].reset()
         network["words-recorder", 0].reset()
         network["metrics:train", 0].reset()
-        # raster_plots(network, ngs=["letters"])
-        # raster_plots(network, ngs=["words"])
 
     network.activate_mechanisms(test_mechanising)
     network.deactivate_mechanisms(train_mechanising)

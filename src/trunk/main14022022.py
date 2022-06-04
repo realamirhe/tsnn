@@ -6,10 +6,6 @@ from scipy import spatial
 
 from PymoNNto import Behaviour, SynapseGroup, Recorder, NeuronGroup, Network
 
-# from PymoNNto.Exploration.Network_UI import get_default_UI_modules, Network_UI
-# from src.libs import behaviours
-# from src.libs.data_generator_numpy import stream_generator_for_character
-# from src.libs.environment import set_dopamine, get_dopamine
 from src.trunk.libs.helper import (
     behaviour_generator,
     voltage_visualizer,
@@ -106,10 +102,8 @@ class Supervisor(Behaviour):
     def new_iteration(self, neurons):
         output = self.outputs[neurons.iteration - 1]
         prediction = neurons.fired
-        # print(stream_i[neurons.iteration - 1], output, prediction)
 
         print(f"iteration={neurons.iteration} {output=} {prediction=}")
-        # assert np.shape(output) == np.shape(prediction)
 
         cosine_similarity = 1 - spatial.distance.cosine(
             re_range_binary(output), re_range_binary(prediction)
@@ -181,7 +175,6 @@ class SynapseSTDP(Behaviour):
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself (todo)!!
         )
-        # print("dw => ", dw)
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
@@ -281,7 +274,6 @@ class SynapseDelay(Behaviour):
     def update_delay_float(self, synapse):
         # TODO: synapse.delay = synapse.delay - dw; # {=> in somewhere else}
         synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
-        # print("synapse.delay => ", synapse.delay)
         """ int_delay: (src.size, dst.size) """
         self.int_delay = np.ceil(synapse.delay).astype(dtype=int)
         """ update delay mask (dst.size, src.size, max_delay) """

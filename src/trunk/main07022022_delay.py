@@ -5,10 +5,6 @@ import numpy as np
 
 from PymoNNto import Behaviour, SynapseGroup, Recorder, NeuronGroup, Network
 
-# from PymoNNto.Exploration.Network_UI import get_default_UI_modules, Network_UI
-# from src.libs import behaviours
-# from src.libs.data_generator_numpy import stream_generator_for_character
-# from src.libs.environment import set_dopamine, get_dopamine
 from src.trunk.libs.helper import (
     behaviour_generator,
     voltage_visualizer,
@@ -51,26 +47,6 @@ print(streams)
 # decrease weights
 # streams = [("a", 0), ("a", 0), ("abc", 0), ("bc", 1), ("ac", 1), ("abc", 0)]
 
-# ("as", False),
-# ("ac", False),
-# ("abc", False),
-# ("sb", False),
-# ("b", False),
-# ("ba", False),
-# ("ca", False),
-# ("abc", False),
-# ("s", False),
-# ("s", False),
-# ("as", False),
-# ("s", False),
-# ("sa", False),
-# ("sa", False),
-# ("ss", False),
-# ("sa", False),
-# ("abcs", False),
-# ("abcs", False),
-# ("abcs", False),
-# ("abcs", False),
 
 stream_j = [spike_stream_j(j) for _, j in streams]
 stream_i = [spike_stream_i(i) for i, _ in streams]
@@ -88,16 +64,10 @@ class DopamineEnvironment:
     @classmethod
     def set(cls, new_dopamine):
         assert -1 <= new_dopamine <= 1
-        # print("dopamine => ", "increase" if cls.dopamine < new_dopamine else "decrease")
         cls.dopamine = new_dopamine
 
     @classmethod
     def decay(cls, decay_factor):
-        # print(
-        #     "decay dopamine 🔻",
-        #     decay_factor,
-        #     f"from {cls.dopamine} => {cls.dopamine * decay_factor}",
-        # )
         cls.dopamine *= decay_factor
 
 
@@ -118,7 +88,6 @@ class Supervisor(Behaviour):
     def new_iteration(self, neurons):
         output = self.outputs[neurons.iteration - 1]
         prediction = neurons.fired
-        # print(stream_i[neurons.iteration - 1], output, prediction)
 
         if prediction[0]:
             if output[0]:
@@ -190,7 +159,6 @@ class SynapseSTDP(Behaviour):
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself (todo)!!
         )
-        # print("dw => ", dw)
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
@@ -256,7 +224,6 @@ class SynapseDelay(Behaviour):
     def update_delay_float(self, synapse):
         # TODO: synapse.delay = synapse.delay - dw; # {=> in somewhere else}
         synapse.delay = np.clip(np.round(synapse.delay, 1), 0, self.max_delay)
-        # print("synapse.delay => ", synapse.delay)
         """ int_delay: (src.size, dst.size) """
         self.int_delay = np.ceil(synapse.delay).astype(dtype=int)
         """ update delay mask (dst.size, src.size, max_delay) """

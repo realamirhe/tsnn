@@ -82,16 +82,10 @@ class DopamineEnvironment:
     @classmethod
     def set(cls, new_dopamine):
         assert -1 <= new_dopamine <= 1
-        # print("dopamine => ", "increase" if cls.dopamine < new_dopamine else "decrease")
         cls.dopamine = new_dopamine
 
     @classmethod
     def decay(cls, decay_factor):
-        # print(
-        #     "decay dopamine 🔻",
-        #     decay_factor,
-        #     f"from {cls.dopamine} => {cls.dopamine * decay_factor}",
-        # )
         cls.dopamine *= decay_factor
 
 
@@ -180,7 +174,6 @@ class SynapseSTDP(Behaviour):
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself (todo)!!
         )
-        # print("dw => ", dw)
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
@@ -453,14 +446,3 @@ if __name__ == "__main__":
     main()
 
 
-# Recorder(tag="letters-recorder:test", variables=["n.v", "n.fired"]),
-# network.deactivate_mechanisms(['STDP'])
-# network.activate_mechanisms(['letter-recorder:test'])
-# network['letters', 0].behaviour[2].clear_recorder()
-# network['letters', 0].behaviour[2].__init__(tag="letters-recorder", variables=["n.v", "n.fired"])
-# network['letters', 0].v = network['letters', 0].v_rest + network['letters', 0].get_neuron_vec("uniform") * 10
-# network['letters', 0].fired = network['letters', 0].get_neuron_vec("zeros") > 0
-# network['letters', 0].behaviour[2].reset()
-# network['letters', 0].recording = True
-# network['letters', 0].behaviour[2].variables = {"n.v": [], "n.fired": []}
-# network['letters', 0].behaviour[2] = Recorder(tag="letters-recorder", variables=["n.v", "n.fired"])

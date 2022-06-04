@@ -80,16 +80,10 @@ class DopamineEnvironment:
     @classmethod
     def set(cls, new_dopamine):
         assert -1 <= new_dopamine <= 1
-        # print("dopamine => ", "increase" if cls.dopamine < new_dopamine else "decrease")
         cls.dopamine = new_dopamine
 
     @classmethod
     def decay(cls, decay_factor):
-        # print(
-        #     "decay dopamine 🔻",
-        #     decay_factor,
-        #     f"from {cls.dopamine} => {cls.dopamine * decay_factor}",
-        # )
         cls.dopamine *= decay_factor
 
 
@@ -110,16 +104,9 @@ class Supervisor(Behaviour):
             return
 
         """ Cosine similarity """
-        # distance = 1 - spatial.distance.cosine(
-        #     re_range_binary(output), re_range_binary(prediction)
-        # )
-        # DopamineEnvironment.set(distance or -1)  # replace 0.o effect with -1
 
         """ mismatch similarity """
-        # distance = [-1.0, 1.0][int((output == prediction).all())]
-        # DopamineEnvironment.set(distance)
 
-        # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
         distance = jaccard(output, prediction)
         DopamineEnvironment.set(-distance or 1.0)
@@ -143,7 +130,6 @@ class LIFNeuron(Behaviour):
         if self.stream is not None:
             n.fired[:] = self.stream[n.iteration - 1]
             n.fired |= (n.v > n.v_threshold).astype(dtype=bool)
-            # n.v[(n.v > n.v_threshold).astype(dtype=bool)] = n.v_reset
         else:
             n.fired = n.v > n.v_threshold
 
@@ -496,7 +482,6 @@ class Metrics(Behaviour):
                 end="\n\n",
             )
 
-            # display_labels=['none', 'abc', 'omn', 'both']
             cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
             cm_display.plot()
             plt.title(f"{network_phase} Confusion Matrix")
@@ -526,8 +511,6 @@ class Fire(Behaviour):
     def new_iteration(self, n):
         if self.stream is not None:
             n.fired[:] = self.stream[n.iteration - 1]
-            # n.fired |= (n.v > n.v_threshold).astype(dtype=bool)
-            # n.v[(n.v > n.v_threshold).astype(dtype=bool)] = n.v_reset
         else:
             n.fired = n.v > n.v_threshold
 
@@ -587,14 +570,6 @@ def main():
         behaviour=behaviour_generator(
             [
                 SynapseDelay(max_delay=4, mode=3.0, use_shared_weights=False),
-                # SynapseSTDP(
-                #     tag="stdp",
-                #     weight_decay=0.1,
-                #     stdp_factor=0.0015,
-                #     delay_epsilon=0.15,
-                #     w_min=-10.0,
-                #     w_max=10.0,
-                # ),
                 SynapseSTDPET(
                     tag="stdp",
                     tau_plus=3.0,

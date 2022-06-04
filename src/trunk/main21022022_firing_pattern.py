@@ -78,16 +78,10 @@ class DopamineEnvironment:
     @classmethod
     def set(cls, new_dopamine):
         assert -1 <= new_dopamine <= 1
-        # print("dopamine => ", "increase" if cls.dopamine < new_dopamine else "decrease")
         cls.dopamine = new_dopamine
 
     @classmethod
     def decay(cls, decay_factor):
-        # print(
-        #     "decay dopamine 🔻",
-        #     decay_factor,
-        #     f"from {cls.dopamine} => {cls.dopamine * decay_factor}",
-        # )
         cls.dopamine *= decay_factor
 
 
@@ -108,19 +102,12 @@ class Supervisor(Behaviour):
             return
 
         """ Cosine similarity """
-        # distance = 1 - spatial.distance.cosine(
-        #     re_range_binary(output), re_range_binary(prediction)
-        # )
-        # DopamineEnvironment.set(distance or -1)  # replace 0.o effect with -1
 
         """ mismatch similarity """
         distance = [-1.0, 1.0][int((output == prediction).all())]
         DopamineEnvironment.set(distance)
 
-        # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
-        # distance = jaccard(output, prediction)
-        # DopamineEnvironment.set(-distance or 1.0)
 
 
 class LIFNeuron(Behaviour):
@@ -515,7 +502,6 @@ class Metrics(Behaviour):
                 end="\n\n",
             )
 
-            # display_labels=['none', 'abc', 'omn', 'both']
             cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
             cm_display.plot()
             plt.title(f"{network_phase} Confusion Matrix")
@@ -572,14 +558,6 @@ def main():
         behaviour=behaviour_generator(
             [
                 SynapseDelay(max_delay=3, use_shared_weights=True),
-                # SynapseSTDP(
-                #     tag="stdp",
-                #     weight_decay=0.1,
-                #     stdp_factor=0.0015,
-                #     delay_epsilon=0.15,
-                #     w_min=-10.0,
-                #     w_max=10.0,
-                # ),
                 SynapseSTDPET(
                     tag="stdp",
                     tau_plus=3.0,

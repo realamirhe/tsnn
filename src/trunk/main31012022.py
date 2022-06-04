@@ -171,14 +171,10 @@ def main():
         behaviour=behaviour_generator(
             [
                 LIFMechanism(v_rest=-65, v_reset=-65, v_threshold=-52),
-                # behaviours.ForceSpikeOnLetters(),
                 CharacterSpikeStream(target_char="i", stream_size=ITERATIONS),
                 behaviours.LIFInput(),
-                # Delay(max_delay=3, delay_method="random"),
-                # Delay(max_delay=3, delay_method="zero"),
                 Delay(max_delay=5, delay_method="constant", delay_constant=3),
                 behaviours.STDP(stdp_factor=0.00015),
-                # behaviours.Normalization(norm_factor=10),
                 Recorder(tag="IRecorder", variables=["n.v", "n.fired"]),
             ]
         ),
@@ -193,13 +189,8 @@ def main():
                 LIFMechanism(
                     v_rest=-65, v_reset=-80, v_threshold=-52, with_firing_rate=True
                 ),
-                # CharacterSpikeStream(target_char="j", stream_size=ITERATIONS),
                 behaviours.LIFInput(),
                 behaviours.STDP(stdp_factor=0.00015),
-                # behaviours.Homeostasis(
-                #     target_voltage=0.05, max_ta=-30, min_ta=-60, eta_ip=0.0001
-                # ),
-                # behaviours.Normalization(norm_factor=10),
                 DopamineProvider(dopamine_scale=0.001),
                 Recorder(tag="JRecorder", variables=["n.v", "n.fired"]),
             ]
@@ -207,7 +198,6 @@ def main():
     )
 
     SynapseGroup(net=network, src=neuron_i, dst=neuron_j, tag="GLUTAMATE")
-    # SynapseGroup(net=network, src=neuron_j, dst=neuron_j, tag="GABA")
 
     network.initialize()
     network.simulate_iterations(ITERATIONS, measure_block_time=True)

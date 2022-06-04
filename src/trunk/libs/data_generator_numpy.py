@@ -63,7 +63,6 @@ def get_word_label(word) -> List[int]:
     word_labels = [-1] * (len(word) + 1)
     if word in WORDS:
         word_labels[-2] = WORDS.index(word)  # -2 is position of last seen character
-    # print(word, word_labels)
     return tuple(word_labels)
 
 
@@ -90,11 +89,6 @@ input_data = [char2spike(char) for char in CORPUS]
 letters_input_data = np.stack(input_data).astype(bool)
 
 if __name__ == "__main__":
-    # print(CORPUS)
-    # print(len(CORPUS))
-    # print(labels.shape)
-    # print(labels.dtype)
-    # print(labels)
     print(stream_generator_for_character(target_char="i", noise=0.1, size=5))
     # [0, 0, 1] w
     # [0 , 0, w]

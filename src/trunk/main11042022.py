@@ -124,13 +124,6 @@ def main():
         network["metrics:train", 0].reset()
 
     """ TESTING """
-    # features.switch_test()
-    # # Hacky integration, preventing another weight copy!
-    # network["stdp", 0].recording = False
-    # network.iteration = 0
-    # network["words-recorder", 0].clear_cache()
-    # network["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
-    # network.simulate_iterations(len(stream_i_test))
 
 
 if __name__ == "__main__":

@@ -75,16 +75,10 @@ class DopamineEnvironment:
     @classmethod
     def set(cls, new_dopamine):
         assert -1 <= new_dopamine <= 1
-        # print("dopamine => ", "increase" if cls.dopamine < new_dopamine else "decrease")
         cls.dopamine = new_dopamine
 
     @classmethod
     def decay(cls, decay_factor):
-        # print(
-        #     "decay dopamine 🔻",
-        #     decay_factor,
-        #     f"from {cls.dopamine} => {cls.dopamine * decay_factor}",
-        # )
         cls.dopamine *= decay_factor
 
 
@@ -98,16 +92,12 @@ class Supervisor(Behaviour):
         output = self.outputs[neurons.iteration - 1]
         prediction = neurons.fired
 
-        # print(stream_i[neurons.iteration - 1], output, prediction)
 
-        # print(f"iteration={neurons.iteration} {output=} {prediction=}")
-        # assert np.shape(output) == np.shape(prediction)
 
         cosine_similarity = 1 - spatial.distance.cosine(
             re_range_binary(output), re_range_binary(prediction)
         )
 
-        # print(f"{cosine_similarity=}")
         DopamineEnvironment.set(cosine_similarity)
         DopamineEnvironment.decay(self.dopamine_decay)
 
@@ -188,7 +178,6 @@ class SynapseSTDP(Behaviour):
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself (todo)!!
         )
-        # print("dw => ", dw)
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
@@ -433,4 +422,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # pass

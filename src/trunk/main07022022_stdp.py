@@ -2,10 +2,6 @@ import numpy as np
 
 from PymoNNto import Behaviour, SynapseGroup, Recorder, NeuronGroup, Network
 
-# from PymoNNto.Exploration.Network_UI import get_default_UI_modules, Network_UI
-# from src.libs import behaviours
-# from src.libs.data_generator_numpy import stream_generator_for_character
-# from src.libs.environment import set_dopamine, get_dopamine
 from src.trunk.libs.helper import (
     behaviour_generator,
     voltage_visualizer,
@@ -36,26 +32,6 @@ language = "abcs"
 # decrease weights
 streams = [("a", 0), ("a", 0), ("abc", 0), ("bc", 1), ("ac", 1), ("abc", 0)]
 
-# ("as", False),
-# ("ac", False),
-# ("abc", False),
-# ("sb", False),
-# ("b", False),
-# ("ba", False),
-# ("ca", False),
-# ("abc", False),
-# ("s", False),
-# ("s", False),
-# ("as", False),
-# ("s", False),
-# ("sa", False),
-# ("sa", False),
-# ("ss", False),
-# ("sa", False),
-# ("abcs", False),
-# ("abcs", False),
-# ("abcs", False),
-# ("abcs", False),
 
 stream_j = [spike_stream_j(j) for _, j in streams]
 stream_i = [spike_stream_i(i) for i, _ in streams]
@@ -116,24 +92,7 @@ class Supervisor(Behaviour):
             else:
                 DopamineEnvironment.decay(self.dopamine_decay)
 
-        # if (prediction == output).all():
-        #     if np.sum(prediction) > 0:
-        #         print("📒 release dopamine")
-        #         DopamineEnvironment.set(1.0)
-        #     else:
-        #         print("📒 dopamine decay")
-        #         DopamineEnvironment.decay(self.dopamine_decay)
-        # else:
-        #     print("📒 punished prediction because of unwanted spikes")
-        #     DopamineEnvironment.set(-1.0)
 
-        # spike = punishment
-        # if np.sum(neurons.fired[output]) == np.sum(output):
-        #     DopamineEnvironment.set([1.0, -1.0][prediction])
-        # elif output == 1:  # spike = reward
-        #     DopamineEnvironment.set([-1.0, 1.0][prediction])
-        # else:
-        #     DopamineEnvironment.decay(self.dopamine_decay)
 
 
 class LIFNeuron(Behaviour):
@@ -212,7 +171,6 @@ def main():
         behaviour=behaviour_generator(
             [
                 LIFNeuron(v_rest=-65, v_reset=-65, v_threshold=-52, stream=stream_i),
-                # STDP(stdp_factor=0.015),
                 Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
             ]
         ),

@@ -15,8 +15,6 @@ from bindsnet.network.topology import Connection
 # RESET RANDOM SEED
 seed = 42
 torch.manual_seed(seed)
-# random.seed(seed)
-# np.random.seed(seed)
 
 # codes
 letters = string.ascii_lowercase
@@ -74,7 +72,6 @@ def char2spike(char):
         # return -torch.ones_like(spike) # NOTE: because of converting to byte it will be 255
 
     spike[letters.index(char)] = 1  # TODO: change weight connections
-    # spike[letters.index(char)] = 50  # no effect on spikes but make voltage decay more smooth
     return spike
 
 
@@ -175,19 +172,8 @@ if __name__ == "__main__":
     # plot_voltages(voltages, plot_type="color")
     plt.show()
 
-    # print(input_data.shape)
-    # print(input_data)
-    # target_layer = LIFNodes(n=1000, traces=True)
 
-    # print(tokens)
-    # print(sentences_token)
-    # print(list(set(tokens)))
-    # print(char2spike('a'))
-    # print(char2spike('b'))
-    # print(char2spike('c'))
-    # print(char2spike('z'))
 
-    # print(words_letter_weights(words))
 
 """
 Must be checked

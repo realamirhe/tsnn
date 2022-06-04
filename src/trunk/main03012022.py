@@ -154,7 +154,6 @@ def simulated_accumulated_delay(
 
 if __name__ == "__main__":
     corpus = gen_corpus(size=30, prob=0.5, no_common_chars=False)
-    # corpus = ["abc"] * 5
     corpus = " ".join(corpus)
 
     # simulation time in dt count version
@@ -168,8 +167,6 @@ if __name__ == "__main__":
     letters_layer = Input(
         n=len(letters),
         traces=True,
-        # tc_trace=20.0, # spike trace decay time.
-        # trace_scale=0.001, # scaling factor
         sum_input=True,
     )
     network.add_layer(layer=letters_layer, name="letters")
@@ -192,23 +189,18 @@ if __name__ == "__main__":
         theta_plus=0.05,  # 🌟 should be increased?
         tc_theta_decay=1e7,
         lbound=-70,  # Prevent so much decay when no input is received
-        # traces_additive=True,
-        # sum_input=True
     )
 network.add_layer(layer=words_layer, name="words")
 words_monitor = Monitor(words_layer, state_vars=("s", "v"), time=time)
 network.add_monitor(monitor=words_monitor, name="words")
 
-# connections [feed-forward]
 forward_connection = Connection(
     # forward_connection = DelayedConnection(
     source=letters_layer,
     target=words_layer,
     # learning
     update_rule=PostPre,
-    # weight_decay=10,
     norm=1.0,
-    # w=0.05 + 0.1 * torch.randn(letters_layer.n, words_layer.n),
     w=words_letter_weights(words),
     # delayed arguments
     # dmax=len(letters),

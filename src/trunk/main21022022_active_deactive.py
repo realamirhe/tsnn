@@ -79,16 +79,10 @@ class DopamineEnvironment:
     @classmethod
     def set(cls, new_dopamine):
         assert -1 <= new_dopamine <= 1
-        # print("dopamine => ", "increase" if cls.dopamine < new_dopamine else "decrease")
         cls.dopamine = new_dopamine
 
     @classmethod
     def decay(cls, decay_factor):
-        # print(
-        #     "decay dopamine 🔻",
-        #     decay_factor,
-        #     f"from {cls.dopamine} => {cls.dopamine * decay_factor}",
-        # )
         cls.dopamine *= decay_factor
 
 
@@ -108,21 +102,8 @@ class Supervisor(Behaviour):
             return
 
         """ Cosine similarity """
-        # DopamineEnvironment.set(
-        #     (
-        #         1
-        #         - spatial.distance.cosine(
-        #             re_range_binary(output), re_range_binary(prediction)
-        #         )
-        #     )
-        #     or -1
-        # ) # replace 0.o effect with -1
 
         """ mismatch similarity """
-        # if (output == prediction).all():
-        #     DopamineEnvironment.set(1.0)
-        # else:
-        #     DopamineEnvironment.set(-1.0)
 
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
         distance = jaccard(output, prediction)
@@ -381,10 +362,6 @@ class Metrics(Behaviour):
             cm_sum = cm.sum(axis=1)
 
             (unique, counts) = np.unique(outputs, return_counts=True)
-            # frequencies = np.asarray((unique, counts), dtype=object).T
-            # frequencies[:, 0] = np.array(presentation_words)[
-            #     frequencies[:, 0].astype(int)
-            # ]
 
             print(
                 "---" * 15,
@@ -395,15 +372,12 @@ class Metrics(Behaviour):
                 f"recall: {recall}",
                 f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
                 "---" * 15,
-                # f"frequencies {frequencies}",
                 sep="\n",
                 end="\n\n",
             )
 
             cm_display = ConfusionMatrixDisplay(
-                # confusion_matrix=cm, display_labels=presentation_words
                 confusion_matrix=cm,
-                # display_labels=np.unique(predictions),
             )
             cm_display.plot()
             plt.title(f"{network_phase} Confusion Matrix")
@@ -511,19 +485,3 @@ if __name__ == "__main__":
     # Testing purposes
     # network.recording_off()
 
-    # raster_plots(network, ngs=["letters", "words"])
-    # network["letters", 0].behaviour[1].stream = stream_i  # LIFNeuron
-    #
-    # network["letters", 0].recording = True
-    # network["letters", 0]["letters-recorder", 0].clear_cache()
-    # network["letters", 0]["letters-recorder", 0].variables = {"n.v": [], "n.fired": []}
-    #
-    # network["words", 0].behaviour[2].outputs = stream_j  # supervisor
-    # network["words", 0].behaviour[3].outputs = stream_j  # metrics
-    # network["words", 0].behaviour[3].reset()  # metrics
-    #
-    # network["words", 0].recording = True
-    # network["words", 0]["words-recorder", 0].clear_cache()
-    # network["words", 0]["words-recorder", 0].variables = {"n.v": [], "n.fired": []}
-    #
-    # network.simulate_iterations(len(stream_i), measure_block_time=False)
