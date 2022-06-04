@@ -8,14 +8,13 @@ l2_non_spike_i => buffer = [0, 1, 0] => 0 out put of neuron
 l3_non_spike_i => buffer = [0, 0, 1] => 0 out put of neuron
 l4_spike_i => buffer = [1, 0, 0] => 1 out put of neuron
 """
-
+# fmt: off
 import random
 import string
 from typing import List, Union
 
 import matplotlib.pyplot as plt
 import torch
-
 from bindsnet.analysis.plotting import plot_spikes, plot_voltages
 from bindsnet.learning import PostPre
 from bindsnet.network import Network
@@ -171,7 +170,7 @@ if __name__ == "__main__":
         traces=True,
         # tc_trace=20.0, # spike trace decay time.
         # trace_scale=0.001, # scaling factor
-        sum_input=True
+        sum_input=True,
     )
     network.add_layer(layer=letters_layer, name="letters")
     letters_monitor = Monitor(letters_layer, state_vars=("s",), time=time)
@@ -253,3 +252,5 @@ Report:
 base config: 
 - no learning seems to be happen with 200, 3000 corpus size
 """
+
+# fmt: on
