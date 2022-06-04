@@ -115,8 +115,10 @@ class SynapsePairWiseSTDP(Behaviour):
         if not non_zero_dw.any():
             return
 
-        should_update = np.min(synapse.delay[non_zero_dw]) > self.min_delay_threshold
-        if should_update:
-            synapse.delay[non_zero_dw] -= dw[non_zero_dw] * self.delay_factor
+        should_update = np.min(np.where(non_zero_dw, synapse.delay, np.inf), axis=1)
+        should_update[should_update == np.inf] = 0
+        should_update = should_update > self.min_delay_threshold
+        if should_update.any():
+            synapse.delay -= dw * should_update[:, np.newaxis] * self.delay_factor
             # NOTE: that np.floor doesn't use definition of "floor-towards-zero"
             self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
