@@ -112,8 +112,8 @@ class Homeostasis(Behaviour):
 
 class Normalization(Behaviour):
     """
-        This module can be used to normalize all synapses connected to a NeuronGroup of a given type.
-        https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Normalization/
+    This module can be used to normalize all synapses connected to a NeuronGroup of a given type.
+    https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Normalization/
     """
 
     def set_variables(self, neurons):
@@ -138,7 +138,7 @@ class Normalization(Behaviour):
 
 class Delay(Behaviour):
     """
-        This module can be used to delay the input of a NeuronGroup.
+    This module can be used to delay the input of a NeuronGroup.
     """
 
     def set_variables(self, n):
@@ -198,7 +198,7 @@ class DopamineProvider(Behaviour):
         self.dopamine_scale = self.get_init_attr("dopamine_scale", 0.5, n)
 
     def new_iteration(self, n):
-        """ Evaluate function for dopamine control """
+        """Evaluate function for dopamine control"""
         step_label = labels[n.iteration - 1]
         print(f"labels:{step_label} firing:{n.fired}")
         if step_label == -1:

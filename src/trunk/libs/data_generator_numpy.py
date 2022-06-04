@@ -27,7 +27,7 @@ def gen_corpus(
     words_to_use: List[str] = WORDS,
 ) -> List[str]:
     """
-        Generate a corpus of random words. contains learnable words within
+    Generate a corpus of random words. contains learnable words within
     """
     corpus: List[str] = []
     valid_letters = letters_to_use
@@ -48,9 +48,9 @@ def gen_corpus(
 
 def char2spike(char: str) -> np.array:
     """
-        Convert a character to a spike vector
-        :param char: character to convert
-        :return: spike vector
+    Convert a character to a spike vector
+    :param char: character to convert
+    :return: spike vector
     """
     spike = np.zeros(len(LETTERS))
     if char != " ":

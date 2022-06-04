@@ -391,7 +391,7 @@ class SynapseDelay(Behaviour):
 
         weight_scale = t_spikes[:, :, np.newaxis] * self.weight_share
         if hasattr(synapse, "weight_scale"):
-            """ accumulative shift of weight_share """
+            """accumulative shift of weight_share"""
             weight_scale[:, :, 0] += synapse.weights_scale[:, :, -1]
         synapse.weights_scale = weight_scale
 
@@ -403,7 +403,7 @@ class SynapseDelay(Behaviour):
         """ update delay mask (dst.size, src.size, max_delay) """
         self.delay_mask = np.zeros_like(self.delayed_spikes, dtype=bool)
         for n_idx in range(self.int_delay.shape[0]):
-            """ Set neurons in delay index to True """
+            """Set neurons in delay index to True"""
             for delay, row in zip(self.int_delay[n_idx], self.delay_mask[n_idx]):
                 if delay != 0:
                     row[-delay] = True

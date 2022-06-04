@@ -51,5 +51,6 @@ def raster_plots(network, ngs=["letters", "words"]):
 def voltage_plots(network, ngs=["letters", "words"]):
     for ng in ngs:
         voltage_visualizer(
-            network[f"{ng}-recorder", 0]["n.v", 0], title=f"{ng} spike activity",
+            network[f"{ng}-recorder", 0]["n.v", 0],
+            title=f"{ng} spike activity",
         )

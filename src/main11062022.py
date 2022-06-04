@@ -40,7 +40,10 @@ def main():
         size=len(letters),
         behaviour={
             1: StreamableLIFNeurons(
-                tag="lif:train", stream=stream_i_train, corpus=corpus_train, **lif_base,
+                tag="lif:train",
+                stream=stream_i_train,
+                corpus=corpus_train,
+                **lif_base,
             ),
             2: TraceHistory(max_delay=max_delay, trace_decay_factor=1),
             3: Recorder(tag="letters-recorder", variables=["n.v", "n.fired"]),
@@ -59,7 +62,9 @@ def main():
                 synapse_lens_selector=["GLUTAMATE", 0],
             ),
             3: StreamableLIFNeurons(
-                **lif_base, has_long_term_effect=True, capture_old_v=True,
+                **lif_base,
+                has_long_term_effect=True,
+                capture_old_v=True,
             ),
             4: TraceHistory(max_delay=max_delay),
             5: ActivityBaseHomeostasis(

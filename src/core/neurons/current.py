@@ -6,10 +6,10 @@ from src.data.plotters import words_stimulus_plotter
 
 class CurrentStimulus(Behaviour):
     """
-        - a -> decay
-        - ab -> decay
-        - abc -> decay
-        - abc_ -> validation_mechanism (reward|punishment)
+    - a -> decay
+    - ab -> decay
+    - abc -> decay
+    - abc_ -> validation_mechanism (reward|punishment)
     """
 
     __slots__ = ["dopamine_decay", "outputs"]

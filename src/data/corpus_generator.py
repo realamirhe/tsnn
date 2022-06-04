@@ -14,7 +14,7 @@ def gen_corpus(
     words_to_use: List[str] = words,
 ) -> List[str]:
     """
-        Generate a corpus of random words. contains learnable words within
+    Generate a corpus of random words. contains learnable words within
     """
     corpus: List[str] = []
     valid_letters = letters_to_use

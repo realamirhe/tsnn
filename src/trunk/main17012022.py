@@ -85,8 +85,8 @@ class STDP(Behaviour):
 
 class Homeostasis(Behaviour):
     """
-        This mechanism can be used to stabilize the neurons activity.
-        https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Homeostasis/
+    This mechanism can be used to stabilize the neurons activity.
+    https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Homeostasis/
     """
 
     def set_variables(self, n):
@@ -116,8 +116,8 @@ class Homeostasis(Behaviour):
 
 class Normalization(Behaviour):
     """
-        This module can be used to normalize all synapses connected to a NeuronGroup of a given type.
-        https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Normalization/
+    This module can be used to normalize all synapses connected to a NeuronGroup of a given type.
+    https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Normalization/
     """
 
     def set_variables(self, neurons):
@@ -142,7 +142,7 @@ class Normalization(Behaviour):
 
 class Delay(Behaviour):
     """
-        This module can be used to delay the input of a NeuronGroup.
+    This module can be used to delay the input of a NeuronGroup.
     """
 
     def set_variables(self, n):

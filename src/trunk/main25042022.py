@@ -55,7 +55,9 @@ def main():
         size=len(words),
         behaviour={
             3: StreamableLIFNeurons(
-                **lif_base, has_long_term_effect=True, capture_old_v=True,
+                **lif_base,
+                has_long_term_effect=True,
+                capture_old_v=True,
             ),
             4: ActivityBaseHomeostasis(
                 tag="homeostasis",

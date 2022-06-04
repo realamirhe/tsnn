@@ -39,10 +39,10 @@ class LIFMechanism(Behaviour):
 # NOTE: Test has not been managed yet
 class Delay(Behaviour):
     """
-        This module can be behavioursused to delay the input of a NeuronGroup.
-        delayed_spikes => [t+max_delay, ...,t+2, t+1, t]
-        delays => [0..max_delay]xN
-        delays_float => float32 delays
+    This module can be behavioursused to delay the input of a NeuronGroup.
+    delayed_spikes => [t+max_delay, ...,t+2, t+1, t]
+    delays => [0..max_delay]xN
+    delays_float => float32 delays
     """
 
     def set_variables(self, n):
@@ -140,7 +140,7 @@ class DopamineProvider(Behaviour):
         self.dopamine_scale = self.get_init_attr("dopamine_scale", 0.9, n)
 
     def new_iteration(self, n):
-        """ Evaluate function for dopamine control """
+        """Evaluate function for dopamine control"""
         if "j" not in n.tags:
             return
 

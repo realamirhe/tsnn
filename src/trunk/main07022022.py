@@ -45,10 +45,10 @@ class LIFMechanism(Behaviour):
 # NOTE: Test has not been managed yet
 class Delay(Behaviour):
     """
-        This module can be behaviours used to delay the input of a NeuronGroup.
-        delayed_spikes => [t+max_delay, ...,t+2, t+1, t]
-        delays => [0..max_delay]xN
-        delays_float => float32 delays
+    This module can be behaviours used to delay the input of a NeuronGroup.
+    delayed_spikes => [t+max_delay, ...,t+2, t+1, t]
+    delays => [0..max_delay]xN
+    delays_float => float32 delays
     """
 
     def set_variables(self, n):
@@ -172,7 +172,7 @@ class DopamineProvider(Behaviour):
         self.dopamine_scale = self.get_init_attr("dopamine_scale", 0.9, n)
 
     def new_iteration(self, n):
-        """ Evaluate function for dopamine control """
+        """Evaluate function for dopamine control"""
         if "j" not in n.tags:
             return
 
@@ -224,7 +224,8 @@ class STDP(Behaviour):
             if (s.delays_float > 0.5).all():
                 learnable_mask = np.min(dw, axis=0) < 0.5
                 s.delays_float = np.round(
-                    s.delays_float - np.sum(np.where(learnable_mask, dw, 0), axis=1), 1,
+                    s.delays_float - np.sum(np.where(learnable_mask, dw, 0), axis=1),
+                    1,
                 )
 
                 # TODO: Update synapse only where pre-synaptic mimium update of a one post-synapse neuron is gt some threshold
