@@ -46,9 +46,7 @@ def get_data(size, prob=0.7, fixed_size=3):
             word_spike[word_index] = 1
         stream_j.append(word_spike)  # spike when see hole word!
 
-        # for _ in sparse_gap:
-        #     stream_j.append(empty_spike)  # space between words
-
     if len(stream_i) != len(stream_j):
         raise AssertionError("stream length mismatch")
+
     return stream_i, stream_j, corpus

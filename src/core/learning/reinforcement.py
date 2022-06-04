@@ -46,8 +46,6 @@ class Supervisor(Behaviour):
         """ mismatch similarity """
         distance = [-1.0, 1.0][int((output == prediction).all())]
         DopamineEnvironment.set(distance)
-        # [F, F]
-        # [T, F]
 
         # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
