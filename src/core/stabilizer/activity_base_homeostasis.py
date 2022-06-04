@@ -33,10 +33,8 @@ class ActivityBaseHomeostasis(Behaviour):
         self.exhaustion = n.get_neuron_vec(mode="zeros")
 
     def new_iteration(self, n):
-        # 15 + 85 * -15/100
         self.activities += np.where(n.fired, 1, self.activity_step)
         activity_plotter.add(self.activities, should_copy=True)
-        # self.exhaustion *= 0.9
         if (n.iteration % self.window_size) == 0:
             greater = ((self.activities > self.max_activity) * -1).astype(def_dtype)
             smaller = ((self.activities < self.min_activity) * 1).astype(def_dtype)
