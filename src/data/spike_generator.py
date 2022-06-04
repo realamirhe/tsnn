@@ -49,5 +49,6 @@ def get_data(size, prob=0.7, fixed_size=3):
         # for _ in sparse_gap:
         #     stream_j.append(empty_spike)  # space between words
 
-    assert len(stream_i) == len(stream_j), "stream length mismatch"
+    if len(stream_i) != len(stream_j):
+        raise AssertionError("stream length mismatch")
     return stream_i, stream_j, corpus
