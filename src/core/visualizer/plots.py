@@ -11,7 +11,7 @@ def voltage_visualizer(voltage, title="voltage_trace", labels=("iteration", "vol
 
 
 def spike_visualizer(spikes, title="spike_trace", labels=("iteration", "spike")):
-    if not len(spikes):
+    if not spikes:
         return
     plt.imshow(spikes, cmap="gray", aspect="auto")
     plt.title(title)
