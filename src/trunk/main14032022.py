@@ -129,7 +129,6 @@ class LIFNeuron(Behaviour):
         n.R = self.get_init_attr("R", 1, n)
         n.tau = self.get_init_attr("tau", 3, n)
 
-
     def new_iteration(self, n):
         n.I = 90 * self.stream[n.iteration - 1]
         dv_dt = (n.v_rest - n.v) + n.R * n.I

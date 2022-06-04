@@ -93,8 +93,6 @@ class Supervisor(Behaviour):
                 DopamineEnvironment.decay(self.dopamine_decay)
 
 
-
-
 class LIFNeuron(Behaviour):
     def set_variables(self, neurons):
         self.add_tag("LIFNeuron")

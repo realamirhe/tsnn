@@ -399,7 +399,6 @@ class Metrics(Behaviour):
             plt.show()
 
 
-
 # ================= NETWORK  =================
 def main():
     network = Network()

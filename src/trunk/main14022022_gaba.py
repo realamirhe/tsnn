@@ -414,7 +414,6 @@ class Metrics(Behaviour):
             plt.show()
 
 
-
 # ================= NETWORK  =================
 def main():
     network = Network()
@@ -512,5 +511,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

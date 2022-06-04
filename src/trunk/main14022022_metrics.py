@@ -92,8 +92,6 @@ class Supervisor(Behaviour):
         output = self.outputs[neurons.iteration - 1]
         prediction = neurons.fired
 
-
-
         cosine_similarity = 1 - spatial.distance.cosine(
             re_range_binary(output), re_range_binary(prediction)
         )
