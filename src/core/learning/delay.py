@@ -21,9 +21,14 @@ class SynapseDelay(Behaviour):
                 raise AssertionError("mode can not be zero")
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
         else:
-            synapse.delay = (
-                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
+            # Delay are initialized very high at our nervous system, so we start with the N(max, max/2)
+            deviation = self.max_delay / 2
+            synapse.delay = np.random.normal(
+                loc=self.max_delay,
+                scale=deviation,
+                size=(depth_size, synapse.src.size),
             )
+            synapse.delay = np.clip(synapse.delay, deviation, self.max_delay)
 
         if magically_hardcode_the_delays:
             synapse.delay = (
