@@ -16,10 +16,9 @@ class SynapseDelay(Behaviour):
         mode = self.get_init_attr("mode", "random", synapse)
         depth_size = 1 if use_shared_weights else synapse.dst.size
 
-        # assert self.max_delay >= 1, 'Max delay must be greater than 1'
-
         if isinstance(mode, float):
-            assert mode != 0, "mode can not be zero"
+            if mode == 0:
+                raise AssertionError("mode can not be zero")
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
         else:
             synapse.delay = (

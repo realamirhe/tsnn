@@ -11,7 +11,7 @@ def voltage_visualizer(voltage, title="voltage_trace", labels=("iteration", "vol
 
 
 def spike_visualizer(spikes, title="spike_trace", labels=("iteration", "spike")):
-    if not len(spikes):
+    if not spikes:
         return
     plt.imshow(spikes, cmap="gray", aspect="auto")
     plt.title(title)
@@ -20,7 +20,7 @@ def spike_visualizer(spikes, title="spike_trace", labels=("iteration", "spike"))
     plt.show()
 
 
-def raster_plots(network, ngs=["letters", "words"]):
+def raster_plots(network, ngs=("letters", "words")):
     for ng in ngs:
         spike_visualizer(
             network[f"{ng}-recorder", 0]["n.fired", 0, "np"].transpose(),
@@ -28,7 +28,7 @@ def raster_plots(network, ngs=["letters", "words"]):
         )
 
 
-def voltage_plots(network, ngs=["letters", "words"]):
+def voltage_plots(network, ngs=("letters", "words")):
     for ng in ngs:
         voltage_visualizer(
             network[f"{ng}-recorder", 0]["n.v", 0],

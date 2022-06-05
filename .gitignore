@@ -11,6 +11,9 @@ cmake-build-*/
 # IntelliJ
 out/
 
+# history
+/src/trunk/
+
 # mpeltonen/sbt-idea plugin
 .idea_modules/
 
