@@ -2,6 +2,7 @@ import random
 
 import numpy as np
 
+from src import configs
 from src.data.constants import letters, words
 from src.data.corpus_generator import gen_corpus
 
@@ -25,7 +26,7 @@ def get_data(size, prob=0.7, fixed_size=3):
     )
     # 7 with reward in reward window
     random.shuffle(corpus)
-    sparse_gap = " " * 1  # TODO: When we should use more sparsity gap
+    sparse_gap = " " * configs.GAP
     joined_corpus = sparse_gap.join(corpus) + sparse_gap
     stream_i = [spike_stream_i(char) for char in joined_corpus]
     stream_j = []
@@ -46,7 +47,17 @@ def get_data(size, prob=0.7, fixed_size=3):
             word_spike[word_index] = 1
         stream_j.append(word_spike)  # spike when see hole word!
 
+        for _ in range(configs.GAP - 1):
+            stream_j.append(empty_spike)
+
     if len(stream_i) != len(stream_j):
         raise AssertionError("stream length mismatch")
 
-    return stream_i, stream_j, corpus
+    return stream_i, stream_j, joined_corpus
+
+
+if __name__ == "__main__":
+    stream_i, stream_j, corpus = get_data(size=100, prob=0.7, fixed_size=3)
+    print(stream_i)
+    print(stream_j)
+    print(corpus)

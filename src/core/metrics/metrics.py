@@ -38,12 +38,9 @@ class Metrics(Behaviour):
             "recording_phase": None,
             "outputs": [],
             "words": [],
-            "corpus": [],
         }
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, n))
-
-        self.corpus = " ".join(self.corpus) + " "
 
         self._old_recording = n.recording
         self._predictions = []

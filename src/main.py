@@ -22,7 +22,7 @@ max_delay = 3
 # ================= NETWORK  =================
 def main():
     network = Network()
-    stream_i_train, stream_j_train, corpus_train = get_data(1000, prob=0.9)
+    stream_i_train, stream_j_train, joined_corpus = get_data(1000, prob=0.9)
     stream_i_test, stream_j_test, corpus_test = get_data(1000, prob=0.6)
 
     lif_base = {
@@ -42,7 +42,7 @@ def main():
             1: StreamableLIFNeurons(
                 tag="lif:train",
                 stream=stream_i_train,
-                corpus=corpus_train,
+                joined_corpus=joined_corpus,
                 **lif_base,
             ),
             2: TraceHistory(max_delay=max_delay, trace_decay_factor=1),
@@ -92,7 +92,6 @@ def main():
                 tag="metrics:train",
                 words=words,
                 outputs=stream_j_train,
-                corpus=corpus_train,
             ),
             11: Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
         },

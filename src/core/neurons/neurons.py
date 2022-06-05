@@ -1,6 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
+from src import configs
 from src.data.feature_flags import DEBUG_MODE
 
 
@@ -13,9 +14,8 @@ class StreamableLIFNeurons(Behaviour):
         self.stream = self.get_init_attr("stream", None, n)
 
         if DEBUG_MODE:
-            self.corpus = self.get_init_attr("corpus", None, n)
-            if self.corpus is not None:
-                self.corpus = " ".join(self.corpus) + " "
+            self.joined_corpus = self.get_init_attr("joined_corpus", None, n)
+            if self.joined_corpus is not None:
                 n.seen_char = ""
 
         self.capture_old_v = self.get_init_attr("capture_old_v", False, n)
@@ -41,9 +41,9 @@ class StreamableLIFNeurons(Behaviour):
 
     def new_iteration(self, n):
 
-        if DEBUG_MODE and self.corpus is not None:
-            n.seen_char += self.corpus[n.iteration - 1]
-            n.seen_char = n.seen_char[-4:]
+        if DEBUG_MODE and self.joined_corpus is not None:
+            n.seen_char += self.joined_corpus[n.iteration - 1]
+            n.seen_char = n.seen_char[-configs.GAP :]
 
         is_forced_spike = self.stream is not None
 

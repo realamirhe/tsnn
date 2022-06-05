@@ -7,5 +7,3 @@ words = [
     "abc",
     "omn",
 ]
-
-print(words)
