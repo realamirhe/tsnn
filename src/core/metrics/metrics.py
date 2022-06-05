@@ -10,10 +10,9 @@ from sklearn.metrics import (
 )
 
 from PymoNNto import Behaviour
-from src.core.environement.dopamine import DopamineEnvironment
-from src.core.nlp.constants import UNK
-from src.data.feature_flags import enable_cm_plot, enable_metrix_log
-from src.data.plotters import (
+from src.configs import feature_flags, corpus_config
+from src.configs.corpus_config import UNK
+from src.configs.plotters import (
     dw_plotter,
     w_plotter,
     dopamine_plotter,
@@ -23,9 +22,10 @@ from src.data.plotters import (
     words_stimulus_plotter,
     selected_delay_plotter,
     selected_dw_plotter,
+    selected_weights_plotter,
 )
-
-index = 0
+from src.core.environement.dopamine import DopamineEnvironment
+from src.helpers.network import EpisodeTracker
 
 
 class Metrics(Behaviour):
@@ -38,12 +38,9 @@ class Metrics(Behaviour):
             "recording_phase": None,
             "outputs": [],
             "words": [],
-            "corpus": [],
         }
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, n))
-
-        self.corpus = " ".join(self.corpus) + " "
 
         self._old_recording = n.recording
         self._predictions = []
@@ -64,14 +61,14 @@ class Metrics(Behaviour):
         if n.iteration == len(self.outputs):
             dw_plotter.plot()
             w_plotter.plot()
-            selected_delay_plotter.plot(
-                legend="a b c o m n".split(" "), should_reset=False
-            )
-            selected_dw_plotter.plot(legend="a b c o m n".split(" "))
+            legend = list("".join(corpus_config.words))
+            selected_delay_plotter.plot(legend=legend, should_reset=False)
+            selected_weights_plotter.plot(legend=legend, should_reset=False)
+            selected_dw_plotter.plot(legend=legend, should_reset=False)
             dopamine_plotter.plot()
-            threshold_plotter.plot(legend="abc omn".split(" "), should_reset=False)
+            threshold_plotter.plot(legend=corpus_config.words, should_reset=False)
             delay_plotter.plot()
-            activity_plotter.plot()
+            activity_plotter.plot(should_reset=False)
             words_stimulus_plotter.plot()
 
             bit_range = 1 << np.arange(self.outputs[0].size)
@@ -96,10 +93,8 @@ class Metrics(Behaviour):
 
             frequencies = np.asarray(np.unique(outputs, return_counts=True)).T
             frequencies_p = np.asarray(np.unique(predictions, return_counts=True)).T
-            global index
-            index += 1
 
-            if enable_metrix_log:
+            if feature_flags.enable_metric_logs:
                 print(
                     "---" * 15,
                     f"{network_phase}",
@@ -115,8 +110,11 @@ class Metrics(Behaviour):
                     end="\n\n",
                 )
 
-            if enable_cm_plot:
+            if feature_flags.enable_cm_plot:
                 cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
                 cm_display.plot()
-                plt.title(f"{network_phase} Confusion Matrix iteration={index}")
+                plt.title(
+                    f"{network_phase} Confusion Matrix "
+                    f"(episode={EpisodeTracker.episode()})"
+                )
                 plt.show()

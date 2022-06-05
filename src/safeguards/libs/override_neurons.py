@@ -9,7 +9,7 @@ class OverrideNeurons(Behaviour):
         self.overridable = [
             attr for attr in dir(n) if attr.endswith(OVERRIDABLE_SUFFIX)
         ]
-        if not len(self.overridable):
+        if not self.overridable:
             raise AssertionError("No overridable attributes found")
 
     def new_iteration(self, n):

@@ -1,16 +1,16 @@
 class DopamineEnvironment:
-    dopamine = 0.0
+    _dopamine = 0.0
 
     @classmethod
     def get(cls):
-        return cls.dopamine
+        return cls._dopamine
 
     @classmethod
     def set(cls, new_dopamine):
         if not -1 <= new_dopamine <= 1:
             raise AssertionError
-        cls.dopamine = new_dopamine
+        cls._dopamine = new_dopamine
 
     @classmethod
     def decay(cls, decay_factor):
-        cls.dopamine *= decay_factor
+        cls._dopamine *= decay_factor

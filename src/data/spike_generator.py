@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 
-from src.data.constants import letters, words
+from src.configs.corpus_config import letters, words, words_spacing_gap
 from src.data.corpus_generator import gen_corpus
 
 
@@ -13,19 +13,20 @@ def spike_stream_i(char):
     return spikes
 
 
-def get_data(size, prob=0.7, fixed_size=3):
+def get_data(size, prob=0.7, words_size=3):
     corpus = gen_corpus(
         size,
         prob,
-        min_length=fixed_size,
-        max_length=fixed_size,
+        min_length=words_size,
+        max_length=words_size,
         no_common_chars=False,
         letters_to_use=letters,
         words_to_use=words,
     )
-    # 7 with reward in reward window
+
     random.shuffle(corpus)
-    sparse_gap = " " * 1  # TODO: When we should use more sparsity gap
+
+    sparse_gap = " " * words_spacing_gap
     joined_corpus = sparse_gap.join(corpus) + sparse_gap
     stream_i = [spike_stream_i(char) for char in joined_corpus]
     stream_j = []
@@ -34,19 +35,18 @@ def get_data(size, prob=0.7, fixed_size=3):
     empty_spike[:] = np.NaN
 
     # NOTE: 🚀 it seems that shifting all spikes won't chane the flow, but has more neuro-scientific effects
-    # uncomment line 39 and comment line 49-50 to see the difference
     for word in corpus:
-        for _ in word:
-            # for _ in range(len(word) - 1):
-            stream_j.append(empty_spike)
+        stream_j.extend((empty_spike for _ in word))
 
+        # First space character after hole word
         word_spike = np.zeros(len(words), dtype=bool)
         if word in words:
-            word_index = words.index(word)
-            word_spike[word_index] = 1
-        stream_j.append(word_spike)  # spike when see hole word!
+            word_spike[words.index(word)] = 1
+        stream_j.append(word_spike)
+
+        stream_j.extend((empty_spike for _ in range(words_spacing_gap - 1)))
 
     if len(stream_i) != len(stream_j):
         raise AssertionError("stream length mismatch")
 
-    return stream_i, stream_j, corpus
+    return stream_i, stream_j, joined_corpus

@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from src.core.visualizer.history_recorder import HistoryRecorder
+from src.helpers.network import EpisodeTracker
 
 
 class HistoryRecorder1D(HistoryRecorder):
@@ -9,7 +10,7 @@ class HistoryRecorder1D(HistoryRecorder):
         if not self.enabled:
             return
 
-        plt.title(self.title)
+        plt.title(self.title + f" (eps={EpisodeTracker.episode()})")
         if scale is not None:
             plt.plot(np.array(self.history) * scale)
         else:

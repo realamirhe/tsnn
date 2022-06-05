@@ -1,8 +1,8 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.data.feature_flags import magically_hardcode_the_delays
-from src.data.plotters import selected_delay_plotter
+from src.configs import feature_flags, corpus_config
+from src.configs.plotters import selected_delay_plotter
 
 
 class SynapseDelay(Behaviour):
@@ -21,16 +21,21 @@ class SynapseDelay(Behaviour):
                 raise AssertionError("mode can not be zero")
             synapse.delay = np.ones((depth_size, synapse.src.size)) * mode
         else:
-            synapse.delay = (
-                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
+            # Delay are initialized very high at our nervous system,
+            # Hence we start with the N(max, max/2)
+            deviation = self.max_delay / 2
+            synapse.delay = np.random.normal(
+                loc=self.max_delay,
+                scale=deviation,
+                size=(depth_size, synapse.src.size),
             )
+            synapse.delay = np.clip(synapse.delay, deviation, self.max_delay)
 
-        if magically_hardcode_the_delays:
-            synapse.delay = (
-                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
-            )
-            synapse.delay[0, [0, 1, 2]] = [3, 2, 1]
-            synapse.delay[1, [14, 12, 13]] = [3, 2, 1]
+        if feature_flags.enable_magic_delays:
+            for i, word in enumerate(corpus_config.words):
+                synapse.delay[
+                    i, [corpus_config.letters.index(char) for char in word]
+                ] = np.arange(self.max_delay, 0, -self.max_delay / len(word))
 
         """ History or neuron memory for storing the spiked activity over times """
         self.weight_effect = np.zeros(
@@ -57,7 +62,9 @@ class SynapseDelay(Behaviour):
             activate next layer input. So keeping the `t` layer of all output neurons will give us `weight_scale`
             and the maximum of weight scale in the output axis will give us the firing pattern
         """
+        synapse.delay += 1e-5
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
+        # TODO: need generality
         selected_delay_plotter.add(
             synapse.delay[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]]
         )

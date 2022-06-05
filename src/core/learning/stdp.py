@@ -1,12 +1,14 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.core.environement.dopamine import DopamineEnvironment
-from src.data.feature_flags import (
-    magically_hardcode_the_weights,
-    prevent_delay_update_in_stdp,
+from src.configs import feature_flags, corpus_config
+from src.configs.plotters import (
+    dw_plotter,
+    w_plotter,
+    selected_dw_plotter,
+    selected_weights_plotter,
 )
-from src.data.plotters import dw_plotter, w_plotter, selected_dw_plotter
+from src.core.environement.dopamine import DopamineEnvironment
 
 
 class SynapsePairWiseSTDP(Behaviour):
@@ -46,11 +48,11 @@ class SynapsePairWiseSTDP(Behaviour):
         synapse.W = synapse.W * (self.w_max - self.w_min) + self.w_min
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
-        if magically_hardcode_the_weights:
-            synapse.W[0, [0, 1, 2]] = self.w_max
-            synapse.W[1, [0, 1, 2]] = self.w_min
-            synapse.W[1, [12, 13, 14]] = self.w_max
-            synapse.W[0, [12, 13, 14]] = self.w_min
+        if feature_flags.enable_magic_weights:
+            for i, word in enumerate(corpus_config.words):
+                indices = [corpus_config.letters.index(char) for char in word]
+                synapse.W[:, indices] = self.w_min
+                synapse.W[i, indices] = self.w_max
 
         self.weight_decay = 1 - self.weight_decay
 
@@ -102,9 +104,12 @@ class SynapsePairWiseSTDP(Behaviour):
         selected_dw_plotter.add(dw[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]])
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
+        selected_weights_plotter.add(
+            synapse.W[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]]
+        )
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
         """ stop condition for delay learning """
-        if prevent_delay_update_in_stdp:
+        if not feature_flags.enable_delay_update_in_stdp:
             return
 
         use_shared_delay = dw.shape != synapse.delay.shape
@@ -115,8 +120,10 @@ class SynapsePairWiseSTDP(Behaviour):
         if not non_zero_dw.any():
             return
 
-        should_update = np.min(synapse.delay[non_zero_dw]) > self.min_delay_threshold
-        if should_update:
-            synapse.delay[non_zero_dw] -= dw[non_zero_dw] * self.delay_factor
+        should_update = np.min(np.where(non_zero_dw, synapse.delay, np.inf), axis=1)
+        should_update[should_update == np.inf] = 0
+        should_update = should_update > self.min_delay_threshold
+        if should_update.any():
+            synapse.delay -= dw * should_update[:, np.newaxis] * self.delay_factor
             # NOTE: that np.floor doesn't use definition of "floor-towards-zero"
             self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
