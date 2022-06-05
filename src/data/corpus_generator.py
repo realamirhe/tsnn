@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from src.data.constants import letters, words
+from src import configs
 
 
 def gen_corpus(
@@ -10,8 +10,8 @@ def gen_corpus(
     min_length=1,
     max_length=10,
     no_common_chars: bool = False,
-    letters_to_use: str = letters,
-    words_to_use: List[str] = words,
+    letters_to_use: str = configs.corpus.letters,
+    words_to_use: List[str] = configs.corpus.words,
 ) -> List[str]:
     """
     Generate a corpus of random words. contains learnable words within

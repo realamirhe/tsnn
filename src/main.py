@@ -1,6 +1,7 @@
 import numpy as np
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
+from src import configs
 from src.core.learning.delay import SynapseDelay
 from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
@@ -10,7 +11,6 @@ from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.neurons.trace import TraceHistory
 from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
-from src.data.constants import letters, words
 from src.data.spike_generator import get_data
 from src.helpers.base import reset_random_seed
 from src.helpers.network import FeatureSwitch
@@ -37,7 +37,7 @@ def main():
     letters_ng = NeuronGroup(
         net=network,
         tag="letters",
-        size=len(letters),
+        size=len(configs.corpus.letters),
         behaviour={
             1: StreamableLIFNeurons(
                 tag="lif:train",
@@ -53,7 +53,7 @@ def main():
     words_ng = NeuronGroup(
         net=network,
         tag="words",
-        size=len(words),
+        size=len(configs.corpus.words),
         behaviour={
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
@@ -90,7 +90,7 @@ def main():
             ),
             9: Metrics(
                 tag="metrics:train",
-                words=words,
+                words=configs.corpus.words,
                 outputs=stream_j_train,
             ),
             11: Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
@@ -121,7 +121,7 @@ def main():
                 # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
                 w_max=np.round(
                     (lif_base["threshold"] - lif_base["v_rest"])
-                    / np.average(list(map(len, words))),
+                    / np.average(list(map(len, configs.corpus.words))),
                     decimals=1,
                 ),
                 min_delay_threshold=1,  # 0.15,

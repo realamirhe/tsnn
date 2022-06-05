@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src import configs
+from src.configs import corpus
 from src.data.feature_flags import DEBUG_MODE
 
 
@@ -43,7 +43,7 @@ class StreamableLIFNeurons(Behaviour):
 
         if DEBUG_MODE and self.joined_corpus is not None:
             n.seen_char += self.joined_corpus[n.iteration - 1]
-            n.seen_char = n.seen_char[-configs.GAP :]
+            n.seen_char = n.seen_char[-corpus.gap :]
 
         is_forced_spike = self.stream is not None
 
