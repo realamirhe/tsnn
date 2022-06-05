@@ -114,6 +114,7 @@ class Metrics(Behaviour):
                 cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
                 cm_display.plot()
                 plt.title(
-                    f"{network_phase} Confusion Matrix iteration={EpisodeTracker.episode()}"
+                    f"{network_phase} Confusion Matrix "
+                    f"(episode={EpisodeTracker.episode()})"
                 )
                 plt.show()
