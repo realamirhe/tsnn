@@ -2,7 +2,7 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.configs import feature_flags
-from src.data.plotters import selected_delay_plotter
+from src.configs.plotters import selected_delay_plotter
 
 
 class SynapseDelay(Behaviour):

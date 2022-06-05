@@ -3,7 +3,7 @@ import numpy as np
 from PymoNNto import Behaviour, def_dtype
 
 # should be after or be
-from src.data.plotters import threshold_plotter, activity_plotter
+from src.configs.plotters import threshold_plotter, activity_plotter
 
 
 class ActivityBaseHomeostasis(Behaviour):

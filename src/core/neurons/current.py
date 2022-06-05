@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.data.plotters import words_stimulus_plotter
+from src.configs.plotters import words_stimulus_plotter
 
 
 class CurrentStimulus(Behaviour):
