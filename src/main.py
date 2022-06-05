@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
 from src.configs import corpus_config
@@ -137,20 +138,12 @@ def main():
 
     """ TRAINING """
     epochs = 10
-    for episode in range(epochs):
+    for _ in tqdm(range(epochs), "Learning"):
         EpisodeTracker.update()
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
-        weights = network.SynapseGroups[0].W
-        delay = network.SynapseGroups[0].delay
-        print("delay:", delay[0, [0, 1, 2]], "**", delay[1, [14, 12, 13]])
-        print(
-            f"episode={episode} sum={np.sum(weights):.1f}, max={np.max(weights):.1f}, min={np.min(weights):.1f}"
-        )
-        print(f"{episode + 1}::long term threshold", network.NeuronGroups[1].threshold)
-        network["letters-recorder", 0].reset()
-        network["words-recorder", 0].reset()
-        network["metrics:train", 0].reset()
+        for tag in ["letters-recorder", "words-recorder", "metrics:train"]:
+            network[tag, 0].reset()
 
 
 if __name__ == "__main__":
