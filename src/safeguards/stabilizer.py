@@ -7,7 +7,7 @@ from src.configs import corpus_config
 from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.helpers.base import behaviour_generator
-from src.safeguards.libs.OverrideNeurons import OverrideNeurons, OVERRIDABLE_SUFFIX
+from src.safeguards.libs.override_neurons import OverrideNeurons, OVERRIDABLE_SUFFIX
 
 
 def make_custom_network(size, overridable_params=None):
