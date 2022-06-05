@@ -61,7 +61,9 @@ class SynapseDelay(Behaviour):
             activate next layer input. So keeping the `t` layer of all output neurons will give us `weight_scale`
             and the maximum of weight scale in the output axis will give us the firing pattern
         """
+        synapse.delay += 1e-5
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
+        # TODO: need generality
         selected_delay_plotter.add(
             synapse.delay[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]]
         )

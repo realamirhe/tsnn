@@ -10,7 +10,7 @@ from sklearn.metrics import (
 )
 
 from PymoNNto import Behaviour
-from src.configs import feature_flags
+from src.configs import feature_flags, corpus_config
 from src.configs.corpus_config import UNK
 from src.configs.plotters import (
     dw_plotter,
@@ -61,17 +61,12 @@ class Metrics(Behaviour):
         if n.iteration == len(self.outputs):
             dw_plotter.plot()
             w_plotter.plot()
-            selected_delay_plotter.plot(
-                legend="a b c o m n".split(" "), should_reset=False
-            )
-            selected_weights_plotter.plot(
-                legend="a b c o m n".split(" "), should_reset=False
-            )
-            selected_dw_plotter.plot(
-                legend="a b c o m n".split(" "), should_reset=False
-            )
+            legend = list("".join(corpus_config.words))
+            selected_delay_plotter.plot(legend=legend, should_reset=False)
+            selected_weights_plotter.plot(legend=legend, should_reset=False)
+            selected_dw_plotter.plot(legend=legend, should_reset=False)
             dopamine_plotter.plot()
-            threshold_plotter.plot(legend="abc omn".split(" "), should_reset=False)
+            threshold_plotter.plot(legend=corpus_config.words, should_reset=False)
             delay_plotter.plot()
             activity_plotter.plot(should_reset=False)
             words_stimulus_plotter.plot()
