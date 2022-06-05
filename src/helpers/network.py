@@ -18,3 +18,15 @@ class FeatureSwitch:
         self.network.deactivate_mechanisms(
             [f"{f}:{nonactive_mode}" for f in self.features]
         )
+
+
+class EpisodeTracker:
+    _episode = 0
+
+    @classmethod
+    def episode(cls):
+        return cls._episode
+
+    @classmethod
+    def update(cls):
+        cls._episode += 1

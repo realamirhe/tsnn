@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.data.feature_flags import DEBUG_MODE
+from src.configs import corpus_config, network_config
 
 
 class StreamableLIFNeurons(Behaviour):
@@ -12,10 +12,9 @@ class StreamableLIFNeurons(Behaviour):
         self.dt = self.get_init_attr("dt", 0.1, n)
         self.stream = self.get_init_attr("stream", None, n)
 
-        if DEBUG_MODE:
-            self.corpus = self.get_init_attr("corpus", None, n)
-            if self.corpus is not None:
-                self.corpus = " ".join(self.corpus) + " "
+        if network_config.is_debug_mode:
+            self.joined_corpus = self.get_init_attr("joined_corpus", None, n)
+            if self.joined_corpus is not None:
                 n.seen_char = ""
 
         self.capture_old_v = self.get_init_attr("capture_old_v", False, n)
@@ -40,10 +39,9 @@ class StreamableLIFNeurons(Behaviour):
             n.threshold = np.ones_like(n.v) * n.threshold
 
     def new_iteration(self, n):
-
-        if DEBUG_MODE and self.corpus is not None:
-            n.seen_char += self.corpus[n.iteration - 1]
-            n.seen_char = n.seen_char[-4:]
+        if network_config.is_debug_mode and self.joined_corpus is not None:
+            n.seen_char += self.joined_corpus[n.iteration - 1]
+            n.seen_char = n.seen_char[-corpus_config.words_capture_window_size :]
 
         is_forced_spike = self.stream is not None
 

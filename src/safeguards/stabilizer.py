@@ -3,11 +3,11 @@ import unittest
 import numpy as np
 
 from PymoNNto import Network, NeuronGroup, Recorder
+from src.configs import corpus_config
 from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
-from src.data.constants import words
 from src.helpers.base import behaviour_generator
-from src.safeguards.libs.OverrideNeurons import OverrideNeurons, OVERRIDABLE_SUFFIX
+from src.safeguards.libs.override_neurons import OverrideNeurons, OVERRIDABLE_SUFFIX
 
 
 def make_custom_network(size, overridable_params=None):
@@ -20,7 +20,7 @@ def make_custom_network(size, overridable_params=None):
     NeuronGroup(
         net=network,
         tag="letters",
-        size=len(words),
+        size=len(corpus_config.words),
         behaviour=behaviour_generator(
             [
                 StreamableLIFNeurons(),
@@ -37,7 +37,7 @@ def make_custom_network(size, overridable_params=None):
 
 class WinnerTakeAllTestCase(unittest.TestCase):
     def test_fire_pattern_must_no_change_randomly(self):
-        vector_size = len(words)
+        vector_size = len(corpus_config.words)
         params = {
             f"v_{OVERRIDABLE_SUFFIX}": np.ones(vector_size) * -70,
             f"fired_{OVERRIDABLE_SUFFIX}": np.zeros(vector_size) > 0,
@@ -47,7 +47,7 @@ class WinnerTakeAllTestCase(unittest.TestCase):
         self.assertTrue(np.all(ng_fired == params[f"fired_{OVERRIDABLE_SUFFIX}"]))
 
     def test_fire_pattern_must_no_change_randomly(self):
-        vector_size = len(words)
+        vector_size = len(corpus_config.words)
         times = 30
         params = {
             f"v_{OVERRIDABLE_SUFFIX}": np.random.random((times, vector_size)),
