@@ -39,10 +39,9 @@ class StreamableLIFNeurons(Behaviour):
             n.threshold = np.ones_like(n.v) * n.threshold
 
     def new_iteration(self, n):
-
         if network_config.is_debug_mode and self.joined_corpus is not None:
             n.seen_char += self.joined_corpus[n.iteration - 1]
-            n.seen_char = n.seen_char[-corpus_config.words_spacing_gap :]
+            n.seen_char = n.seen_char[-corpus_config.words_capture_window_size :]
 
         is_forced_spike = self.stream is not None
 

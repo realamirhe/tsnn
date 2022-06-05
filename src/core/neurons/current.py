@@ -26,7 +26,6 @@ class CurrentStimulus(Behaviour):
             setattr(self, attr, self.get_init_attr(attr, value, neurons))
 
     def new_iteration(self, neurons):
-
         # NOTE: 🔥 Synapse selection make it specific to first synapse, which might not be proper in bigger network
         synapse = neurons.afferent_synapses
         for lens in self.synapse_lens_selector:
