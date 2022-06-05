@@ -13,7 +13,7 @@ from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasi
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.spike_generator import get_data
 from src.helpers.base import reset_random_seed
-from src.helpers.network import FeatureSwitch
+from src.helpers.network import FeatureSwitch, EpisodeTracker
 
 reset_random_seed(1230)
 max_delay = 3
@@ -23,7 +23,6 @@ max_delay = 3
 def main():
     network = Network()
     stream_i_train, stream_j_train, joined_corpus = get_data(1000, prob=0.9)
-    stream_i_test, stream_j_test, corpus_test = get_data(1000, prob=0.6)
 
     lif_base = {
         "v_rest": -65,
@@ -139,6 +138,7 @@ def main():
     """ TRAINING """
     epochs = 10
     for episode in range(epochs):
+        EpisodeTracker.update()
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
         weights = network.SynapseGroups[0].W
@@ -151,8 +151,6 @@ def main():
         network["letters-recorder", 0].reset()
         network["words-recorder", 0].reset()
         network["metrics:train", 0].reset()
-
-    """ TESTING """
 
 
 if __name__ == "__main__":

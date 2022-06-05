@@ -2,7 +2,12 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.configs import feature_flags, corpus_config
-from src.configs.plotters import dw_plotter, w_plotter, selected_dw_plotter
+from src.configs.plotters import (
+    dw_plotter,
+    w_plotter,
+    selected_dw_plotter,
+    selected_weights_plotter,
+)
 from src.core.environement.dopamine import DopamineEnvironment
 
 
@@ -99,6 +104,9 @@ class SynapsePairWiseSTDP(Behaviour):
         selected_dw_plotter.add(dw[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]])
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
+        selected_weights_plotter.add(
+            synapse.W[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]]
+        )
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
         """ stop condition for delay learning """
         if not feature_flags.enable_delay_update_in_stdp:

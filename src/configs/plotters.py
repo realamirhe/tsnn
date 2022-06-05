@@ -16,5 +16,14 @@ words_stimulus_plotter = HistoryRecorder1D(
     title="words_stimulus", window_size=25, enabled=False
 )
 selected_delay_plotter = HistoryRecorder1D(
-    title="selected::delay", window_size=25, enabled=False
+    title="selected::delay",
+    window_size=25,
+    vertical_history_separator=True,
+    enabled=True,
+)
+selected_weights_plotter = HistoryRecorder1D(
+    title="selected::weights",
+    window_size=25,
+    vertical_history_separator=True,
+    enabled=True,
 )

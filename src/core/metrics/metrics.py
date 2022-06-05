@@ -22,10 +22,10 @@ from src.configs.plotters import (
     words_stimulus_plotter,
     selected_delay_plotter,
     selected_dw_plotter,
+    selected_weights_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
-
-index = 0
+from src.helpers.network import EpisodeTracker
 
 
 class Metrics(Behaviour):
@@ -64,6 +64,9 @@ class Metrics(Behaviour):
             selected_delay_plotter.plot(
                 legend="a b c o m n".split(" "), should_reset=False
             )
+            selected_weights_plotter.plot(
+                legend="a b c o m n".split(" "), should_reset=False
+            )
             selected_dw_plotter.plot(legend="a b c o m n".split(" "))
             dopamine_plotter.plot()
             threshold_plotter.plot(legend="abc omn".split(" "), should_reset=False)
@@ -93,8 +96,6 @@ class Metrics(Behaviour):
 
             frequencies = np.asarray(np.unique(outputs, return_counts=True)).T
             frequencies_p = np.asarray(np.unique(predictions, return_counts=True)).T
-            global index
-            index += 1
 
             if feature_flags.enable_metric_logs:
                 print(
@@ -115,5 +116,7 @@ class Metrics(Behaviour):
             if feature_flags.enable_cm_plot:
                 cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
                 cm_display.plot()
-                plt.title(f"{network_phase} Confusion Matrix iteration={index}")
+                plt.title(
+                    f"{network_phase} Confusion Matrix iteration={EpisodeTracker.episode()}"
+                )
                 plt.show()
