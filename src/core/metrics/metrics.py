@@ -11,6 +11,7 @@ from sklearn.metrics import (
 
 from PymoNNto import Behaviour
 from src.configs import feature_flags
+from src.configs.corpus_config import UNK
 from src.configs.plotters import (
     dw_plotter,
     w_plotter,
@@ -23,7 +24,6 @@ from src.configs.plotters import (
     selected_dw_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
-from src.core.nlp.constants import UNK
 
 index = 0
 
