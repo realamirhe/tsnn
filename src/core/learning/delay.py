@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.configs import feature_flags
+from src.configs import feature_flags, corpus_config
 from src.configs.plotters import selected_delay_plotter
 
 
@@ -31,11 +31,10 @@ class SynapseDelay(Behaviour):
             synapse.delay = np.clip(synapse.delay, deviation, self.max_delay)
 
         if feature_flags.enable_magic_delays:
-            synapse.delay = (
-                np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
-            )
-            synapse.delay[0, [0, 1, 2]] = [3, 2, 1]
-            synapse.delay[1, [14, 12, 13]] = [3, 2, 1]
+            for i, word in enumerate(corpus_config.words):
+                synapse.delay[
+                    i, [corpus_config.letters.index(char) for char in word]
+                ] = np.arange(self.max_delay, 0, -self.max_delay / len(word))
 
         """ History or neuron memory for storing the spiked activity over times """
         self.weight_effect = np.zeros(

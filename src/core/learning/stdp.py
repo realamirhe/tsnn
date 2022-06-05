@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.configs import feature_flags
+from src.configs import feature_flags, corpus_config
 from src.configs.plotters import dw_plotter, w_plotter, selected_dw_plotter
 from src.core.environement.dopamine import DopamineEnvironment
 
@@ -44,10 +44,10 @@ class SynapsePairWiseSTDP(Behaviour):
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
         if feature_flags.enable_magic_weights:
-            synapse.W[0, [0, 1, 2]] = self.w_max
-            synapse.W[1, [0, 1, 2]] = self.w_min
-            synapse.W[1, [12, 13, 14]] = self.w_max
-            synapse.W[0, [12, 13, 14]] = self.w_min
+            for i, word in enumerate(corpus_config.words):
+                indices = [corpus_config.letters.index(char) for char in word]
+                synapse.W[:, indices] = self.w_min
+                synapse.W[i, indices] = self.w_max
 
         self.weight_decay = 1 - self.weight_decay
 
