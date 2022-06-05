@@ -1,11 +1,8 @@
 import numpy as np
 
 from PymoNNto import Behaviour
+from src.configs import feature_flags
 from src.core.environement.dopamine import DopamineEnvironment
-from src.data.feature_flags import (
-    magically_hardcode_the_weights,
-    prevent_delay_update_in_stdp,
-)
 from src.data.plotters import dw_plotter, w_plotter, selected_dw_plotter
 
 
@@ -46,7 +43,7 @@ class SynapsePairWiseSTDP(Behaviour):
         synapse.W = synapse.W * (self.w_max - self.w_min) + self.w_min
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
-        if magically_hardcode_the_weights:
+        if feature_flags.enable_magic_weights:
             synapse.W[0, [0, 1, 2]] = self.w_max
             synapse.W[1, [0, 1, 2]] = self.w_min
             synapse.W[1, [12, 13, 14]] = self.w_max
@@ -104,7 +101,7 @@ class SynapsePairWiseSTDP(Behaviour):
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
         """ stop condition for delay learning """
-        if prevent_delay_update_in_stdp:
+        if not feature_flags.enable_delay_update_in_stdp:
             return
 
         use_shared_delay = dw.shape != synapse.delay.shape

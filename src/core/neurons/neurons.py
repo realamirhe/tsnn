@@ -43,7 +43,7 @@ class StreamableLIFNeurons(Behaviour):
 
         if DEBUG_MODE and self.joined_corpus is not None:
             n.seen_char += self.joined_corpus[n.iteration - 1]
-            n.seen_char = n.seen_char[-corpus.gap :]
+            n.seen_char = n.seen_char[-corpus.words_spacing_gap :]
 
         is_forced_spike = self.stream is not None
 

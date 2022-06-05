@@ -26,7 +26,7 @@ def get_data(size, prob=0.7, words_size=3):
     )
     # 7 with reward in reward window
     random.shuffle(corpus)
-    sparse_gap = " " * configs.corpus.gap
+    sparse_gap = " " * configs.corpus.words_spacing_gap
     joined_corpus = sparse_gap.join(corpus) + sparse_gap
     stream_i = [spike_stream_i(char) for char in joined_corpus]
     stream_j = []
@@ -48,7 +48,7 @@ def get_data(size, prob=0.7, words_size=3):
             word_spike[word_index] = 1
         stream_j.append(word_spike)  # spike when see hole word!
 
-        for _ in range(configs.corpus.gap - 1):
+        for _ in range(configs.corpus.words_spacing_gap - 1):
             stream_j.append(empty_spike)
 
     if len(stream_i) != len(stream_j):

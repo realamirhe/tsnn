@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.data.feature_flags import magically_hardcode_the_delays
+from src.configs import feature_flags
 from src.data.plotters import selected_delay_plotter
 
 
@@ -30,7 +30,7 @@ class SynapseDelay(Behaviour):
             )
             synapse.delay = np.clip(synapse.delay, deviation, self.max_delay)
 
-        if magically_hardcode_the_delays:
+        if feature_flags.enable_magic_delays:
             synapse.delay = (
                 np.random.random((depth_size, synapse.src.size)) * self.max_delay + 1
             )

@@ -10,9 +10,9 @@ from sklearn.metrics import (
 )
 
 from PymoNNto import Behaviour
+from src.configs import feature_flags
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.nlp.constants import UNK
-from src.data.feature_flags import enable_cm_plot, enable_metrix_log
 from src.data.plotters import (
     dw_plotter,
     w_plotter,
@@ -96,7 +96,7 @@ class Metrics(Behaviour):
             global index
             index += 1
 
-            if enable_metrix_log:
+            if feature_flags.enable_metric_logs:
                 print(
                     "---" * 15,
                     f"{network_phase}",
@@ -112,7 +112,7 @@ class Metrics(Behaviour):
                     end="\n\n",
                 )
 
-            if enable_cm_plot:
+            if feature_flags.enable_cm_plot:
                 cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
                 cm_display.plot()
                 plt.title(f"{network_phase} Confusion Matrix iteration={index}")
