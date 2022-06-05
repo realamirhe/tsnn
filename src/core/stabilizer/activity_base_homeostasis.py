@@ -10,7 +10,6 @@ class ActivityBaseHomeostasis(Behaviour):
     def set_variables(self, n):
         self.window_size = self.get_init_attr("window_size", 100, n)
         self.updating_rate = self.get_init_attr("updating_rate", 0.001, n)
-        # TODO: unsafe code need more time to digest the possibilities
         activity_rate = self.get_init_attr("activity_rate", 5, n)
         if isinstance(activity_rate, (float, int)):
             activity_rate = n.get_neuron_vec(mode="ones") * activity_rate

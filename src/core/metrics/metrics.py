@@ -67,11 +67,13 @@ class Metrics(Behaviour):
             selected_weights_plotter.plot(
                 legend="a b c o m n".split(" "), should_reset=False
             )
-            selected_dw_plotter.plot(legend="a b c o m n".split(" "))
+            selected_dw_plotter.plot(
+                legend="a b c o m n".split(" "), should_reset=False
+            )
             dopamine_plotter.plot()
             threshold_plotter.plot(legend="abc omn".split(" "), should_reset=False)
             delay_plotter.plot()
-            activity_plotter.plot()
+            activity_plotter.plot(should_reset=False)
             words_stimulus_plotter.plot()
 
             bit_range = 1 << np.arange(self.outputs[0].size)
