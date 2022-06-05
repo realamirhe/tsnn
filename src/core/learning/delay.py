@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.config import feature_flags
+from src.configs import feature_flags
 from src.data.plotters import selected_delay_plotter
 
 

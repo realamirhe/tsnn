@@ -10,7 +10,7 @@ from sklearn.metrics import (
 )
 
 from PymoNNto import Behaviour
-from src.config import feature_flags
+from src.configs import feature_flags
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.nlp.constants import UNK
 from src.data.plotters import (

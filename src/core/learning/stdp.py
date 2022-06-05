@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.config import feature_flags
+from src.configs import feature_flags
 from src.core.environement.dopamine import DopamineEnvironment
 from src.data.plotters import dw_plotter, w_plotter, selected_dw_plotter
 
