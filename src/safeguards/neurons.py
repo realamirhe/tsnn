@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 from PymoNNto import Network, NeuronGroup, Recorder
-from src import configs
+from src.configs import corpus_config
 from src.core.neurons.neurons import StreamableLIFNeurons
 from src.data.spike_generator import spike_stream_i
 from src.helpers.base import behaviour_generator
@@ -24,7 +24,7 @@ def make_custom_network(corpus, use_stream=True, use_long_term_effect=True):
     NeuronGroup(
         net=network,
         tag="letters",
-        size=len(configs.corpus.letters),
+        size=len(corpus_config.letters),
         behaviour=behaviour_generator(
             [
                 StreamableLIFNeurons(
@@ -49,8 +49,8 @@ class NeuronGroupTestCase(unittest.TestCase):
         net = make_custom_network(corpus)
         ng_fired = net["recorder", 0]["n.fired", 0]
         for fire_pattern, letter in zip(ng_fired, corpus):
-            index_letters = configs.corpus.letters.index(letter)
-            for inx in range(len(configs.corpus.letters)):
+            index_letters = corpus_config.letters.index(letter)
+            for inx in range(len(corpus_config.letters)):
                 if inx == index_letters:
                     self.assertTrue(fire_pattern[inx])
                 else:

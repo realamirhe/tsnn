@@ -1,8 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.configs import corpus
-from src.data.feature_flags import DEBUG_MODE
+from src.configs import corpus_config, network_config
 
 
 class StreamableLIFNeurons(Behaviour):
@@ -13,7 +12,7 @@ class StreamableLIFNeurons(Behaviour):
         self.dt = self.get_init_attr("dt", 0.1, n)
         self.stream = self.get_init_attr("stream", None, n)
 
-        if DEBUG_MODE:
+        if network_config.is_debug_mode:
             self.joined_corpus = self.get_init_attr("joined_corpus", None, n)
             if self.joined_corpus is not None:
                 n.seen_char = ""
@@ -41,9 +40,9 @@ class StreamableLIFNeurons(Behaviour):
 
     def new_iteration(self, n):
 
-        if DEBUG_MODE and self.joined_corpus is not None:
+        if network_config.is_debug_mode and self.joined_corpus is not None:
             n.seen_char += self.joined_corpus[n.iteration - 1]
-            n.seen_char = n.seen_char[-corpus.words_spacing_gap :]
+            n.seen_char = n.seen_char[-corpus_config.words_spacing_gap :]
 
         is_forced_spike = self.stream is not None
 

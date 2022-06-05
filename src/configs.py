@@ -12,10 +12,16 @@ feature_flags = dict(
 feature_flags = namedtuple("FeatureFlags", feature_flags.keys())(**feature_flags)
 
 # NLP & Corpus configuration
-corpus = dict(
+corpus_config = dict(
     words_spacing_gap=7,
     language=string.ascii_lowercase + " ",
     letters=string.ascii_lowercase,
     words=["abc", "omn"],
 )
-corpus = namedtuple("Corpus", corpus.keys())(**corpus)
+corpus_config = namedtuple("Corpus", corpus_config.keys())(**corpus_config)
+
+# Network configuration
+network_config = dict(
+    is_debug_mode=True,
+)
+network_config = namedtuple("Network", network_config.keys())(**network_config)
