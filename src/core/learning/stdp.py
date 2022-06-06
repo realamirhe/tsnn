@@ -86,6 +86,12 @@ class SynapsePairWiseSTDP(Behaviour):
             * synapse.dst.trace[:, -1][:, np.newaxis]
         )
 
+        dw_neutral = (
+            self.a_plus
+            * synapse.src.fire_effect
+            * (synapse.dst.trace[:, -1] * synapse.dst.fired)[:, np.newaxis]
+        )
+
         dw_plus = (
             self.a_plus
             * synapse.src.trace[self.delay_domains, self.delay_ranges]
@@ -94,7 +100,7 @@ class SynapsePairWiseSTDP(Behaviour):
 
         dw = (
             DopamineEnvironment.get()  # from global environment
-            * (dw_plus + dw_minus)  # stdp mechanism
+            * (dw_plus + dw_neutral + dw_minus)  # stdp mechanism
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself
             * self.dt
