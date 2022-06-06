@@ -16,7 +16,7 @@ from src.data.spike_generator import get_data
 from src.helpers.base import reset_random_seed
 from src.helpers.network import FeatureSwitch, EpisodeTracker
 
-reset_random_seed(1230)
+reset_random_seed(1231)
 max_delay = 3
 
 
@@ -114,7 +114,7 @@ def main():
                 tag="stdp",
                 tau_plus=4.0,
                 tau_minus=4.0,
-                a_plus=0.01,
+                a_plus=0.02,
                 a_minus=-0.01,
                 dt=1.0,
                 w_min=0,
@@ -126,8 +126,8 @@ def main():
                 ),
                 min_delay_threshold=1,  # 0.15,
                 weight_decay=0,
-                stdp_factor=0.1,
-                delay_factor=1e1,  # episode increase
+                stdp_factor=0.5,
+                delay_factor=1,  # episode increase
             ),
         },
     )
@@ -137,7 +137,7 @@ def main():
     features.switch_train()
 
     """ TRAINING """
-    epochs = 10
+    epochs = 20
     for _ in tqdm(range(epochs), "Learning"):
         EpisodeTracker.update()
         network.iteration = 0

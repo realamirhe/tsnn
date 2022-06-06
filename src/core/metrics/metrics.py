@@ -65,7 +65,7 @@ class Metrics(Behaviour):
             selected_delay_plotter.plot(legend=legend, should_reset=False)
             selected_weights_plotter.plot(legend=legend, should_reset=False)
             selected_dw_plotter.plot(legend=legend, should_reset=False)
-            dopamine_plotter.plot()
+            dopamine_plotter.plot(should_reset=False)
             threshold_plotter.plot(legend=corpus_config.words, should_reset=False)
             delay_plotter.plot()
             activity_plotter.plot(should_reset=False)
