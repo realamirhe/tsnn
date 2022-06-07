@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
-from src.configs import corpus_config
+from src.configs import corpus_config, feature_flags
 from src.core.learning.delay import SynapseDelay
 from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
@@ -62,7 +62,14 @@ def main():
                 synapse_lens_selector=["GLUTAMATE", 0],
             ),
             3: StreamableLIFNeurons(
-                **lif_base,
+                **(
+                    lif_base
+                    if feature_flags.enable_reset_factory
+                    else {
+                        **lif_base,
+                        "v_reset": -65 - (lif_base["R"] / lif_base["tau"]) * max_delay,
+                    }
+                ),
                 has_long_term_effect=True,
                 capture_old_v=True,
             ),
@@ -126,6 +133,7 @@ def main():
                 ),
                 min_delay_threshold=1,  # 0.15,
                 weight_decay=0,
+                weight_update_strategy=None,
                 stdp_factor=0.5,
                 delay_factor=1,  # episode increase
             ),
