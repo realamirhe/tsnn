@@ -13,33 +13,35 @@ from src.core.environement.dopamine import DopamineEnvironment
 
 class SynapsePairWiseSTDP(Behaviour):
     __slots__ = [
-        "tau_plus",
-        "tau_minus",
-        "a_plus",
         "a_minus",
+        "a_plus",
         "dt",
-        "weight_decay",
-        "stdp_factor",
         "min_delay_threshold",
-        "w_min",
+        "stdp_factor",
+        "tau_minus",
+        "tau_plus",
         "w_max",
+        "w_min",
+        "weight_decay",
+        "weight_update_strategy",
     ]
 
     def set_variables(self, synapse):
         synapse.W = synapse.get_synapse_mat("uniform")
 
         configure = {
-            "tau_plus": 3.0,
-            "tau_minus": 3.0,
-            "a_plus": 0.1,
             "a_minus": -0.2,
-            "dt": 1.0,
-            "weight_decay": 0.0,
-            "stdp_factor": 1.0,
+            "a_plus": 0.1,
             "delay_factor": 1.0,
+            "dt": 1.0,
             "min_delay_threshold": 0.15,
-            "w_min": 0.0,
+            "stdp_factor": 1.0,
+            "tau_minus": 3.0,
+            "tau_plus": 3.0,
             "w_max": 10.0,
+            "w_min": 0.0,
+            "weight_decay": 0.0,
+            "weight_update_strategy": None,
         }
 
         for attr, value in configure.items():
@@ -64,6 +66,24 @@ class SynapsePairWiseSTDP(Behaviour):
         )
         self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
 
+        if self.weight_update_strategy not in (None, "soft-bound", "hard-bound"):
+            raise AssertionError(
+                "weight_update_strategy must be one of soft-bound|hard-bound|None"
+            )
+
+        # http://www.scholarpedia.org/article/Spike-timing_dependent_plasticity#Weight_dependence:_hard_bounds_and_soft_bounds
+        if self.weight_update_strategy is None:
+            self.A_minus = lambda w: self.a_minus
+            self.A_plus = lambda w: self.a_plus
+        elif self.weight_update_strategy == "soft-bound":
+            # Soft bounds: for large weights, synaptic depression dominates over potentiation
+            self.A_minus = lambda w: w * self.a_minus
+            self.A_plus = lambda w: (self.w_max - w) * self.a_plus
+        elif self.weight_update_strategy == "hard-bound":
+            # Hard bounds: an update rule with fixed parameters a- and a+ is used until the bounds are reached
+            self.A_minus = lambda w: np.heaviside(-w, 0) * self.a_minus
+            self.A_plus = lambda w: np.heaviside(self.w_max - w, 0) * self.a_plus
+
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
         if not synapse.recording:
@@ -81,19 +101,19 @@ class SynapsePairWiseSTDP(Behaviour):
         ) * self.dt
 
         dw_minus = (
-            self.a_minus
-            * synapse.src.fire_effect
-            * synapse.dst.trace[:, -1][:, np.newaxis]
+            self.A_minus(synapse.W)
+            * synapse.src.fire_effect  # 1x26
+            * synapse.dst.trace[:, -1][:, np.newaxis]  # 2x1
         )
 
         dw_neutral = (
-            self.a_plus
+            self.A_plus(synapse.W)
             * synapse.src.fire_effect
             * (synapse.dst.trace[:, -1] * synapse.dst.fired)[:, np.newaxis]
         )
 
         dw_plus = (
-            self.a_plus
+            self.A_plus(synapse.W)
             * synapse.src.trace[self.delay_domains, self.delay_ranges]
             * synapse.dst.fired[:, np.newaxis]
         )

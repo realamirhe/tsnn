@@ -33,21 +33,14 @@ class Supervisor(Behaviour):
                 DopamineEnvironment.decay(self.dopamine_decay)
             return
 
-        """
-        abc omn abc kfw
-        """
-
         """ Cosine similarity """
-        # distance = 1 - spatial.distance.cosine(
-        #     re_range_binary(output), re_range_binary(prediction)
-        # )
+        # distance = 1 - spatial.distance.cosine(output + 1, prediction + 1)
         # DopamineEnvironment.set(distance or -1)  # replace 0.o effect with -1
 
-        """ mismatch similarity """
+        """ Mismatch similarity """
         distance = [-1.0, 1.0][int((output == prediction).all())]
         DopamineEnvironment.set(distance)
 
-        # DopamineEnvironment.set(-1)
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
         # distance = jaccard(output, prediction)
         # DopamineEnvironment.set(-distance or 1.0)
