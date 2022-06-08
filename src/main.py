@@ -145,7 +145,7 @@ def main():
     features.switch_train()
 
     """ TRAINING """
-    epochs = 20
+    epochs = 50
     for _ in tqdm(range(epochs), "Learning"):
         EpisodeTracker.update()
         network.iteration = 0

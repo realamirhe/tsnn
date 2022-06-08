@@ -8,7 +8,7 @@ from src.helpers.base import selected_neurons_from_words
 
 class SynapseDelay(Behaviour):
     # fmt: off
-    __slots__ = ["max_delay", "delayed_spikes", "weight_effect", "int_delay", "delay_mask"]
+    __slots__ = ["max_delay", "delayed_spikes", "weight_effect", "delay_mask"]
 
     # fmt: on
     def set_variables(self, synapse):
@@ -38,12 +38,10 @@ class SynapseDelay(Behaviour):
                     i, [corpus_config.letters.index(char) for char in word]
                 ] = np.arange(self.max_delay, 0, -self.max_delay / len(word))
 
-        """ History or neuron fire spike pattern over times """
-        self.fired_history = np.zeros(
-            (synapse.src.size, self.max_delay + 1), dtype=np.float32
+        """ History or neuron memory for storing the spiked activity over times """
+        self.weight_effect = np.zeros(
+            (depth_size, synapse.src.size, self.max_delay + 1), dtype=np.float32
         )
-        self.src_fired_indices = np.mgrid[0 : synapse.src.size, 0 : synapse.src.size]
-        self.src_fired_indices = self.src_fired_indices[1][: synapse.dst.size, :]
 
     # NOTE: delay behaviour only update internal vars corresponding to delta delay update.
     def new_iteration(self, synapse):
@@ -67,18 +65,42 @@ class SynapseDelay(Behaviour):
         """
         synapse.delay += 1e-5
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
+
         rows, cols = selected_neurons_from_words()
         selected_delay_plotter.add(synapse.delay[rows, cols])
 
-        self.fired_history = np.roll(self.fired_history, -1, axis=1)
-        self.fired_history[:, -1] = synapse.src.fired
+        new_spikes = synapse.src.fired
+        activated_src_neurons = np.argwhere(new_spikes != 0)
 
-        delays_indices = np.floor(synapse.delay).astype(int)
-        mantis = synapse.delay % 1.0
-        mantis[mantis == 0] = 1.0
-        complement = 1 - mantis
+        # NOTE: consider swap for loop and benchmarking performance 🐝
+        for dst_index in range(self.weight_effect.shape[0]):
+            for (src_index,) in activated_src_neurons:
+                delay = synapse.delay[dst_index, src_index]
+                delay_index = np.floor(delay).astype(dtype=int)
+                """
+                Intelligence switch for delay share (t=3, t=2) (complement, mantis)
+                delay=2.3 => (0.7, 0.3) => should be **switched** it is closed to 2 most share are for 2 (base_t=2)
+                delay=2.7 => (0.3, 0.7) => should be **switched** it is closed to 3 most share are for 3 (base_t=2)
+                delay=3 => (1, 0) (base_t=3)
+                delay=2 => (1, 0) (base_t=2)
+                """
+                mantis = delay % 1.0 or 1.0
+                complement = 1 - mantis
+                # Delay is going to bypass major section of itself to the current spikes output
+                if delay_index == 0:
+                    self.weight_effect[dst_index, src_index, -2:] += [
+                        mantis,
+                        complement,
+                    ]
+                # Do not do the complement update in case it will be zero
+                elif complement == 0:
+                    self.weight_effect[dst_index, src_index, -delay_index - 1] += mantis
+                else:
+                    self.weight_effect[
+                        dst_index, src_index, -delay_index - 2 : -delay_index
+                    ] += [mantis, complement]
 
-        synapse.src.fire_effect = (
-            self.fired_history[self.src_fired_indices, -delays_indices] * complement
-            + self.fired_history[self.src_fired_indices, -delays_indices - 1] * mantis
-        )
+        synapse.src.fire_effect = self.weight_effect[:, :, -1].copy()
+
+        self.weight_effect[:, :, -1] = 0
+        self.weight_effect = np.roll(self.weight_effect, 1, axis=2)

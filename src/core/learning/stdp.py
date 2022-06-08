@@ -9,6 +9,7 @@ from src.configs.plotters import (
     selected_weights_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
+from src.helpers.base import selected_neurons_from_words
 
 
 class SynapsePairWiseSTDP(Behaviour):
@@ -127,12 +128,11 @@ class SynapsePairWiseSTDP(Behaviour):
         )
 
         dw_plotter.add_image(dw * 1e5)
-        selected_dw_plotter.add(dw[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]])
+        rows, cols = selected_neurons_from_words()
+        selected_dw_plotter.add(dw[rows, cols])
         synapse.W = synapse.W * self.weight_decay + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
-        selected_weights_plotter.add(
-            synapse.W[[0, 0, 0, 1, 1, 1], [0, 1, 2, 14, 12, 13]]
-        )
+        selected_weights_plotter.add(synapse.W[rows, cols])
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
         """ stop condition for delay learning """
         if not feature_flags.enable_delay_update_in_stdp:
