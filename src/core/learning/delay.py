@@ -70,8 +70,8 @@ class SynapseDelay(Behaviour):
         rows, cols = selected_neurons_from_words()
         selected_delay_plotter.add(synapse.delay[rows, cols])
 
-        self.fired_history = np.roll(self.fired_history, -1, axis=1)
-        self.fired_history[:, -1] = synapse.src.fired
+        self.fired_history = np.roll(self.fired_history, 1, axis=1)
+        self.fired_history[:, 0] = synapse.src.fired
 
         delays_indices = np.floor(synapse.delay).astype(int)
         mantis = synapse.delay % 1.0
@@ -79,6 +79,9 @@ class SynapseDelay(Behaviour):
         complement = 1 - mantis
 
         synapse.src.fire_effect = (
-            self.fired_history[self.src_fired_indices, -delays_indices] * complement
-            + self.fired_history[self.src_fired_indices, -delays_indices - 1] * mantis
+            self.fired_history[self.src_fired_indices, delays_indices] * complement
+            + self.fired_history[
+                self.src_fired_indices, np.clip(delays_indices + 1, 0, self.max_delay)
+            ]
+            * mantis
         )
