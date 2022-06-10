@@ -73,7 +73,7 @@ class SynapseDelay(Behaviour):
         self.fired_history = np.roll(self.fired_history, 1, axis=1)
         self.fired_history[:, 0] = synapse.src.fired
 
-        delays_indices = np.floor(synapse.delay).astype(int)
+        delays_indices = synapse.delay.astype(int)
         mantis = synapse.delay % 1.0
         mantis[mantis == 0] = 1.0
         complement = 1 - mantis

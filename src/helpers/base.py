@@ -7,6 +7,7 @@ import random
 import numpy as np
 
 from src.configs import corpus_config
+from src.configs.feature_flags import enabled_c_profiler
 
 
 def reset_random_seed(seed=42):
@@ -18,6 +19,7 @@ def behaviour_generator(behaviours):
     return {index + 1: behaviour for index, behaviour in enumerate(behaviours)}
 
 
+@functools.lru_cache(maxsize=1)
 def selected_neurons_from_words():
     rows = np.array(
         [[i for _ in word] for i, word in enumerate(corpus_config.words)]
@@ -34,6 +36,9 @@ def selected_neurons_from_words():
 
 
 def c_profiler(func):
+    if not enabled_c_profiler:
+        return func
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         pr = cProfile.Profile()
@@ -50,3 +55,9 @@ def c_profiler(func):
             f.write(s.getvalue())
 
     return wrapper
+
+
+if __name__ == "__main__":
+    print(selected_neurons_from_words())
+    print(selected_neurons_from_words())
+    print(selected_neurons_from_words())
