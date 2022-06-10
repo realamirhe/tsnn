@@ -12,7 +12,7 @@ selected_dw_plotter = HistoryRecorder1D(
     title="selected::dw", vertical_history_separator=True, window_size=25, enabled=False
 )
 threshold_plotter = HistoryRecorder1D(
-    title="threshold", vertical_history_separator=True, enabled=False
+    title="threshold", window_size=25, vertical_history_separator=True, enabled=True
 )
 words_stimulus_plotter = HistoryRecorder1D(
     title="words_stimulus", window_size=25, enabled=False

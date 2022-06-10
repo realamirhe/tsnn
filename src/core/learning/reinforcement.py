@@ -1,7 +1,7 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.core.environement.dopamine import DopamineEnvironment
+from .. import dopamine
 
 
 class Supervisor(Behaviour):
@@ -28,9 +28,9 @@ class Supervisor(Behaviour):
 
         if np.isnan(output).any():
             if np.sum(prediction) > 0:
-                DopamineEnvironment.set(-1)
+                dopamine.set(-1)
             else:
-                DopamineEnvironment.decay(self.dopamine_decay)
+                dopamine.decay(self.dopamine_decay)
             return
 
         """ Cosine similarity """
@@ -39,7 +39,7 @@ class Supervisor(Behaviour):
 
         """ Mismatch similarity """
         distance = [-1.0, 1.0][int((output == prediction).all())]
-        DopamineEnvironment.set(distance)
+        dopamine.set(distance)
 
         """ https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html """
         # distance = jaccard(output, prediction)

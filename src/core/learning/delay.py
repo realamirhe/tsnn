@@ -1,9 +1,9 @@
 import numpy as np
+from configs import feature_flags, corpus_config
+from configs.plotters import selected_delay_plotter
+from helpers.base import selected_neurons_from_words
 
 from PymoNNto import Behaviour
-from src.configs import feature_flags, corpus_config
-from src.configs.plotters import selected_delay_plotter
-from src.helpers.base import selected_neurons_from_words
 
 
 class SynapseDelay(Behaviour):

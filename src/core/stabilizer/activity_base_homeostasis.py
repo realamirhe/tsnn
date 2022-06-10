@@ -34,6 +34,9 @@ class ActivityBaseHomeostasis(Behaviour):
     def new_iteration(self, n):
         self.activities += np.where(n.fired, 1, self.activity_step)
         activity_plotter.add(self.activities, should_copy=True)
+        if n.iteration % 1000 == 0:
+            print(f"{n.threshold=}")
+
         if (n.iteration % self.window_size) == 0:
             greater = ((self.activities > self.max_activity) * -1).astype(def_dtype)
             smaller = ((self.activities < self.min_activity) * 1).astype(def_dtype)

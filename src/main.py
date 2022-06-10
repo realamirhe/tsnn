@@ -2,23 +2,23 @@ import numpy as np
 from tqdm import tqdm
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
-from src.configs import corpus_config, feature_flags
-from src.configs.network_config import epochs, calculate_fire_effect_via_fire_history
-from src.core.learning.delay import SynapseDelay as FireHistorySynapseDelay
-from src.core.learning.reinforcement import Supervisor
-from src.core.learning.stdp import SynapsePairWiseSTDP
-from src.core.learning.weight_effect_delay import (
-    SynapseDelay as WeightEffectSynapseDelay,
+from configs import corpus_config, feature_flags
+from configs.network_config import epochs, calculate_fire_effect_via_fire_history
+from core.learning import (
+    FireHistorySynapseDelay,
+    WeightEffectSynapseDelay,
+    Supervisor,  # reinforcement
+    SynapsePairWiseSTDP,
 )
-from src.core.metrics.metrics import Metrics
-from src.core.neurons.current import CurrentStimulus
-from src.core.neurons.neurons import StreamableLIFNeurons
-from src.core.neurons.trace import TraceHistory
-from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
-from src.core.stabilizer.winner_take_all import WinnerTakeAll
-from src.data.spike_generator import get_data
-from src.helpers.base import reset_random_seed, c_profiler
-from src.helpers.network import FeatureSwitch, EpisodeTracker
+from core.metrics.metrics import Metrics
+from core.neurons.current import CurrentStimulus
+from core.neurons.neurons import StreamableLIFNeurons
+from core.neurons.trace import TraceHistory
+from core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
+from core.stabilizer.winner_take_all import WinnerTakeAll
+from data.spike_generator import get_data
+from helpers.base import reset_random_seed, c_profiler
+from helpers.network import FeatureSwitch, EpisodeTracker
 
 reset_random_seed(1231)
 max_delay = 3
@@ -34,7 +34,12 @@ SynapseDelay = (
 @c_profiler
 def main():
     network = Network()
-    stream_i_train, stream_j_train, joined_corpus = get_data(1000, prob=0.9)
+    expected_word_seen_prop = 0.9
+    homeostasis_window_size = 100
+
+    stream_i_train, stream_j_train, joined_corpus = get_data(
+        1000, prob=expected_word_seen_prop
+    )
 
     lif_base = {
         "v_rest": -65,
@@ -87,11 +92,18 @@ def main():
             4: TraceHistory(max_delay=max_delay),
             5: ActivityBaseHomeostasis(
                 tag="homeostasis",
-                window_size=100,
+                window_size=homeostasis_window_size,
                 # NOTE: making updating_rate adaptive is not useful, because we are training model multiple time
                 # so long term threshold must be set within one of these passes. It is useful for faster convergence
-                updating_rate=0.01,
-                activity_rate=15,
+                updating_rate=0.02,
+                activity_rate=(
+                    homeostasis_window_size
+                    / (
+                        np.mean([len(word) for word in corpus_config.words])
+                        + corpus_config.words_spacing_gap
+                    )
+                )
+                * expected_word_seen_prop,
                 # window_size = 100 character every word has 3 character + space, so we roughly got 25
                 # spaced words per window; 0.6 of words are desired so 25*0.6 = 15 are expected to spike
                 # in each window (15 can be calculated from the corpus)

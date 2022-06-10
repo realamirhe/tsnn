@@ -24,8 +24,8 @@ from src.configs.plotters import (
     selected_dw_plotter,
     selected_weights_plotter,
 )
-from src.core.environement.dopamine import DopamineEnvironment
 from src.helpers.network import EpisodeTracker
+from .. import dopamine
 
 
 class Metrics(Behaviour):
@@ -56,7 +56,7 @@ class Metrics(Behaviour):
         # if not np.isnan(self.outputs[n.iteration - 1]).any():
         #     # NOTE: 🚀 can append the int here also
         self._predictions.append(n.fired.copy())
-        dopamine_plotter.add(DopamineEnvironment.get())
+        dopamine_plotter.add(dopamine.get())
 
         if n.iteration == len(self.outputs):
             dw_plotter.plot()

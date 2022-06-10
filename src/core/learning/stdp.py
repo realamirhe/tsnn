@@ -8,8 +8,8 @@ from src.configs.plotters import (
     selected_dw_plotter,
     selected_weights_plotter,
 )
-from src.core.environement.dopamine import DopamineEnvironment
 from src.helpers.base import selected_neurons_from_words
+from .. import dopamine
 
 
 class SynapsePairWiseSTDP(Behaviour):
@@ -120,7 +120,7 @@ class SynapsePairWiseSTDP(Behaviour):
         )
 
         dw = (
-            DopamineEnvironment.get()  # from global environment
+            dopamine.get()  # from global environment
             * (dw_plus + dw_neutral + dw_minus)  # stdp mechanism
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself

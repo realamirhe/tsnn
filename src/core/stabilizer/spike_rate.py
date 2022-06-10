@@ -5,6 +5,7 @@ import numpy as np
 from PymoNNto import Behaviour
 
 
+# @deprecated
 class SpikeRate(Behaviour):
     __slots__ = ["interval_size", "outputs"]
 
