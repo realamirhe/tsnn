@@ -1,3 +1,7 @@
+import cProfile
+import functools
+import io
+import pstats
 import random
 
 import numpy as np
@@ -27,3 +31,22 @@ def selected_neurons_from_words():
     ).flatten()
 
     return rows, cols
+
+
+def c_profiler(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        pr = cProfile.Profile()
+        pr.enable()
+
+        func(*args, **kwargs)
+
+        pr.disable()
+        s = io.StringIO()
+        ps = pstats.Stats(pr, stream=s).sort_stats("tottime")
+        ps.print_stats()
+
+        with open("report.txt", "w+") as f:
+            f.write(s.getvalue())
+
+    return wrapper
