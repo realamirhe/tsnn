@@ -3,9 +3,13 @@ from tqdm import tqdm
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
 from src.configs import corpus_config, feature_flags
-from src.core.learning.delay import SynapseDelay
+from src.configs.network_config import epochs, calculate_fire_effect_via_fire_history
+from src.core.learning.delay import SynapseDelay as FireHistorySynapseDelay
 from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
+from src.core.learning.weight_effect_delay import (
+    SynapseDelay as WeightEffectSynapseDelay,
+)
 from src.core.metrics.metrics import Metrics
 from src.core.neurons.current import CurrentStimulus
 from src.core.neurons.neurons import StreamableLIFNeurons
@@ -13,14 +17,21 @@ from src.core.neurons.trace import TraceHistory
 from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.spike_generator import get_data
-from src.helpers.base import reset_random_seed
+from src.helpers.base import reset_random_seed, c_profiler
 from src.helpers.network import FeatureSwitch, EpisodeTracker
 
 reset_random_seed(1231)
 max_delay = 3
 
+SynapseDelay = (
+    FireHistorySynapseDelay
+    if calculate_fire_effect_via_fire_history
+    else WeightEffectSynapseDelay
+)
+
 
 # ================= NETWORK  =================
+@c_profiler
 def main():
     network = Network()
     stream_i_train, stream_j_train, joined_corpus = get_data(1000, prob=0.9)
@@ -145,7 +156,6 @@ def main():
     features.switch_train()
 
     """ TRAINING """
-    epochs = 20
     for _ in tqdm(range(epochs), "Learning"):
         EpisodeTracker.update()
         network.iteration = 0
