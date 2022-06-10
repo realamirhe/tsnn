@@ -75,7 +75,7 @@ def main():
             3: StreamableLIFNeurons(
                 **(
                     lif_base
-                    if feature_flags.enable_reset_factory
+                    if feature_flags.enable_neuron_reset_factory
                     else {
                         **lif_base,
                         "v_reset": -65 - (lif_base["R"] / lif_base["tau"]) * max_delay,
