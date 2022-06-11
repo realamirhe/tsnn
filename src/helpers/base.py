@@ -21,16 +21,13 @@ def behaviour_generator(behaviours):
 
 @functools.lru_cache(maxsize=1)
 def selected_neurons_from_words():
-    rows = np.array(
-        [[i for _ in word] for i, word in enumerate(corpus_config.words)]
-    ).flatten()
+    rows = []
+    for i, word in enumerate(corpus_config.words):
+        rows.extend([i for _ in word])
 
-    cols = np.array(
-        [
-            [corpus_config.letters.index(letter) for letter in word]
-            for word in corpus_config.words
-        ]
-    ).flatten()
+    cols = []
+    for word in corpus_config.words:
+        cols.extend([corpus_config.letters.index(letter) for letter in word])
 
     return rows, cols
 
