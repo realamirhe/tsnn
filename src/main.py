@@ -34,7 +34,11 @@ SynapseDelay = (
 @c_profiler
 def main():
     network = Network()
-    stream_i_train, stream_j_train, joined_corpus = get_data(1000, prob=0.9)
+    homeostasis_window_size = 100
+    corpus_word_seen_probability = 0.9
+    stream_i_train, stream_j_train, joined_corpus = get_data(
+        1000, prob=corpus_word_seen_probability
+    )
 
     lif_base = {
         "v_rest": -65,
@@ -87,11 +91,13 @@ def main():
             4: TraceHistory(max_delay=max_delay),
             5: ActivityBaseHomeostasis(
                 tag="homeostasis",
-                window_size=100,
+                window_size=homeostasis_window_size,
                 # NOTE: making updating_rate adaptive is not useful, because we are training model multiple time
                 # so long term threshold must be set within one of these passes. It is useful for faster convergence
-                updating_rate=0.01,
-                activity_rate=15,
+                updating_rate=0.001,
+                activity_rate=homeostasis_window_size
+                / corpus_config.words_average_size_occupation
+                * corpus_word_seen_probability,
                 # window_size = 100 character every word has 3 character + space, so we roughly got 25
                 # spaced words per window; 0.6 of words are desired so 25*0.6 = 15 are expected to spike
                 # in each window (15 can be calculated from the corpus)
