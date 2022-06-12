@@ -34,7 +34,7 @@ SynapseDelay = (
 @c_profiler
 def main():
     network = Network()
-    homeostasis_window_size = 100
+    homeostasis_window_size = 1000
     corpus_word_seen_probability = 0.9
     stream_i_train, stream_j_train, joined_corpus = get_data(
         1000, prob=corpus_word_seen_probability
@@ -72,7 +72,7 @@ def main():
         behaviour={
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
-                noise_scale_factor=1,
+                noise_scale_factor=0.1,
                 stimulus_scale_factor=1,
                 synapse_lens_selector=["GLUTAMATE", 0],
             ),
@@ -94,7 +94,7 @@ def main():
                 window_size=homeostasis_window_size,
                 # NOTE: making updating_rate adaptive is not useful, because we are training model multiple time
                 # so long term threshold must be set within one of these passes. It is useful for faster convergence
-                updating_rate=0.001,
+                updating_rate=0.01,
                 activity_rate=homeostasis_window_size
                 / corpus_config.words_average_size_occupation
                 * corpus_word_seen_probability,
@@ -163,6 +163,8 @@ def main():
 
     """ TRAINING """
     for _ in tqdm(range(epochs), "Learning"):
+        if _ == 50:
+            print("50")
         EpisodeTracker.update()
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))

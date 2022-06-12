@@ -8,7 +8,7 @@ from src.helpers.base import selected_neurons_from_words
 
 class SynapseDelay(Behaviour):
     # fmt: off
-    __slots__ = ["max_delay", "delayed_spikes", "weight_effect", "int_delay", "delay_mask"]
+    __slots__ = ["max_delay", "delayed_spikes", "weight_effect", "delay_mask"]
 
     # fmt: on
     def set_variables(self, synapse):
@@ -40,31 +40,14 @@ class SynapseDelay(Behaviour):
 
         """ History or neuron fire spike pattern over times """
         self.fired_history = np.zeros(
-            (synapse.src.size, self.max_delay + 1), dtype=np.float32
+            (synapse.src.size, self.max_delay + 1), dtype=np.float32  # sparse matrix
         )
         self.src_fired_indices = np.mgrid[0 : synapse.src.size, 0 : synapse.src.size]
         self.src_fired_indices = self.src_fired_indices[1][: synapse.dst.size, :]
 
     # NOTE: delay behaviour only update internal vars corresponding to delta delay update.
     def new_iteration(self, synapse):
-        """
-            1. clip the synapse delay between its boundary
-            2. for every dst layer connection as `dst_index` do
-                2.1. for every spiked src 🚀 layer connection as `src_index` do
-                    2.1.1. update weight share and by_pass connection (in zero delay) directly on the existing variables
-            3. calculate the synapse.src.fired based on the existing weight-share (@note weight_share_2_firing_pattern)
-            4. convert floating nonzero effect to boolean spike pattern for synapse.src.fired
-            5. get copy of the active weight share
-            6. make the forward step in the time (zero last + roll)
-
-        https://docs.google.com/spreadsheets/d/11Z07E7FCriw9YbbzBBVYK3270W9jz182chuYbtB6Lcw/edit#gid=0
-        @note:
-            weight_share_2_firing_pattern:    Every connection in the `t` layer is caused by previous seen character
-            (input) in the previous layer so, it only co-occurrence which might cause an issue is when neurons in the
-            output layer has same synapse delay (or larger) as the accumulated weight share become strong enough to
-            activate next layer input. So keeping the `t` layer of all output neurons will give us `weight_scale`
-            and the maximum of weight scale in the output axis will give us the firing pattern
-        """
+        """https://docs.google.com/spreadsheets/d/11Z07E7FCriw9YbbzBBVYK3270W9jz182chuYbtB6Lcw/edit#gid=0"""
         synapse.delay += 1e-5
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
         rows, cols = selected_neurons_from_words()

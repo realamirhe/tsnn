@@ -12,11 +12,10 @@ class ActivityBaseHomeostasis(Behaviour):
         self.updating_rate = self.get_init_attr("updating_rate", 0.001, n)
         activity_rate = self.get_init_attr("activity_rate", 5, n)
         if isinstance(activity_rate, (float, int)):
-            activity_rate = n.get_neuron_vec(mode="ones") * activity_rate
+            activity_rate = n.get_neuron_vec(mode="ones") * activity_rate / n.size
         """
             It must at an average spikes for at least one time in w/A range
             for penalty we decrease -A/w (-(w/A)^-1) every one step it doesn't spike
-            [1, 1, 1, 1] // 
         """
 
         self.activity_step = -activity_rate / self.window_size
@@ -45,7 +44,12 @@ class ActivityBaseHomeostasis(Behaviour):
                 greater[are_nearly_the_same] = 0
                 smaller[are_nearly_the_same] = 0
 
-            change = (greater + smaller) * self.updating_rate
+            change = (
+                (greater + smaller)
+                * self.updating_rate
+                * 0.99 ** (n.iteration // self.window_size)
+            )
+
             self.exhaustion += change
             n.threshold -= self.exhaustion
             threshold_plotter.add(n.threshold, should_copy=True)

@@ -103,7 +103,7 @@ class SynapsePairWiseSTDP(Behaviour):
 
         dw_minus = (
             self.A_minus(synapse.W)
-            * synapse.src.fire_effect  # 1x26
+            * synapse.src.fire_effect  # 2x26
             * synapse.dst.trace[:, -1][:, np.newaxis]  # 2x1
         )
 
