@@ -113,7 +113,7 @@ class SynapsePairWiseSTDP(Behaviour):
             * (synapse.dst.trace[:, -1] * synapse.dst.fired)[:, np.newaxis]
         )
 
-        dw_plus = 0 * (
+        dw_plus = (
             self.A_plus(synapse.W)
             * synapse.src.trace[self.delay_domains, self.delay_ranges]
             * synapse.dst.fired[:, np.newaxis]
