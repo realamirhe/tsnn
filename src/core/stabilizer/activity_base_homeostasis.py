@@ -32,7 +32,7 @@ class ActivityBaseHomeostasis(Behaviour):
 
     def new_iteration(self, n):
         self.activities += np.where(n.fired, 1, self.activity_step)
-        activity_plotter.add(self.activities, should_copy=True)
+        activity_plotter.add(self.activities)
         if (n.iteration % self.window_size) == 0:
             greater = ((self.activities > self.max_activity) * -1).astype(def_dtype)
             smaller = ((self.activities < self.min_activity) * 1).astype(def_dtype)
@@ -52,7 +52,7 @@ class ActivityBaseHomeostasis(Behaviour):
 
             self.exhaustion += change
             n.threshold -= self.exhaustion
-            threshold_plotter.add(n.threshold, should_copy=True)
+            threshold_plotter.add(n.threshold)
 
             # For: Logic for adaptive updating rate (see old trunks)
 

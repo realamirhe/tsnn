@@ -24,6 +24,9 @@ class HistoryRecorder1D(HistoryRecorder):
             for x in self.history_steps:
                 plt.axvline(x, color="b", linestyle="--", alpha=0.3)
 
+        if self.ylim is not None:
+            plt.gca().set_ylim(self.ylim)
+
         plt.show()
 
         if should_reset:

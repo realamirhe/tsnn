@@ -41,7 +41,7 @@ class SynapsePairWiseSTDP(Behaviour):
             "tau_plus": 3.0,
             "w_max": 10.0,
             "w_min": 0.0,
-            "weight_decay": 0.0,
+            "weight_decay": 1.0,
             "weight_update_strategy": None,
         }
 
@@ -56,8 +56,6 @@ class SynapsePairWiseSTDP(Behaviour):
                 indices = [corpus_config.letters.index(char) for char in word]
                 synapse.W[:, indices] = self.w_min
                 synapse.W[i, indices] = self.w_max
-
-        self.weight_decay = 1 - self.weight_decay
 
         if self.a_minus >= 0:
             raise AssertionError("a_minus should be negative")
@@ -84,6 +82,8 @@ class SynapsePairWiseSTDP(Behaviour):
             # Hard bounds: an update rule with fixed parameters a- and a+ is used until the bounds are reached
             self.A_minus = lambda w: np.heaviside(-w, 0) * self.a_minus
             self.A_plus = lambda w: np.heaviside(self.w_max - w, 0) * self.a_plus
+
+        selected_weights_plotter.configure_plot(ylim=[self.w_min, self.w_max + 0.2])
 
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
@@ -113,7 +113,7 @@ class SynapsePairWiseSTDP(Behaviour):
             * (synapse.dst.trace[:, -1] * synapse.dst.fired)[:, np.newaxis]
         )
 
-        dw_plus = (
+        dw_plus = 0 * (
             self.A_plus(synapse.W)
             * synapse.src.trace[self.delay_domains, self.delay_ranges]
             * synapse.dst.fired[:, np.newaxis]

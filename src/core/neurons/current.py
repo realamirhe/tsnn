@@ -42,4 +42,4 @@ class CurrentStimulus(Behaviour):
             * 2
         )
         synapse.dst.I = next_layer_stimulus * self.stimulus_scale_factor + noise
-        words_stimulus_plotter.add(synapse.dst.I, should_copy=True)
+        words_stimulus_plotter.add(synapse.dst.I)

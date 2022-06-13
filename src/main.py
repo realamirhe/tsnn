@@ -3,7 +3,11 @@ from tqdm import tqdm
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
 from src.configs import corpus_config, feature_flags
-from src.configs.network_config import epochs, calculate_fire_effect_via_fire_history
+from src.configs.network_config import (
+    epochs,
+    calculate_fire_effect_via_fire_history,
+    max_delay,
+)
 from src.core.learning.delay import SynapseDelay as FireHistorySynapseDelay
 from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
@@ -21,7 +25,6 @@ from src.helpers.base import reset_random_seed, c_profiler
 from src.helpers.network import FeatureSwitch, EpisodeTracker
 
 reset_random_seed(1231)
-max_delay = 3
 
 SynapseDelay = (
     FireHistorySynapseDelay
@@ -34,10 +37,10 @@ SynapseDelay = (
 @c_profiler
 def main():
     network = Network()
-    homeostasis_window_size = 1000
+    homeostasis_window_size = 100
     corpus_word_seen_probability = 0.9
     stream_i_train, stream_j_train, joined_corpus = get_data(
-        1000, prob=corpus_word_seen_probability
+        200, prob=corpus_word_seen_probability
     )
 
     lif_base = {
@@ -148,8 +151,8 @@ def main():
                     / np.average(list(map(len, corpus_config.words))),
                     decimals=1,
                 ),
-                min_delay_threshold=1,  # 0.15,
-                weight_decay=0,
+                min_delay_threshold=1,
+                weight_decay=1,
                 weight_update_strategy=None,
                 stdp_factor=0.5,
                 delay_factor=1,  # episode increase

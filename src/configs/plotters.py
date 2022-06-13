@@ -6,26 +6,36 @@ dw_plotter = HistoryRecorder2D(title="dw", window_size=4, enabled=False)
 w_plotter = HistoryRecorder2D(title="w", window_size=25, enabled=False)
 delay_plotter = HistoryRecorder2D(title="delay", window_size=25, enabled=False)
 activity_plotter = HistoryRecorder1D(
-    title="activity", window_size=25, vertical_history_separator=True, enabled=False
+    title="activity",
+    window_size=25,
+    vertical_history_separator=True,
+    enabled=False,
+    should_copy_on_add=True,
 )
 selected_dw_plotter = HistoryRecorder1D(
-    title="selected::dw", vertical_history_separator=True, window_size=25, enabled=False
+    title="selected::dw",
+    vertical_history_separator=True,
+    window_size=25,
+    enabled=True,
 )
 threshold_plotter = HistoryRecorder1D(
-    title="threshold", vertical_history_separator=True, enabled=True
+    title="threshold",
+    vertical_history_separator=True,
+    enabled=False,
+    should_copy_on_add=True,
 )
 words_stimulus_plotter = HistoryRecorder1D(
-    title="words_stimulus", window_size=25, enabled=False
+    title="words_stimulus", window_size=25, enabled=False, should_copy_on_add=True
 )
 selected_delay_plotter = HistoryRecorder1D(
     title="selected::delay",
     window_size=25,
     vertical_history_separator=True,
-    enabled=False,
+    enabled=True,
 )
 selected_weights_plotter = HistoryRecorder1D(
     title="selected::weights",
-    window_size=25,
+    window_size=3,
     vertical_history_separator=True,
-    enabled=False,
+    enabled=True,
 )

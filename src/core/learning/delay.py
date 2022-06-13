@@ -61,10 +61,10 @@ class SynapseDelay(Behaviour):
         mantis[mantis == 0] = 1.0
         complement = 1 - mantis
 
+        # Next Timestep Delays Indices
+        next_delays_indices = delays_indices + 1
+        next_delays_indices[next_delays_indices > self.max_delay] = self.max_delay
         synapse.src.fire_effect = (
             self.fired_history[self.src_fired_indices, delays_indices] * complement
-            + self.fired_history[
-                self.src_fired_indices, np.clip(delays_indices + 1, 0, self.max_delay)
-            ]
-            * mantis
+            + self.fired_history[self.src_fired_indices, next_delays_indices] * mantis
         )
