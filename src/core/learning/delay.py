@@ -40,14 +40,31 @@ class SynapseDelay(Behaviour):
 
         """ History or neuron fire spike pattern over times """
         self.fired_history = np.zeros(
-            (synapse.src.size, self.max_delay + 1), dtype=np.float32  # sparse matrix
+            (synapse.src.size, self.max_delay + 1), dtype=np.float32
         )
         self.src_fired_indices = np.mgrid[0 : synapse.src.size, 0 : synapse.src.size]
         self.src_fired_indices = self.src_fired_indices[1][: synapse.dst.size, :]
 
     # NOTE: delay behaviour only update internal vars corresponding to delta delay update.
     def new_iteration(self, synapse):
-        """https://docs.google.com/spreadsheets/d/11Z07E7FCriw9YbbzBBVYK3270W9jz182chuYbtB6Lcw/edit#gid=0"""
+        """
+            1. clip the synapse delay between its boundary
+            2. for every dst layer connection as `dst_index` do
+                2.1. for every spiked src 🚀 layer connection as `src_index` do
+                    2.1.1. update weight share and by_pass connection (in zero delay) directly on the existing variables
+            3. calculate the synapse.src.fired based on the existing weight-share (@note weight_share_2_firing_pattern)
+            4. convert floating nonzero effect to boolean spike pattern for synapse.src.fired
+            5. get copy of the active weight share
+            6. make the forward step in the time (zero last + roll)
+
+        https://docs.google.com/spreadsheets/d/11Z07E7FCriw9YbbzBBVYK3270W9jz182chuYbtB6Lcw/edit#gid=0
+        @note:
+            weight_share_2_firing_pattern:    Every connection in the `t` layer is caused by previous seen character
+            (input) in the previous layer so, it only co-occurrence which might cause an issue is when neurons in the
+            output layer has same synapse delay (or larger) as the accumulated weight share become strong enough to
+            activate next layer input. So keeping the `t` layer of all output neurons will give us `weight_scale`
+            and the maximum of weight scale in the output axis will give us the firing pattern
+        """
         synapse.delay += 1e-5
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
         rows, cols = selected_neurons_from_words()
@@ -61,10 +78,10 @@ class SynapseDelay(Behaviour):
         mantis[mantis == 0] = 1.0
         complement = 1 - mantis
 
-        # Next Timestep Delays Indices
-        next_delays_indices = delays_indices + 1
-        next_delays_indices[next_delays_indices > self.max_delay] = self.max_delay
         synapse.src.fire_effect = (
             self.fired_history[self.src_fired_indices, delays_indices] * complement
-            + self.fired_history[self.src_fired_indices, next_delays_indices] * mantis
+            + self.fired_history[
+                self.src_fired_indices, np.clip(delays_indices + 1, 0, self.max_delay)
+            ]
+            * mantis
         )
