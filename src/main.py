@@ -148,7 +148,8 @@ def main():
                 # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
                 w_max=np.round(
                     (lif_base["threshold"] - lif_base["v_rest"])
-                    / np.average(list(map(len, corpus_config.words))),
+                    / np.average(list(map(len, corpus_config.words)))
+                    + 0.2,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
                     decimals=1,
                 ),
                 min_delay_threshold=1,

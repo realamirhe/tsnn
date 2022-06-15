@@ -32,6 +32,7 @@ class StreamableLIFNeurons(Behaviour):
 
         for attr, value in configure.items():
             setattr(n, attr, self.get_init_attr(attr, value, n))
+        # n.v = n.get_neuron_vec(mode="ones") * n.v_rest
         n.v = n.v_rest + n.get_neuron_vec(mode="uniform", scale=0.1) * (
             n.threshold - n.v_reset
         )
