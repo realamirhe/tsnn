@@ -40,7 +40,7 @@ def main():
     homeostasis_window_size = 100
     corpus_word_seen_probability = 0.9
     stream_i_train, stream_j_train, joined_corpus = get_data(
-        200, prob=corpus_word_seen_probability
+        1000, prob=corpus_word_seen_probability
     )
 
     lif_base = {
@@ -141,22 +141,22 @@ def main():
                 tag="stdp",
                 tau_plus=4.0,
                 tau_minus=4.0,
-                a_plus=0.02,
-                a_minus=-0.01,
+                a_plus=0.2,  # 0.02
+                a_minus=-0.1,  # 0.01
                 dt=1.0,
                 w_min=0,
                 # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
                 w_max=np.round(
                     (lif_base["threshold"] - lif_base["v_rest"])
                     / np.average(list(map(len, corpus_config.words)))
-                    + 0.2,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
+                    + 2,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
                     decimals=1,
                 ),
                 min_delay_threshold=1,
                 weight_decay=1,
                 weight_update_strategy=None,
                 stdp_factor=0.5,
-                delay_factor=1,  # episode increase
+                delay_factor=0.1,  # episode increase
             ),
         },
     )

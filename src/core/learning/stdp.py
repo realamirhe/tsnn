@@ -85,6 +85,7 @@ class SynapsePairWiseSTDP(Behaviour):
 
         selected_weights_plotter.configure_plot(ylim=[self.w_min, self.w_max + 0.2])
 
+    # TODO: add dw_neutral effect into dw_plus
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
         if not synapse.recording:
@@ -126,6 +127,9 @@ class SynapsePairWiseSTDP(Behaviour):
             * synapse.enabled  # activation of synapse itself
             * self.dt
         )
+
+        if (dw != 0).any():
+            x = "slama alaik"
 
         dw_plotter.add_image(dw * 1e5)
         rows, cols = selected_neurons_from_words()
