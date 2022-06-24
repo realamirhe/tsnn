@@ -31,8 +31,10 @@ class SynapsePairWiseSTDP(Behaviour):
         synapse.W = synapse.get_synapse_mat("uniform")
 
         configure = {
-            "a_minus": -0.2,
-            "a_plus": 0.1,
+            "a_minus": -0.1,
+            "a_plus": 0.2,
+            "delay_a_minus": -0.1,
+            "delay_a_plus": 0.2,
             "delay_factor": 1.0,
             "dt": 1.0,
             "min_delay_threshold": 0.15,
@@ -42,11 +44,14 @@ class SynapsePairWiseSTDP(Behaviour):
             "w_max": 10.0,
             "w_min": 0.0,
             "weight_decay": 1.0,
-            "weight_update_strategy": None,
         }
 
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, synapse))
+
+        weight_update_strategy = self.get_init_attr(
+            "weight_update_strategy", None, synapse
+        )
         # Scale W from [0,1) to [w_min, w_max)
         synapse.W = synapse.W * (self.w_max - self.w_min) + self.w_min
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
@@ -65,23 +70,23 @@ class SynapsePairWiseSTDP(Behaviour):
         )
         self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
 
-        if self.weight_update_strategy not in (None, "soft-bound", "hard-bound"):
+        if weight_update_strategy not in (None, "soft-bound", "hard-bound"):
             raise AssertionError(
                 "weight_update_strategy must be one of soft-bound|hard-bound|None"
             )
 
         # http://www.scholarpedia.org/article/Spike-timing_dependent_plasticity#Weight_dependence:_hard_bounds_and_soft_bounds
-        if self.weight_update_strategy is None:
-            self.A_minus = lambda w: self.a_minus
-            self.A_plus = lambda w: self.a_plus
-        elif self.weight_update_strategy == "soft-bound":
+        if weight_update_strategy is None:
+            self.A_minus = lambda w, am=self.a_minus: am
+            self.A_plus = lambda w, ap=self.a_plus: ap
+        elif weight_update_strategy == "soft-bound":
             # Soft bounds: for large weights, synaptic depression dominates over potentiation
-            self.A_minus = lambda w: w * self.a_minus
-            self.A_plus = lambda w: (self.w_max - w) * self.a_plus
-        elif self.weight_update_strategy == "hard-bound":
+            self.A_minus = lambda w, am=self.a_minus: w * am
+            self.A_plus = lambda w, ap=self.a_plus: (self.w_max - w) * ap
+        elif weight_update_strategy == "hard-bound":
             # Hard bounds: an update rule with fixed parameters a- and a+ is used until the bounds are reached
-            self.A_minus = lambda w: np.heaviside(-w, 0) * self.a_minus
-            self.A_plus = lambda w: np.heaviside(self.w_max - w, 0) * self.a_plus
+            self.A_minus = lambda w, am=self.a_minus: np.heaviside(-w, 0) * am
+            self.A_plus = lambda w, ap=self.a_plus: np.heaviside(self.w_max - w, 0) * ap
 
         selected_weights_plotter.configure_plot(ylim=[self.w_min, self.w_max + 0.2])
 
@@ -102,34 +107,30 @@ class SynapsePairWiseSTDP(Behaviour):
             -synapse.dst.trace[:, -1] / self.tau_minus + synapse.dst.fired  # dy
         ) * self.dt
 
-        dw_minus = (
-            self.A_minus(synapse.W)
-            * synapse.src.fire_effect  # 2x26
-            * synapse.dst.trace[:, -1][:, np.newaxis]  # 2x1
-        )
+        dw_minus = synapse.src.fire_effect * synapse.dst.trace[:, -1][:, np.newaxis]
 
         dw_neutral = (
-            self.A_plus(synapse.W)
-            * synapse.src.fire_effect
+            synapse.src.fire_effect
             * (synapse.dst.trace[:, -1] * synapse.dst.fired)[:, np.newaxis]
         )
 
+        # post_pre incremental view
         dw_plus = (
-            self.A_plus(synapse.W)
-            * synapse.src.trace[self.delay_domains, self.delay_ranges]
+            synapse.src.trace[self.delay_domains, self.delay_ranges]
             * synapse.dst.fired[:, np.newaxis]
         )
-
+        # soft bound for both delay and stdp separate
         dw = (
             DopamineEnvironment.get()  # from global environment
-            * (dw_plus + dw_neutral + dw_minus)  # stdp mechanism
+            * (
+                self.A_plus(synapse.W) * dw_plus
+                - self.A_minus(synapse.W) * dw_neutral
+                + self.A_minus(synapse.W) * dw_minus
+            )  # stdp mechanism
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself
             * self.dt
         )
-
-        if (dw != 0).any():
-            x = "slama alaik"
 
         dw_plotter.add_image(dw * 1e5)
         rows, cols = selected_neurons_from_words()
@@ -142,18 +143,23 @@ class SynapsePairWiseSTDP(Behaviour):
         if not feature_flags.enable_delay_update_in_stdp:
             return
 
-        use_shared_delay = dw.shape != synapse.delay.shape
+        dd = (
+            self.A_plus(synapse.W, self.delay_a_plus) * dw_plus
+            - self.A_minus(synapse.W, self.delay_a_minus) * dw_neutral
+            + self.A_minus(synapse.W, self.delay_a_minus) * dw_minus
+        )
+        use_shared_delay = dd.shape != synapse.delay.shape
         if use_shared_delay:
-            dw = np.mean(dw, axis=0, keepdims=True)
+            dd = np.mean(dd, axis=0, keepdims=True)
 
-        non_zero_dw = (dw != 0).astype(bool)
-        if not non_zero_dw.any():
+        non_zero_dd = (dd != 0).astype(bool)
+        synapse.delay[non_zero_dd] += 1e-5
+        if not non_zero_dd.any():
             return
 
-        should_update = np.min(np.where(non_zero_dw, synapse.delay, np.inf), axis=1)
-        should_update[should_update == np.inf] = 0
+        should_update = np.min(synapse.delay, axis=1)
         should_update = should_update > self.min_delay_threshold
         if should_update.any():
-            synapse.delay -= dw * should_update[:, np.newaxis] * self.delay_factor
+            synapse.delay -= dd * should_update[:, np.newaxis] * self.delay_factor
             # NOTE: that np.floor doesn't use definition of "floor-towards-zero"
             self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1

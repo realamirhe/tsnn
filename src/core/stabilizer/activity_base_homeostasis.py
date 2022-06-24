@@ -18,6 +18,7 @@ class ActivityBaseHomeostasis(Behaviour):
             for penalty we decrease -A/w (-(w/A)^-1) every one step it doesn't spike
         """
 
+        # - noise
         self.activity_step = -activity_rate / self.window_size
 
         # rename activity_rate for the readability [same ref]
@@ -32,6 +33,7 @@ class ActivityBaseHomeostasis(Behaviour):
 
     def new_iteration(self, n):
         self.activities += np.where(n.fired, 1, self.activity_step)
+        self.activities[self.activities < 0] = 0
         activity_plotter.add(self.activities)
         if (n.iteration % self.window_size) == 0:
             greater = ((self.activities > self.max_activity) * -1).astype(def_dtype)
@@ -56,5 +58,6 @@ class ActivityBaseHomeostasis(Behaviour):
 
             # For: Logic for adaptive updating rate (see old trunks)
 
-            self.activities *= 0
+            # TODO: note it should be there or not
+            # self.activities *= 0
             self.exhaustion *= 0

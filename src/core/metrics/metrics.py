@@ -87,10 +87,9 @@ class Metrics(Behaviour):
             precision = precision_score(outputs, predictions, average="micro")
             f1 = f1_score(outputs, predictions, average="micro")
             recall = recall_score(outputs, predictions, average="micro")
-            # confusion matrix
+
             cm = confusion_matrix(outputs, predictions)
             cm_sum = cm.sum(axis=1)
-
             frequencies = np.asarray(np.unique(outputs, return_counts=True)).T
             frequencies_p = np.asarray(np.unique(predictions, return_counts=True)).T
 

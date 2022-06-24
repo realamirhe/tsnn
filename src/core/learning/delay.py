@@ -33,6 +33,7 @@ class SynapseDelay(Behaviour):
             synapse.delay = np.clip(synapse.delay, deviation, self.max_delay)
 
         if feature_flags.enable_magic_delays:
+            # synapse.delay[0, 0] = 0.9
             for i, word in enumerate(corpus_config.words):
                 synapse.delay[
                     i, [corpus_config.letters.index(char) for char in word]
@@ -65,7 +66,7 @@ class SynapseDelay(Behaviour):
             activate next layer input. So keeping the `t` layer of all output neurons will give us `weight_scale`
             and the maximum of weight scale in the output axis will give us the firing pattern
         """
-        synapse.delay += 1e-5
+        synapse.delay += np.random.random(synapse.delay.shape) * 1e-5
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
         rows, cols = selected_neurons_from_words()
         selected_delay_plotter.add(synapse.delay[rows, cols])
@@ -75,7 +76,6 @@ class SynapseDelay(Behaviour):
 
         delays_indices = synapse.delay.astype(int)
         mantis = synapse.delay % 1.0
-        mantis[mantis == 0] = 1.0
         complement = 1 - mantis
 
         synapse.src.fire_effect = (

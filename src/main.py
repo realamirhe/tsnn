@@ -46,7 +46,7 @@ def main():
     lif_base = {
         "v_rest": -65,
         "v_reset": -65,
-        "threshold": -52,
+        "threshold": -63,
         "dt": 1.0,
         "R": 3,
         "tau": 3,
@@ -143,20 +143,22 @@ def main():
                 tau_minus=4.0,
                 a_plus=0.2,  # 0.02
                 a_minus=-0.1,  # 0.01
+                delay_a_minus=-0.01,
+                delay_a_plus=0.02,
                 dt=1.0,
                 w_min=0,
                 # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
                 w_max=np.round(
                     (lif_base["threshold"] - lif_base["v_rest"])
-                    / np.average(list(map(len, corpus_config.words)))
-                    + 2,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
+                    / (np.average(list(map(len, corpus_config.words))))
+                    + 0.02,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
                     decimals=1,
                 ),
                 min_delay_threshold=1,
                 weight_decay=1,
-                weight_update_strategy=None,
-                stdp_factor=0.5,
-                delay_factor=0.1,  # episode increase
+                weight_update_strategy="soft-bound",
+                stdp_factor=0.002,
+                delay_factor=0.001,  # episode increase
             ),
         },
     )
