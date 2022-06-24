@@ -21,21 +21,32 @@ selected_dw_plotter = HistoryRecorder1D(
 threshold_plotter = HistoryRecorder1D(
     title="threshold",
     vertical_history_separator=True,
-    enabled=False,
     should_copy_on_add=True,
+    enabled=True,
 )
 words_stimulus_plotter = HistoryRecorder1D(
-    title="words_stimulus", window_size=25, enabled=False, should_copy_on_add=True
+    title="words_stimulus",
+    window_size=25,
+    should_copy_on_add=True,
+    enabled=False,
 )
 selected_delay_plotter = HistoryRecorder1D(
     title="selected::delay",
     window_size=25,
     vertical_history_separator=True,
-    enabled=False,
+    enabled=True,
 )
 selected_weights_plotter = HistoryRecorder1D(
     title="selected::weights",
     window_size=3,
     vertical_history_separator=True,
+    enabled=True,
+)
+
+dst_firing_plotter = HistoryRecorder1D(
+    title="dst firing",
+    vertical_history_separator=True,
+    should_copy_on_add=True,
+    save_as_csv=False,
     enabled=False,
 )

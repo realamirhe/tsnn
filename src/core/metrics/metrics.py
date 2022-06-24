@@ -23,6 +23,7 @@ from src.configs.plotters import (
     selected_delay_plotter,
     selected_dw_plotter,
     selected_weights_plotter,
+    dst_firing_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
 from src.helpers.network import EpisodeTracker
@@ -70,6 +71,7 @@ class Metrics(Behaviour):
             delay_plotter.plot()
             activity_plotter.plot(should_reset=False)
             words_stimulus_plotter.plot()
+            dst_firing_plotter.plot(should_reset=False)
 
             bit_range = 1 << np.arange(self.outputs[0].size)
 

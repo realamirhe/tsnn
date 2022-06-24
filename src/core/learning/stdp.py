@@ -159,7 +159,11 @@ class SynapsePairWiseSTDP(Behaviour):
 
         should_update = np.min(synapse.delay, axis=1)
         should_update = should_update > self.min_delay_threshold
+
         if should_update.any():
             synapse.delay -= dd * should_update[:, np.newaxis] * self.delay_factor
             # NOTE: that np.floor doesn't use definition of "floor-towards-zero"
             self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
+        else:
+            # Neuron actual behaviour
+            synapse.delay += 1e-5

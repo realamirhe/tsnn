@@ -37,7 +37,7 @@ SynapseDelay = (
 @c_profiler
 def main():
     network = Network()
-    homeostasis_window_size = 100
+    homeostasis_window_size = 200
     corpus_word_seen_probability = 0.9
     stream_i_train, stream_j_train, joined_corpus = get_data(
         1000, prob=corpus_word_seen_probability
