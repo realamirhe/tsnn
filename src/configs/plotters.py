@@ -53,6 +53,7 @@ selected_weights_plotter = HistoryRecorder1D(
     vertical_history_separator=True,
     enabled=enable_plotter and True,
     every_n_episode=5,
+    save_as_csv=False,
 )
 
 dst_firing_plotter = HistoryRecorder1D(

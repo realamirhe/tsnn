@@ -2,6 +2,7 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.configs import feature_flags, corpus_config
+from src.configs.corpus_config import letters
 from src.configs.plotters import (
     dw_plotter,
     w_plotter,
@@ -25,6 +26,8 @@ def none_bound(a_min, A, a_max):
 
 
 bounds = {"soft-bound": soft_bound, "hard-bound": hard_bound, "none": none_bound}
+
+LET = np.array(list(letters))
 
 
 class SynapsePairWiseSTDP(Behaviour):
@@ -124,8 +127,8 @@ class SynapsePairWiseSTDP(Behaviour):
         coincidence = (
             synapse.src.fire_effect.astype(bool) * synapse.dst.fired[:, np.newaxis]
         )
-        coincidence = np.logical_not(coincidence)
-        ltd = synapse.src.fire_effect * synapse.dst.trace[:, -1][:, np.newaxis]
+        non_coincidence = np.logical_not(coincidence)
+        ltd = synapse.src.fire_effect * synapse.dst.trace[:, 0][:, np.newaxis]
 
         delay_ranges = synapse.delay.astype(int)
         mantis = synapse.delay % 1.0
@@ -149,7 +152,7 @@ class SynapsePairWiseSTDP(Behaviour):
             * (
                 # stdp mechanism
                 self.a_plus * ltp
-                + self.a_minus * ltd * coincidence
+                + self.a_minus * ltd * non_coincidence
             )
             * bounds[self.weight_update_strategy or "none"](
                 self.w_min, synapse.W, self.w_max
@@ -162,21 +165,40 @@ class SynapsePairWiseSTDP(Behaviour):
         dw_plotter.add_image(dw * 1e5)
         rows, cols = selected_neurons_from_words()
         selected_dw_plotter.add(dw[rows, cols])
-        synapse.W = synapse.W * self.weight_decay + dw
+
+        synapse.W[synapse.W > 0.01] -= 1e-5
+        synapse.delay[synapse.delay < self.max_delay - 0.01] += 1e-5
+
+        synapse.W = synapse.W + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
+
         selected_weights_plotter.add(synapse.W[rows, cols])
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
+
+        # if (self.delay_a_minus * ltd < 0).any():
+        #     abc_active = LET[synapse.src.fire_effect[0].astype(bool)]
+        #     omn_active = LET[synapse.src.fire_effect[1].astype(bool)]
+        #     print("abc:", "".join(abc_active))
+        #     print("omn:", "".join(omn_active))
+        # omn jaq
+        #     print("seen_char:", synapse.src.seen_char.replace(" ", "."))
+        #     print(
+        #         "delay",
+        #         synapse.delay[
+        #             [0] * len(abc_active) + [1] * len(omn_active),
+        #             [letters.index(i) for i in abc_active]
+        #             + [letters.index(i) for i in omn_active],
+        #         ],
+        #     )
+        #     print("Hichi ltd manfi nadarim!!!!!")
 
         """ stop condition for delay learning """
         if not feature_flags.enable_delay_update_in_stdp:
             return
 
         dd = DopamineEnvironment.get() * (
-            self.delay_a_plus * ltp * coincidence + self.delay_a_minus * ltd
+            self.delay_a_plus * ltp * non_coincidence + self.delay_a_minus * ltd
         )
-
-        # if synapse.src.fire_effect.any() or synapse.dst.fired.any():
-        #     print("happy")
 
         use_shared_delay = dd.shape != synapse.delay.shape
         if use_shared_delay:
@@ -188,7 +210,7 @@ class SynapsePairWiseSTDP(Behaviour):
 
         should_update = np.min(synapse.delay, axis=1)
         should_update = should_update > self.min_delay_threshold
-        synapse.delay[np.logical_not(should_update)] += 1e-5
+        # synapse.delay[np.logical_not(should_update)] += 1e-5
 
         if should_update.any():
             synapse.delay += dd * should_update[:, np.newaxis] * self.delay_factor

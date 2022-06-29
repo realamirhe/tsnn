@@ -31,18 +31,23 @@ class Supervisor(Behaviour):
         output = self.outputs[n.iteration - 1]
         prediction = n.fired
 
+        # abc  askfhklas kfhkh
+        #     1,01nn
         if not np.isnan(output).any():
             self.current_pattern = output
 
-            if np.sum(prediction) == 0:
-                DopamineEnvironment.set(-1)
-                return
+            # if np.sum(prediction) == 0:
+            #     DopamineEnvironment.set(-1)
+            #     print("dop", DopamineEnvironment.get())
+            #     return
 
         if np.sum(prediction) > 0:
             distance = [-1.0, 1.0][int((self.current_pattern == prediction).all())]
             DopamineEnvironment.set(distance)
         else:
             DopamineEnvironment.decay(self.dopamine_decay)
+
+        # print("dop", DopamineEnvironment.get())
 
         # Cosine similarity
         # distance = 1 - spatial.distance.cosine(output + 1, prediction + 1)

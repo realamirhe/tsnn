@@ -19,7 +19,7 @@ def joined_corpus_generator(corpus: List[str], has_noise=False) -> str:
         sparse_gap = " " * words_spacing_gap
         return sparse_gap.join(corpus) + sparse_gap
 
-    space_seen_probability = 0.8
+    space_seen_probability = 0.5
     p = np.ones(len(letters) + 1)
     p *= (1 - space_seen_probability) / (p.size - 1)
     p[0] = space_seen_probability

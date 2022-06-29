@@ -21,10 +21,10 @@ from src.core.neurons.trace import TraceHistory
 from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.spike_generator import get_data
-from src.helpers.base import reset_random_seed, c_profiler
+from src.helpers.base import c_profiler
 from src.helpers.network import FeatureSwitch, EpisodeTracker
 
-reset_random_seed(2298)
+# reset_random_seed(2294)
 
 SynapseDelay = (
     FireHistorySynapseDelay
@@ -151,7 +151,7 @@ def main():
                 a_plus=0.2,  # 0.02
                 a_minus=-0.1,  # 0.01
                 delay_a_plus=0.2,
-                delay_a_minus=-0.1,
+                delay_a_minus=-0.5,
                 dt=1.0,
                 w_min=0,
                 # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
@@ -163,9 +163,9 @@ def main():
                     decimals=1,
                 ),
                 min_delay_threshold=1,
-                weight_decay=1,
-                weight_update_strategy="soft-bound",
-                stdp_factor=0.002,
+                weight_decay=0.999,
+                weight_update_strategy=None,
+                stdp_factor=0.02,
                 max_delay=max_delay,
                 delay_factor=0.02,  # episode increase
             ),
@@ -189,3 +189,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# delay -
+# weight +
+# ltd count in negative form - must be increased!
+# this is why delay are increased
