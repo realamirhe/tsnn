@@ -36,7 +36,13 @@ class HistoryRecorder1D(HistoryRecorder):
         if self.ylim is not None:
             plt.gca().set_ylim(self.ylim)
 
-        plt.show()
+        if (
+            self.every_n_episode is None
+            or EpisodeTracker.episode() % self.every_n_episode == 0
+        ):
+            plt.show()
+        else:
+            plt.clf()
 
         if should_reset:
             self.reset()

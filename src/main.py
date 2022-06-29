@@ -166,7 +166,8 @@ def main():
                 weight_decay=1,
                 weight_update_strategy="soft-bound",
                 stdp_factor=0.002,
-                delay_factor=0.001,  # episode increase
+                max_delay=max_delay,
+                delay_factor=0.02,  # episode increase
             ),
         },
     )

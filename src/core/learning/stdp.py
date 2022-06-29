@@ -59,6 +59,7 @@ class SynapsePairWiseSTDP(Behaviour):
             "w_max": 10.0,
             "w_min": 0.0,
             "weight_decay": 1.0,
+            "max_delay": 1.0,
             "weight_update_strategy": None,
             "delay_update_strategy": None,
         }
@@ -82,7 +83,6 @@ class SynapsePairWiseSTDP(Behaviour):
         self.delay_domains = np.arange(synapse.src.size, dtype=int) * np.ones(
             (synapse.dst.size, 1), dtype=int
         )
-        self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
 
         if self.weight_update_strategy not in (None, "soft-bound", "hard-bound"):
             raise AssertionError(
@@ -105,12 +105,12 @@ class SynapsePairWiseSTDP(Behaviour):
         # add new trace to existing src trace history
         # we don't have access to the latest src asar till here
         # should we accumulate it to the previous last layer trace or just replace that with the latest one
-        synapse.src.trace[:, -1] += (
-            -synapse.src.trace[:, -1] / self.tau_plus + synapse.src.fired  # dx
+        synapse.src.trace[:, 0] += (
+            -synapse.src.trace[:, 0] / self.tau_plus + synapse.src.fired  # dx
         ) * self.dt
 
-        synapse.dst.trace[:, -1] += (
-            -synapse.dst.trace[:, -1] / self.tau_minus + synapse.dst.fired  # dy
+        synapse.dst.trace[:, 0] += (
+            -synapse.dst.trace[:, 0] / self.tau_minus + synapse.dst.fired  # dy
         ) * self.dt
 
         #  TODO: coincidence logic detection re-check
@@ -121,11 +121,24 @@ class SynapsePairWiseSTDP(Behaviour):
         # dw:= a_plus* ltp + a_min * ltd
         # W += dw
         # delay+=dd
-
+        coincidence = (
+            synapse.src.fire_effect.astype(bool) * synapse.dst.fired[:, np.newaxis]
+        )
+        coincidence = np.logical_not(coincidence)
         ltd = synapse.src.fire_effect * synapse.dst.trace[:, -1][:, np.newaxis]
 
+        delay_ranges = synapse.delay.astype(int)
+        mantis = synapse.delay % 1.0
+        complement = 1 - mantis
+
         ltp = (
-            synapse.src.trace[self.delay_domains, self.delay_ranges]
+            (
+                synapse.src.trace[self.delay_domains, delay_ranges] * complement
+                + synapse.src.trace[
+                    self.delay_domains, np.clip(delay_ranges + 1, 0, self.max_delay)
+                ]
+                * mantis
+            )
             # * synapse.src.trace[self.delay_domains, self.delay_ranges+1]*cpomplete ?
             * synapse.dst.fired[:, np.newaxis]
         )
@@ -136,7 +149,7 @@ class SynapsePairWiseSTDP(Behaviour):
             * (
                 # stdp mechanism
                 self.a_plus * ltp
-                + self.a_minus * ltd * np.logical_not(synapse.dst.fired)[:, np.newaxis]
+                + self.a_minus * ltd * coincidence
             )
             * bounds[self.weight_update_strategy or "none"](
                 self.w_min, synapse.W, self.w_max
@@ -159,15 +172,11 @@ class SynapsePairWiseSTDP(Behaviour):
             return
 
         dd = DopamineEnvironment.get() * (
-            self.delay_a_plus * ltp * np.logical_not(synapse.dst.fired)[:, np.newaxis]
-            + self.delay_a_minus * ltd
+            self.delay_a_plus * ltp * coincidence + self.delay_a_minus * ltd
         )
 
-        if synapse.src.fire_effect.any() or synapse.dst.fired.any():
-            pass
-        else:
-            if (dd != 0).any() or (dw != 0).any():
-                print("disaster")
+        # if synapse.src.fire_effect.any() or synapse.dst.fired.any():
+        #     print("happy")
 
         use_shared_delay = dd.shape != synapse.delay.shape
         if use_shared_delay:
@@ -183,5 +192,3 @@ class SynapsePairWiseSTDP(Behaviour):
 
         if should_update.any():
             synapse.delay += dd * should_update[:, np.newaxis] * self.delay_factor
-            # NOTE: that np.floor doesn't use definition of "floor-towards-zero"
-            self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1

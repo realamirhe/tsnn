@@ -32,6 +32,7 @@ threshold_plotter = HistoryRecorder1D(
     vertical_history_separator=True,
     should_copy_on_add=True,
     enabled=enable_plotter and True,
+    every_n_episode=5,
 )
 words_stimulus_plotter = HistoryRecorder1D(
     title="words_stimulus",
@@ -44,12 +45,14 @@ selected_delay_plotter = HistoryRecorder1D(
     window_size=25,
     vertical_history_separator=True,
     enabled=enable_plotter and True,
+    every_n_episode=5,
 )
 selected_weights_plotter = HistoryRecorder1D(
     title="selected::weights",
     window_size=3,
     vertical_history_separator=True,
     enabled=enable_plotter and True,
+    every_n_episode=5,
 )
 
 dst_firing_plotter = HistoryRecorder1D(
