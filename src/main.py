@@ -24,7 +24,7 @@ from src.data.spike_generator import get_data
 from src.helpers.base import reset_random_seed, c_profiler
 from src.helpers.network import FeatureSwitch, EpisodeTracker
 
-reset_random_seed(1231)
+reset_random_seed(2298)
 
 SynapseDelay = (
     FireHistorySynapseDelay
@@ -33,12 +33,16 @@ SynapseDelay = (
 )
 
 
+#  DERIVED VERBALISES
+# W_MAX (stdp)
+# DOPAMINE_DECAY (reinforcement learning Supervisor)
+
 # ================= NETWORK  =================
 @c_profiler
 def main():
     network = Network()
-    homeostasis_window_size = 200
-    corpus_word_seen_probability = 0.9
+    homeostasis_window_size = 1000
+    corpus_word_seen_probability = 1
     stream_i_train, stream_j_train, joined_corpus = get_data(
         1000, prob=corpus_word_seen_probability
     )
@@ -46,10 +50,13 @@ def main():
     lif_base = {
         "v_rest": -65,
         "v_reset": -65,
-        "threshold": -63,
+        "threshold": -55,
         "dt": 1.0,
-        "R": 3,
-        "tau": 3,
+        "R": 1,
+        "tau": max(
+            corpus_config.words_spacing_gap,
+            max(map(len, corpus_config.words)),
+        ),
     }
 
     letters_ng = NeuronGroup(
@@ -112,7 +119,7 @@ def main():
             6: WinnerTakeAll(),
             7: Supervisor(
                 tag="supervisor:train",
-                dopamine_decay=1 / max_delay,
+                dopamine_decay=1 / (max_delay + 1),
                 outputs=stream_j_train,
             ),
             9: Metrics(
@@ -143,15 +150,16 @@ def main():
                 tau_minus=4.0,
                 a_plus=0.2,  # 0.02
                 a_minus=-0.1,  # 0.01
-                delay_a_minus=-0.01,
-                delay_a_plus=0.02,
+                delay_a_plus=0.2,
+                delay_a_minus=-0.1,
                 dt=1.0,
                 w_min=0,
                 # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
+                # w_max=4,
                 w_max=np.round(
                     (lif_base["threshold"] - lif_base["v_rest"])
                     / (np.average(list(map(len, corpus_config.words))))
-                    + 0.02,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
+                    + 0.7,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
                     decimals=1,
                 ),
                 min_delay_threshold=1,

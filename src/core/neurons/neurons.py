@@ -33,10 +33,7 @@ class StreamableLIFNeurons(Behaviour):
         for attr, value in configure.items():
             setattr(n, attr, self.get_init_attr(attr, value, n))
         # n.v = n.get_neuron_vec(mode="ones") * n.v_rest
-        n.v = n.v_rest + n.get_neuron_vec(mode="uniform", scale=0.1) * (
-            n.threshold - n.v_reset
-        )
-
+        n.v = n.v_rest * n.get_neuron_vec(mode="ones")
         # NOTE: 🧬 For long term support, will be used in e.g. Homeostasis
         if has_long_term_effect:
             n.threshold = np.ones_like(n.v) * n.threshold
@@ -51,8 +48,9 @@ class StreamableLIFNeurons(Behaviour):
         if is_forced_spike:
             n.I = self.stream[n.iteration - 1]
 
-        dv_dt = n.v_rest - n.v + n.R * n.I
-        n.v += dv_dt * self.dt / n.tau
+        # TODO: Match the tau placement
+        dv_dt = (n.v_rest - n.v) * self.dt / n.tau + n.R * n.I
+        n.v += dv_dt
         if self.capture_old_v:
             n.old_v = n.v.copy()
 

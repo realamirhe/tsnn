@@ -12,6 +12,21 @@ from src.core.environement.dopamine import DopamineEnvironment
 from src.helpers.base import selected_neurons_from_words
 
 
+def soft_bound(a_min, A, a_max):
+    return (A - a_min) * (a_max - A)
+
+
+def hard_bound(a_min, A, a_max):
+    return np.heaviside(A - a_min, 0) * np.heaviside(a_max - A, 0)
+
+
+def none_bound(a_min, A, a_max):
+    return 1
+
+
+bounds = {"soft-bound": soft_bound, "hard-bound": hard_bound, "none": none_bound}
+
+
 class SynapsePairWiseSTDP(Behaviour):
     __slots__ = [
         "a_minus",
@@ -44,14 +59,13 @@ class SynapsePairWiseSTDP(Behaviour):
             "w_max": 10.0,
             "w_min": 0.0,
             "weight_decay": 1.0,
+            "weight_update_strategy": None,
+            "delay_update_strategy": None,
         }
 
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, synapse))
 
-        weight_update_strategy = self.get_init_attr(
-            "weight_update_strategy", None, synapse
-        )
         # Scale W from [0,1) to [w_min, w_max)
         synapse.W = synapse.W * (self.w_max - self.w_min) + self.w_min
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
@@ -70,23 +84,15 @@ class SynapsePairWiseSTDP(Behaviour):
         )
         self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
 
-        if weight_update_strategy not in (None, "soft-bound", "hard-bound"):
+        if self.weight_update_strategy not in (None, "soft-bound", "hard-bound"):
             raise AssertionError(
                 "weight_update_strategy must be one of soft-bound|hard-bound|None"
             )
 
-        # http://www.scholarpedia.org/article/Spike-timing_dependent_plasticity#Weight_dependence:_hard_bounds_and_soft_bounds
-        if weight_update_strategy is None:
-            self.A_minus = lambda w, am=self.a_minus: am
-            self.A_plus = lambda w, ap=self.a_plus: ap
-        elif weight_update_strategy == "soft-bound":
-            # Soft bounds: for large weights, synaptic depression dominates over potentiation
-            self.A_minus = lambda w, am=self.a_minus: w * am
-            self.A_plus = lambda w, ap=self.a_plus: (self.w_max - w) * ap
-        elif weight_update_strategy == "hard-bound":
-            # Hard bounds: an update rule with fixed parameters a- and a+ is used until the bounds are reached
-            self.A_minus = lambda w, am=self.a_minus: np.heaviside(-w, 0) * am
-            self.A_plus = lambda w, ap=self.a_plus: np.heaviside(self.w_max - w, 0) * ap
+        if self.delay_update_strategy not in (None, "soft-bound", "hard-bound"):
+            raise AssertionError(
+                "delay_update_strategy must be one of soft-bound|hard-bound|None"
+            )
 
         selected_weights_plotter.configure_plot(ylim=[self.w_min, self.w_max + 0.2])
 
@@ -107,26 +113,34 @@ class SynapsePairWiseSTDP(Behaviour):
             -synapse.dst.trace[:, -1] / self.tau_minus + synapse.dst.fired  # dy
         ) * self.dt
 
-        dw_minus = synapse.src.fire_effect * synapse.dst.trace[:, -1][:, np.newaxis]
+        #  TODO: coincidence logic detection re-check
+        # ltd -> dw_minus (depression) w- d+
+        # ltp -> dw_plus (potentiation) w+ d-
+        # coincidence -> w ltd & delay ltp
+        # dd:= delay_a_plus * ltp + delay_a_minus * ltd
+        # dw:= a_plus* ltp + a_min * ltd
+        # W += dw
+        # delay+=dd
 
-        dw_neutral = (
-            synapse.src.fire_effect
-            * (synapse.dst.trace[:, -1] * synapse.dst.fired)[:, np.newaxis]
-        )
+        ltd = synapse.src.fire_effect * synapse.dst.trace[:, -1][:, np.newaxis]
 
-        # post_pre incremental view
-        dw_plus = (
+        ltp = (
             synapse.src.trace[self.delay_domains, self.delay_ranges]
+            # * synapse.src.trace[self.delay_domains, self.delay_ranges+1]*cpomplete ?
             * synapse.dst.fired[:, np.newaxis]
         )
+
         # soft bound for both delay and stdp separate
         dw = (
             DopamineEnvironment.get()  # from global environment
             * (
-                self.A_plus(synapse.W) * dw_plus
-                - self.A_minus(synapse.W) * dw_neutral
-                + self.A_minus(synapse.W) * dw_minus
-            )  # stdp mechanism
+                # stdp mechanism
+                self.a_plus * ltp
+                + self.a_minus * ltd * np.logical_not(synapse.dst.fired)[:, np.newaxis]
+            )
+            * bounds[self.weight_update_strategy or "none"](
+                self.w_min, synapse.W, self.w_max
+            )
             * self.stdp_factor  # stdp scale factor
             * synapse.enabled  # activation of synapse itself
             * self.dt
@@ -139,31 +153,35 @@ class SynapsePairWiseSTDP(Behaviour):
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
         selected_weights_plotter.add(synapse.W[rows, cols])
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
+
         """ stop condition for delay learning """
         if not feature_flags.enable_delay_update_in_stdp:
             return
 
-        dd = (
-            self.A_plus(synapse.W, self.delay_a_plus) * dw_plus
-            - self.A_minus(synapse.W, self.delay_a_minus) * dw_neutral
-            + self.A_minus(synapse.W, self.delay_a_minus) * dw_minus
+        dd = DopamineEnvironment.get() * (
+            self.delay_a_plus * ltp * np.logical_not(synapse.dst.fired)[:, np.newaxis]
+            + self.delay_a_minus * ltd
         )
+
+        if synapse.src.fire_effect.any() or synapse.dst.fired.any():
+            pass
+        else:
+            if (dd != 0).any() or (dw != 0).any():
+                print("disaster")
+
         use_shared_delay = dd.shape != synapse.delay.shape
         if use_shared_delay:
             dd = np.mean(dd, axis=0, keepdims=True)
 
         non_zero_dd = (dd != 0).astype(bool)
-        synapse.delay[non_zero_dd] += 1e-5
         if not non_zero_dd.any():
             return
 
         should_update = np.min(synapse.delay, axis=1)
         should_update = should_update > self.min_delay_threshold
+        synapse.delay[np.logical_not(should_update)] += 1e-5
 
         if should_update.any():
-            synapse.delay -= dd * should_update[:, np.newaxis] * self.delay_factor
+            synapse.delay += dd * should_update[:, np.newaxis] * self.delay_factor
             # NOTE: that np.floor doesn't use definition of "floor-towards-zero"
             self.delay_ranges = -np.floor(synapse.delay).astype(int) - 1
-        else:
-            # Neuron actual behaviour
-            synapse.delay += 1e-5

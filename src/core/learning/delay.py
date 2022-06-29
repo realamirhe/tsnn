@@ -33,7 +33,6 @@ class SynapseDelay(Behaviour):
             synapse.delay = np.clip(synapse.delay, deviation, self.max_delay)
 
         if feature_flags.enable_magic_delays:
-            # synapse.delay[0, 0] = 0.9
             for i, word in enumerate(corpus_config.words):
                 synapse.delay[
                     i, [corpus_config.letters.index(char) for char in word]
@@ -73,11 +72,14 @@ class SynapseDelay(Behaviour):
         self.fired_history = np.roll(self.fired_history, 1, axis=1)
         self.fired_history[:, 0] = synapse.src.fired
 
+        # 2.2 t=2*0.8 t=3*0.2 -> 2
+        # 2.7 t=2*0.3 t=3*0.7 -> 2
+        # 2.0 t=2*1.0 t=3*0.0 -> 2
+        # 3.0 t=3*1.0 t=(4^)*0.0 -> 3
+
         delays_indices = synapse.delay.astype(int)
-        mantis = synapse.delay % 1.0
-        complement = 1 - mantis
-        mask = ((mantis < 0.5).astype(int) * (mantis != 0).astype(int)).astype(bool)
-        mantis[mask], complement[mask] = complement[mask], mantis[mask]
+        mantis = synapse.delay % 1.0  # 0
+        complement = 1 - mantis  # 1
 
         synapse.src.fire_effect = (
             self.fired_history[self.src_fired_indices, delays_indices] * complement

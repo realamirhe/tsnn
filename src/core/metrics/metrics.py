@@ -76,12 +76,19 @@ class Metrics(Behaviour):
             bit_range = 1 << np.arange(self.outputs[0].size)
 
             presentation_words = self.words + [UNK]
-            outputs = [o.dot(bit_range) for o in self.outputs if not np.isnan(o).any()]
-            predictions = [
-                p.dot(bit_range)
-                for o, p in zip(self.outputs, self._predictions)
-                if not np.isnan(o).any()
+            # outputs = [o.dot(bit_range) for o in self.outputs if not np.isnan(o).any()]
+            # predictions = [
+            #     p.dot(bit_range)
+            #     for o, p in zip(self.outputs, self._predictions)
+            #     if not np.isnan(o).any()
+            # ]
+
+            # Full confusion matrix plot
+            outputs = [
+                o.dot(bit_range) if not np.isnan(o).any() else -1 for o in self.outputs
             ]
+            predictions = [p.dot(bit_range) for p in self._predictions]
+            # print("prediction [metrics] =>", Counter(predictions))
 
             network_phase = "Testing" if "test" in self.tags[0] else "Training"
             accuracy = accuracy_score(outputs, predictions)
@@ -110,6 +117,21 @@ class Metrics(Behaviour):
                     sep="\n",
                     end="\n\n",
                 )
+                predictions = np.array(predictions)
+                outputs = np.array(outputs)
+                print(
+                    "prediction",
+                    np.sum(predictions == 0),
+                    np.sum(predictions == 1),
+                    np.sum(predictions == 2),
+                )
+                print(
+                    "output",
+                    np.sum(outputs == 0),
+                    np.sum(outputs == 1),
+                    np.sum(outputs == 2),
+                )
+                print("==========")
 
             if feature_flags.enable_cm_plot:
                 cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)
