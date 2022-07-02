@@ -5,3 +5,4 @@ enable_cm_plot = True
 enable_metric_logs = False
 enable_neuron_reset_factory = False
 enabled_c_profiler = False
+enable_plotter = True

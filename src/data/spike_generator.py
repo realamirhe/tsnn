@@ -1,4 +1,5 @@
 import random
+from typing import List
 
 import numpy as np
 
@@ -11,6 +12,28 @@ def spike_stream_i(char):
     if char in letters:
         spikes[letters.index(char)] = 1
     return spikes
+
+
+def joined_corpus_generator(corpus: List[str], has_noise=False) -> str:
+    if words_spacing_gap < 2 or not has_noise:
+        sparse_gap = " " * words_spacing_gap
+        return sparse_gap.join(corpus) + sparse_gap
+
+    space_seen_probability = 0.5
+    p = np.ones(len(letters) + 1)
+    p *= (1 - space_seen_probability) / (p.size - 1)
+    p[0] = space_seen_probability
+
+    possible_noise = [" "] + list(letters)
+    return "".join(
+        [
+            word
+            + " "
+            + "".join(np.random.choice(possible_noise, words_spacing_gap - 2, p=p))
+            + " "
+            for word in corpus
+        ]
+    )
 
 
 def get_data(size, prob=0.7, words_size=3):
@@ -26,8 +49,7 @@ def get_data(size, prob=0.7, words_size=3):
 
     random.shuffle(corpus)
 
-    sparse_gap = " " * words_spacing_gap
-    joined_corpus = sparse_gap.join(corpus) + sparse_gap
+    joined_corpus = joined_corpus_generator(corpus, has_noise=True)
     stream_i = [spike_stream_i(char) for char in joined_corpus]
     stream_j = []
 

@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from src.core.visualizer.history_recorder import HistoryRecorder
 from src.helpers.network import EpisodeTracker
@@ -11,6 +12,14 @@ class HistoryRecorder1D(HistoryRecorder):
             return
 
         plt.title(self.title + f" (eps={EpisodeTracker.episode()})")
+
+        if self.save_as_csv is not None:
+            pd.DataFrame(
+                np.array(self.history) * scale
+                if scale is not None
+                else np.array(self.history)
+            ).to_csv(f"out/csv/{self.title}-{EpisodeTracker.episode()}.csv")
+
         if scale is not None:
             plt.plot(np.array(self.history) * scale)
         else:
@@ -24,7 +33,16 @@ class HistoryRecorder1D(HistoryRecorder):
             for x in self.history_steps:
                 plt.axvline(x, color="b", linestyle="--", alpha=0.3)
 
-        plt.show()
+        if self.ylim is not None:
+            plt.gca().set_ylim(self.ylim)
+
+        if (
+            self.every_n_episode is None
+            or EpisodeTracker.episode() % self.every_n_episode == 0
+        ):
+            plt.show()
+        else:
+            plt.clf()
 
         if should_reset:
             self.reset()

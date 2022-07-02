@@ -3,7 +3,11 @@ from tqdm import tqdm
 
 from PymoNNto import SynapseGroup, Recorder, NeuronGroup, Network
 from src.configs import corpus_config, feature_flags
-from src.configs.network_config import epochs, calculate_fire_effect_via_fire_history
+from src.configs.network_config import (
+    epochs,
+    calculate_fire_effect_via_fire_history,
+    max_delay,
+)
 from src.core.learning.delay import SynapseDelay as FireHistorySynapseDelay
 from src.core.learning.reinforcement import Supervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
@@ -17,11 +21,10 @@ from src.core.neurons.trace import TraceHistory
 from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
 from src.core.stabilizer.winner_take_all import WinnerTakeAll
 from src.data.spike_generator import get_data
-from src.helpers.base import reset_random_seed, c_profiler
+from src.helpers.base import c_profiler
 from src.helpers.network import FeatureSwitch, EpisodeTracker
 
-reset_random_seed(1231)
-max_delay = 3
+# reset_random_seed(2294)
 
 SynapseDelay = (
     FireHistorySynapseDelay
@@ -30,19 +33,30 @@ SynapseDelay = (
 )
 
 
+#  DERIVED VERBALISES
+# W_MAX (stdp)
+# DOPAMINE_DECAY (reinforcement learning Supervisor)
+
 # ================= NETWORK  =================
 @c_profiler
 def main():
     network = Network()
-    stream_i_train, stream_j_train, joined_corpus = get_data(1000, prob=0.9)
+    homeostasis_window_size = 1000
+    corpus_word_seen_probability = 1
+    stream_i_train, stream_j_train, joined_corpus = get_data(
+        1000, prob=corpus_word_seen_probability
+    )
 
     lif_base = {
         "v_rest": -65,
         "v_reset": -65,
-        "threshold": -52,
+        "threshold": -55,
         "dt": 1.0,
-        "R": 3,
-        "tau": 3,
+        "R": 1,
+        "tau": max(
+            corpus_config.words_spacing_gap,
+            max(map(len, corpus_config.words)),
+        ),
     }
 
     letters_ng = NeuronGroup(
@@ -68,7 +82,7 @@ def main():
         behaviour={
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
-                noise_scale_factor=1,
+                noise_scale_factor=0.1,
                 stimulus_scale_factor=1,
                 synapse_lens_selector=["GLUTAMATE", 0],
             ),
@@ -87,11 +101,13 @@ def main():
             4: TraceHistory(max_delay=max_delay),
             5: ActivityBaseHomeostasis(
                 tag="homeostasis",
-                window_size=100,
+                window_size=homeostasis_window_size,
                 # NOTE: making updating_rate adaptive is not useful, because we are training model multiple time
                 # so long term threshold must be set within one of these passes. It is useful for faster convergence
                 updating_rate=0.01,
-                activity_rate=15,
+                activity_rate=homeostasis_window_size
+                / corpus_config.words_average_size_occupation
+                * corpus_word_seen_probability,
                 # window_size = 100 character every word has 3 character + space, so we roughly got 25
                 # spaced words per window; 0.6 of words are desired so 25*0.6 = 15 are expected to spike
                 # in each window (15 can be calculated from the corpus)
@@ -103,7 +119,7 @@ def main():
             6: WinnerTakeAll(),
             7: Supervisor(
                 tag="supervisor:train",
-                dopamine_decay=1 / max_delay,
+                dopamine_decay=1 / (max_delay + 1),
                 outputs=stream_j_train,
             ),
             9: Metrics(
@@ -132,21 +148,26 @@ def main():
                 tag="stdp",
                 tau_plus=4.0,
                 tau_minus=4.0,
-                a_plus=0.02,
-                a_minus=-0.01,
+                a_plus=0.2,  # 0.02
+                a_minus=-0.1,  # 0.01
+                delay_a_plus=0.2,
+                delay_a_minus=-0.5,
                 dt=1.0,
                 w_min=0,
                 # ((thresh - reset) / (3=characters) + epsilon) 4.33+eps
+                # w_max=4,
                 w_max=np.round(
                     (lif_base["threshold"] - lif_base["v_rest"])
-                    / np.average(list(map(len, corpus_config.words))),
+                    / (np.average(list(map(len, corpus_config.words))))
+                    + 0.7,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
                     decimals=1,
                 ),
-                min_delay_threshold=1,  # 0.15,
-                weight_decay=0,
+                min_delay_threshold=1,
+                weight_decay=0.999,
                 weight_update_strategy=None,
-                stdp_factor=0.5,
-                delay_factor=1,  # episode increase
+                stdp_factor=0.02,
+                max_delay=max_delay,
+                delay_factor=0.02,  # episode increase
             ),
         },
     )
@@ -157,6 +178,8 @@ def main():
 
     """ TRAINING """
     for _ in tqdm(range(epochs), "Learning"):
+        if _ == 50:
+            print("50")
         EpisodeTracker.update()
         network.iteration = 0
         network.simulate_iterations(len(stream_i_train))
@@ -166,3 +189,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# delay -
+# weight +
+# ltd count in negative form - must be increased!
+# this is why delay are increased
