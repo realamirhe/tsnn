@@ -29,7 +29,6 @@ bounds = {"soft-bound": soft_bound, "hard-bound": hard_bound, "none": none_bound
 
 LET = np.array(list(letters))
 
-
 class SynapsePairWiseSTDP(Behaviour):
     __slots__ = [
         "a_minus",
