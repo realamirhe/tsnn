@@ -8,7 +8,7 @@ from src.helpers.base import selected_neurons_from_words
 
 class SynapseDelay(Behaviour):
     # fmt: off
-    __slots__ = ["max_delay", "delayed_spikes", "weight_effect", "int_delay", "delay_mask"]
+    __slots__ = ["max_delay", "delayed_spikes", "weight_effect", "delay_mask"]
 
     # fmt: on
     def set_variables(self, synapse):
@@ -65,7 +65,7 @@ class SynapseDelay(Behaviour):
             activate next layer input. So keeping the `t` layer of all output neurons will give us `weight_scale`
             and the maximum of weight scale in the output axis will give us the firing pattern
         """
-        synapse.delay += 1e-5
+        # synapse.delay += 1e-5
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
         rows, cols = selected_neurons_from_words()
         selected_delay_plotter.add(synapse.delay[rows, cols])
@@ -73,10 +73,14 @@ class SynapseDelay(Behaviour):
         self.fired_history = np.roll(self.fired_history, 1, axis=1)
         self.fired_history[:, 0] = synapse.src.fired
 
+        # 2.2 t=2*0.8 t=3*0.2 -> 2
+        # 2.7 t=2*0.3 t=3*0.7 -> 2
+        # 2.0 t=2*1.0 t=3*0.0 -> 2
+        # 3.0 t=3*1.0 t=(4^)*0.0 -> 3
+
         delays_indices = synapse.delay.astype(int)
-        mantis = synapse.delay % 1.0
-        mantis[mantis == 0] = 1.0
-        complement = 1 - mantis
+        mantis = synapse.delay % 1.0  # 0
+        complement = 1 - mantis  # 1
 
         synapse.src.fire_effect = (
             self.fired_history[self.src_fired_indices, delays_indices] * complement
