@@ -4,7 +4,7 @@ from nltk.probability import FreqDist
 
 
 def extract_common_imdb_review_words(size: int) -> np.ndarray:
-    df = pd.read_csv("./IMDB_preprocessed.csv")
+    df = pd.read_csv("../corpus/IMDB_preprocessed.csv")
     freq_dist = FreqDist()
     for review in df["review"]:
         for word in review.split(" "):
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # we have 94365 unique words, so we get 80% for them
     # 15540 gte 25, 10210 gte 50
     common_words = extract_common_imdb_review_words(20_000)
-    with open("common_words.npy", "wb") as file:
+    with open("../corpus/common_words.npy", "wb") as file:
         np.save(file, common_words)
-    with open("common_words.npy", "rb") as file:
+    with open("../corpus/common_words.npy", "rb") as file:
         print(np.load(file))

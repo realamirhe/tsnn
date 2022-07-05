@@ -25,7 +25,7 @@ punctuation_remover_tokenizer = RegexpTokenizer(r"\w+")
 
 
 def pre_process_imdb_dataset():
-    df = pd.read_csv("./IMDB Dataset.csv")
+    df = pd.read_csv("../corpus/IMDB Dataset.csv")
     # positive=1 & negative=0
     le = LabelEncoder()
     df["sentiment"] = le.fit_transform(df["sentiment"])
@@ -60,4 +60,4 @@ if __name__ == "__main__":
     data = pre_process_imdb_dataset()
     print(data.head())
     print(data.sentiment.value_counts())
-    data.to_csv("./IMDB_preprocessed.csv", index_label=False, index=False)
+    data.to_csv("../corpus/IMDB_preprocessed.csv", index_label=False, index=False)

@@ -114,6 +114,7 @@ target/
 # data layer file
 *.csv
 *.npy
+*.npz
 
 # Jupyter Notebook
 .ipynb_checkpoints
