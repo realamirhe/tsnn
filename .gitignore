@@ -111,6 +111,10 @@ docs/_build/
 .pybuilder/
 target/
 
+# data layer file
+*.csv
+*.npy
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
