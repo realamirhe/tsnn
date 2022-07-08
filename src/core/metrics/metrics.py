@@ -31,7 +31,7 @@ from src.helpers.network import EpisodeTracker
 
 class Metrics(Behaviour):
     # fmt: off
-    __slots__ = ["recording_phase", "outputs", "_old_recording", "_predictions", "words"]
+    __slots__ = ["recording_phase", "outputs", "_old_recording", "_predictions", "words", "episode_iterations"]
 
     # fmt: on
     def set_variables(self, n):
@@ -39,6 +39,7 @@ class Metrics(Behaviour):
             "recording_phase": None,
             "outputs": [],
             "words": [],
+            "episode_iterations": None,
         }
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, n))
@@ -59,7 +60,7 @@ class Metrics(Behaviour):
         self._predictions.append(n.fired.copy())
         dopamine_plotter.add(DopamineEnvironment.get())
 
-        if n.iteration == len(self.outputs):
+        if n.iteration == self.episode_iterations:
             dw_plotter.plot()
             w_plotter.plot()
             legend = list("".join(corpus_config.words))
@@ -73,9 +74,9 @@ class Metrics(Behaviour):
             words_stimulus_plotter.plot()
             dst_firing_plotter.plot(should_reset=False)
 
-            bit_range = 1 << np.arange(self.outputs[0].size)
+            # bit_range = 1 << np.arange(self._predictions[0].size)
 
-            presentation_words = self.words + [UNK]
+            presentation_words = self.words.tolist() + [UNK]
             # outputs = [o.dot(bit_range) for o in self.outputs if not np.isnan(o).any()]
             # predictions = [
             #     p.dot(bit_range)
@@ -84,11 +85,21 @@ class Metrics(Behaviour):
             # ]
 
             # Full confusion matrix plot
-            outputs = [
-                o.dot(bit_range) if not np.isnan(o).any() else -1 for o in self.outputs
-            ]
-            predictions = [p.dot(bit_range) for p in self._predictions]
+            # -1 means OV spiked, -2 NO spike
+            # outputs = [self.outputs.get(i, -2) for i in range(len(self._predictions))]
+            # predictions = [np.argmax(p) if np.sum(p) else -2 for p in self._predictions]
             # print("prediction [metrics] =>", Counter(predictions))
+
+            outputs = [
+                self.outputs.get(i, -1)
+                for i in range(len(self._predictions))
+                if i in self.outputs
+            ]
+            predictions = [
+                np.argmax(self._predictions[i]) if np.sum(self._predictions[i]) else -1
+                for i in range(len(self._predictions))
+                if i in self.outputs
+            ]
 
             network_phase = "Testing" if "test" in self.tags[0] else "Training"
             accuracy = accuracy_score(outputs, predictions)
@@ -110,28 +121,9 @@ class Metrics(Behaviour):
                     f"precision: {precision}",
                     f"f1: {f1}",
                     f"recall: {recall}",
-                    f"{','.join(presentation_words)} = {cm.diagonal() / np.where(cm_sum > 0, cm_sum, 1)}",
-                    "---" * 15,
-                    f"[Output] frequencies::\n{frequencies}",
-                    f"[Prediction] frequencies::\n{frequencies_p}",
                     sep="\n",
                     end="\n\n",
                 )
-                predictions = np.array(predictions)
-                outputs = np.array(outputs)
-                print(
-                    "prediction",
-                    np.sum(predictions == 0),
-                    np.sum(predictions == 1),
-                    np.sum(predictions == 2),
-                )
-                print(
-                    "output",
-                    np.sum(outputs == 0),
-                    np.sum(outputs == 1),
-                    np.sum(outputs == 2),
-                )
-                print("==========")
 
             if feature_flags.enable_cm_plot:
                 cm_display = ConfusionMatrixDisplay(confusion_matrix=cm)

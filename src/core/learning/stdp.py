@@ -41,7 +41,6 @@ class SynapsePairWiseSTDP(Behaviour):
         "tau_plus",
         "w_max",
         "w_min",
-        "weight_decay",
         "weight_update_strategy",
     ]
 
@@ -61,7 +60,6 @@ class SynapsePairWiseSTDP(Behaviour):
             "tau_plus": 3.0,
             "w_max": 10.0,
             "w_min": 0.0,
-            "weight_decay": 1.0,
             "max_delay": 1.0,
             "weight_update_strategy": None,
             "delay_update_strategy": None,
@@ -174,23 +172,6 @@ class SynapsePairWiseSTDP(Behaviour):
 
         selected_weights_plotter.add(synapse.W[rows, cols])
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
-
-        # if (self.delay_a_minus * ltd < 0).any():
-        #     abc_active = LET[synapse.src.fire_effect[0].astype(bool)]
-        #     omn_active = LET[synapse.src.fire_effect[1].astype(bool)]
-        #     print("abc:", "".join(abc_active))
-        #     print("omn:", "".join(omn_active))
-        # omn jaq
-        #     print("seen_char:", synapse.src.seen_char.replace(" ", "."))
-        #     print(
-        #         "delay",
-        #         synapse.delay[
-        #             [0] * len(abc_active) + [1] * len(omn_active),
-        #             [letters.index(i) for i in abc_active]
-        #             + [letters.index(i) for i in omn_active],
-        #         ],
-        #     )
-        #     print("Hichi ltd manfi nadarim!!!!!")
 
         """ stop condition for delay learning """
         if not feature_flags.enable_delay_update_in_stdp:

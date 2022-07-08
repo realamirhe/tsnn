@@ -41,7 +41,7 @@ SynapseDelay = (
 @c_profiler
 def main():
     network = Network()
-    homeostasis_window_size = 1000
+    homeostasis_window_size = 100
     corpus_word_seen_probability = 1
     stream_i_train, stream_j_train, joined_corpus = get_data(
         1000, prob=corpus_word_seen_probability
@@ -159,7 +159,7 @@ def main():
                 w_max=np.round(
                     (lif_base["threshold"] - lif_base["v_rest"])
                     / (np.average(list(map(len, corpus_config.words))))
-                    + 0.7,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
+                    + 5.7,  # epsilon: delay epsilon increase update, reduce full stimulus by tiny amount
                     decimals=1,
                 ),
                 min_delay_threshold=1,

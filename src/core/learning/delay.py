@@ -42,8 +42,9 @@ class SynapseDelay(Behaviour):
         self.fired_history = np.zeros(
             (synapse.src.size, self.max_delay + 1), dtype=np.float32
         )
-        self.src_fired_indices = np.mgrid[0 : synapse.src.size, 0 : synapse.src.size]
-        self.src_fired_indices = self.src_fired_indices[1][: synapse.dst.size, :]
+        self.src_fired_indices = np.ones(
+            (synapse.dst.size, synapse.src.size), dtype=int
+        ) * np.arange(synapse.src.size, dtype=int)
 
     # NOTE: delay behaviour only update internal vars corresponding to delta delay update.
     def new_iteration(self, synapse):

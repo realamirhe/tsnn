@@ -11,9 +11,11 @@ class ActivityBaseHomeostasis(Behaviour):
         self.window_size = self.get_init_attr("window_size", 100, n)
         self.updating_rate = self.get_init_attr("updating_rate", 0.001, n)
 
-        activity_rate = np.ceil(self.get_init_attr("activity_rate", 5, n) / n.size)
+        # activity_rate = np.ceil(self.get_init_attr("activity_rate", 5, n) / n.size)
+        activity_rate = self.get_init_attr("activity_rate", 5, n) / n.size
         # NOTE: it might cause an error in the long them
         if activity_rate * n.size > self.window_size:
+            print(f"{activity_rate=} {n.size=} {self.window_size=}")
             raise Exception(
                 "Ceiling the activity in this window size cause problem in homeostasis"
             )
