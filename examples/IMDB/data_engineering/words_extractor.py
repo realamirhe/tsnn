@@ -2,8 +2,6 @@ from pandas import DataFrame
 
 from examples.IMDB.data_engineering.test_train_dataset import test_train_dataset
 
-RELATIVE_PATH = ""
-
 
 # NOTE: words were pre-processed and the longest word was 17 character long
 def extract_words(train_df: DataFrame, word_length_threshold=17):

@@ -3,16 +3,16 @@ from os.path import join, dirname
 import pandas as pd
 
 
-def test_train_dataset(train_size=100, test_size=20):
+def test_train_dataset(train_size=100, test_size=20, random_state=None):
     df = pd.read_csv(join(dirname(__file__), f"../corpus/IMDB_preprocessed.csv"))
     per_class_chunk_size = train_size + test_size
 
     train_test_positive_class = df[df["sentiment"] == 1].sample(
-        n=per_class_chunk_size, replace=False, random_state=42
+        n=per_class_chunk_size, replace=False, random_state=random_state
     )
 
     train_test_negative_class = df[df["sentiment"] == 0].sample(
-        n=per_class_chunk_size, replace=False, random_state=42
+        n=per_class_chunk_size, replace=False, random_state=random_state
     )
 
     train_set = [
