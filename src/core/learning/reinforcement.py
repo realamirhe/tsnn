@@ -5,19 +5,12 @@ from src.core.environement.dopamine import DopamineEnvironment
 
 
 class Supervisor(Behaviour):
-    """
-    - a -> decay
-    - ab -> decay
-    - abc -> decay
-    - abc_ -> validation_mechanism (reward|punishment)
-    """
-
     __slots__ = ["dopamine_decay", "outputs"]
 
     def set_variables(self, n):
         self.dopamine_decay = 1 - self.get_init_attr("dopamine_decay", 0.0, n)
         self.outputs = self.get_init_attr("outputs", [], n)
-        self.current_pattern = self.outputs[0] * np.nan
+        self.current_pattern = 0
 
     def new_iteration(self, n):
         """
@@ -28,35 +21,15 @@ class Supervisor(Behaviour):
             - In the non-active time-step decay the existing dopamine
         """
 
-        output = self.outputs[n.iteration - 1]
-        prediction = n.fired
+        y_true = self.outputs.get(n.iteration - 1, None)
+        y_pred = n.fired
 
-        # abc  askfhklas kfhkh
-        #     1,01nn
-        if not np.isnan(output).any():
-            self.current_pattern = output
+        if y_true is not None:
+            self.current_pattern = np.zeros_like(y_pred)
+            self.current_pattern[y_true] = 1
 
-            # if np.sum(prediction) == 0:
-            #     DopamineEnvironment.set(-1)
-            #     print("dop", DopamineEnvironment.get())
-            #     return
-
-        if np.sum(prediction) > 0:
-            distance = [-1.0, 1.0][int((self.current_pattern == prediction).all())]
+        if np.sum(y_pred) > 0:
+            distance = [-1.0, 1.0][int((self.current_pattern == y_pred).all())]
             DopamineEnvironment.set(distance)
         else:
             DopamineEnvironment.decay(self.dopamine_decay)
-
-        # print("dop", DopamineEnvironment.get())
-
-        # Cosine similarity
-        # distance = 1 - spatial.distance.cosine(output + 1, prediction + 1)
-        # DopamineEnvironment.set(distance or -1)  # replace 0.o effect with -1
-
-        # Mismatch similarity
-        # distance = [-1.0, 1.0][int((output == prediction).all())]
-        # DopamineEnvironment.set(distance)
-
-        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jaccard.html
-        # distance = jaccard(output, prediction)
-        # DopamineEnvironment.set(-distance or 1.0)

@@ -31,7 +31,7 @@ from src.helpers.network import EpisodeTracker
 
 class Metrics(Behaviour):
     # fmt: off
-    __slots__ = ["recording_phase", "outputs", "_old_recording", "_predictions", "words"]
+    __slots__ = ["recording_phase", "outputs", "_predictions", "words", "episode_iterations"]
 
     # fmt: on
     def set_variables(self, n):
@@ -39,11 +39,11 @@ class Metrics(Behaviour):
             "recording_phase": None,
             "outputs": [],
             "words": [],
+            "episode_iterations": None,
         }
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, n))
 
-        self._old_recording = n.recording
         self._predictions = []
 
     def reset(self):
@@ -59,7 +59,7 @@ class Metrics(Behaviour):
         self._predictions.append(n.fired.copy())
         dopamine_plotter.add(DopamineEnvironment.get())
 
-        if n.iteration == len(self.outputs):
+        if n.iteration == self.episode_iterations:
             dw_plotter.plot()
             w_plotter.plot()
             legend = list("".join(corpus_config.words))
@@ -73,22 +73,16 @@ class Metrics(Behaviour):
             words_stimulus_plotter.plot()
             dst_firing_plotter.plot(should_reset=False)
 
-            bit_range = 1 << np.arange(self.outputs[0].size)
-
             presentation_words = self.words + [UNK]
-            # outputs = [o.dot(bit_range) for o in self.outputs if not np.isnan(o).any()]
-            # predictions = [
-            #     p.dot(bit_range)
-            #     for o, p in zip(self.outputs, self._predictions)
-            #     if not np.isnan(o).any()
-            # ]
 
             # Full confusion matrix plot
-            outputs = [
-                o.dot(bit_range) if not np.isnan(o).any() else -1 for o in self.outputs
+            outputs = list(self.outputs.values())
+            predictions = [
+                np.argmax(self._predictions[timestep])
+                if np.sum(self._predictions[timestep])
+                else -1
+                for timestep in self.outputs.keys()
             ]
-            predictions = [p.dot(bit_range) for p in self._predictions]
-            # print("prediction [metrics] =>", Counter(predictions))
 
             network_phase = "Testing" if "test" in self.tags[0] else "Training"
             accuracy = accuracy_score(outputs, predictions)

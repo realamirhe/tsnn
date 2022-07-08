@@ -46,7 +46,10 @@ def get_data(size, prob=0.7, words_size=3):
     )
 
     random.shuffle(generated_words)
-    stream_j = []
+
+    stream_words = {}
+    stream_words_idx = 0
+    did_not_spiked = -1
     corpus = []
 
     noise = adaptive_noise_corpus(len(generated_words), space_seen_probability=0.5)
@@ -58,21 +61,11 @@ def get_data(size, prob=0.7, words_size=3):
         noised_adapted_word = word + noise_gap
         corpus.append(noised_adapted_word)
 
-        empty_spike = np.empty(len(words))
-        empty_spike[:] = np.NaN
-        stream_j.extend((empty_spike for _ in word))
-        # First space character after hole word
-        word_spike = np.zeros(len(words), dtype=bool)
-        if word in words:
-            word_spike[words.index(word)] = 1
-
-        stream_j.append(word_spike)
-        stream_j.extend((empty_spike for _ in range(words_spacing_gap - 1)))
+        seen_word_index = words.index(word) if word in words else did_not_spiked
+        stream_words[stream_words_idx + len(word)] = seen_word_index
+        stream_words_idx += len(noised_adapted_word)
 
     joined_corpus = "".join(corpus)
     stream_i = [spike_stream_i(char) for char in joined_corpus]
 
-    if len(stream_i) != len(stream_j):
-        raise AssertionError("stream length mismatch")
-
-    return stream_i, stream_j, joined_corpus
+    return stream_i, stream_words, joined_corpus

@@ -126,6 +126,7 @@ def main():
                 tag="metrics:train",
                 words=corpus_config.words,
                 outputs=stream_j_train,
+                episode_iterations=len(stream_i_train),
             ),
             11: Recorder(tag="words-recorder", variables=["n.v", "n.fired"]),
         },
