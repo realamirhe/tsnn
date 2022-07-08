@@ -1,7 +1,11 @@
+import pickle
+from os import getcwd
+from os.path import join
+
 import numpy as np
 import pandas as pd
 
-from examples.IMDB.configurations.network_config import (
+from examples.archive.IMDB_slow.configurations.network_config import (
     words_spacing_gap,
     letters,
     common_words,
@@ -59,17 +63,15 @@ def get_data(imdb_df):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("../corpus/IMDB_preprocessed.csv")
+    df = pd.read_csv(join(getcwd(), "../corpus/IMDB_preprocessed.csv"))
     df = df.iloc[:100]
     corpus, streams = get_data(df)
-    with open("../corpus/streams_demo.npz", "wb") as file:
-        np.savez(
-            file,
-            corpus=corpus,
-            stream_i=streams[0],
-            stream_words=streams[1],
-            stream_sentences=streams[2],
-        )
+    with open(join(getcwd(), "../corpus/streams_demo.npz"), "wb") as file:
+        np.savez(file, corpus=corpus, stream_i=streams[0])
+    with open(join(getcwd(), "../corpus/stream_words.npy"), "wb") as file:
+        pickle.dump(streams[1], file)
+    with open(join(getcwd(), "../corpus/stream_sentences.npy"), "wb") as file:
+        pickle.dump(streams[2], file)
 
     # df_train, df_test = train_test_split(df, test_size=0.2, random_state=2022)
     # corpus_test, streams_test = get_data(df_test)

@@ -1,3 +1,6 @@
+from os import getcwd
+from os.path import join
+
 import contractions
 import nltk
 import pandas as pd
@@ -25,7 +28,7 @@ punctuation_remover_tokenizer = RegexpTokenizer(r"\w+")
 
 
 def pre_process_imdb_dataset():
-    df = pd.read_csv("../corpus/IMDB Dataset.csv")
+    df = pd.read_csv(join(getcwd(), "corpus/IMDB_slow Dataset.csv"))
     # positive=1 & negative=0
     le = LabelEncoder()
     df["sentiment"] = le.fit_transform(df["sentiment"])
@@ -38,12 +41,13 @@ def pre_process_imdb_dataset():
 def pre_process_text(txt: str) -> str:
     txt = txt.lower()
     # Remove HTML Tags
+    txt = txt.replace("<br />", "<br /> ")
     txt = BeautifulSoup(txt, "html.parser").text
     # Fixing contractions (e.g. gonna => going to)
     txt = contractions.fix(txt)
     # Remove punctuation (e.g. $, #) & stop words (e.g. is, there, he's)
     txt = [
-        word
+        word.replace("_", "").replace(" " * 2, "")
         for word in punctuation_remover_tokenizer.tokenize(txt)
         if word not in stop_words
     ]
@@ -60,4 +64,6 @@ if __name__ == "__main__":
     data = pre_process_imdb_dataset()
     print(data.head())
     print(data.sentiment.value_counts())
-    data.to_csv("../corpus/IMDB_preprocessed.csv", index_label=False, index=False)
+    data.to_csv(
+        join(getcwd(), "corpus/IMDB_preprocessed.csv"), index_label=False, index=False
+    )
