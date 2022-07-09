@@ -82,7 +82,7 @@ class SynapseDelay(Behaviour):
         mantis = synapse.delay % 1.0  # 0
         complement = 1 - mantis  # 1
 
-        synapse.src.fire_effect = (
+        synapse.src_fire_effect = (
             self.fired_history[self.src_fired_indices, delays_indices] * complement
             + self.fired_history[
                 self.src_fired_indices, np.clip(delays_indices + 1, 0, self.max_delay)

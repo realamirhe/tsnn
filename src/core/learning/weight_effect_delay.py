@@ -100,7 +100,7 @@ class SynapseDelay(Behaviour):
                         dst_index, src_index, -delay_index - 2 : -delay_index
                     ] += [mantis, complement]
 
-        synapse.src.fire_effect = self.weight_effect[:, :, -1].copy()
+        synapse.src_fire_effect = self.weight_effect[:, :, -1].copy()
 
         self.weight_effect[:, :, -1] = 0
         self.weight_effect = np.roll(self.weight_effect, 1, axis=2)

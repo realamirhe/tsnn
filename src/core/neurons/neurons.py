@@ -15,7 +15,7 @@ class StreamableLIFNeurons(Behaviour):
         if network_config.is_debug_mode:
             self.joined_corpus = self.get_init_attr("joined_corpus", None, n)
             if self.joined_corpus is not None:
-                n.seen_char = ""
+                n.seen_char = []
 
         self.capture_old_v = self.get_init_attr("capture_old_v", False, n)
         has_long_term_effect = self.get_init_attr("has_long_term_effect", False, n)
@@ -40,7 +40,7 @@ class StreamableLIFNeurons(Behaviour):
 
     def new_iteration(self, n):
         if network_config.is_debug_mode and self.joined_corpus is not None:
-            n.seen_char += self.joined_corpus[n.iteration - 1]
+            n.seen_char.append(self.joined_corpus[n.iteration - 1])
             n.seen_char = n.seen_char[-corpus_config.words_capture_window_size :]
 
         is_forced_spike = self.stream is not None
@@ -48,7 +48,6 @@ class StreamableLIFNeurons(Behaviour):
         if is_forced_spike:
             n.I = self.stream[n.iteration - 1]
 
-        # TODO: Match the tau placement
         dv_dt = (n.v_rest - n.v) * self.dt / n.tau + n.R * n.I
         n.v += dv_dt
         if self.capture_old_v:

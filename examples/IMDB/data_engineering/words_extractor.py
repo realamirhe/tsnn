@@ -1,10 +1,11 @@
 from pandas import DataFrame
 
+from examples.IMDB.config import maximum_length_words
 from examples.IMDB.data_engineering.test_train_dataset import test_train_dataset
 
 
 # NOTE: words were pre-processed and the longest word was 17 character long
-def extract_words(train_df: DataFrame, word_length_threshold=17):
+def extract_words(train_df: DataFrame, word_length_threshold=maximum_length_words):
     words = []
     for idx, row in train_df.iterrows():
         words.extend(

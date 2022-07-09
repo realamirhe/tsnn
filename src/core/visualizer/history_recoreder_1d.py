@@ -13,7 +13,7 @@ class HistoryRecorder1D(HistoryRecorder):
 
         plt.title(self.title + f" (eps={EpisodeTracker.episode()})")
 
-        if self.save_as_csv is not None:
+        if self.save_as_csv:
             pd.DataFrame(
                 np.array(self.history) * scale
                 if scale is not None

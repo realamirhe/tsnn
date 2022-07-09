@@ -5,13 +5,11 @@ from tqdm import tqdm
 
 from src.configs.corpus_config import letters, words, words_spacing_gap
 from src.data.corpus_generator import gen_corpus
+from src.helpers.spikes import entity2spike
 
 
 def spike_stream_i(char):
-    spikes = np.zeros(len(letters), dtype=int)
-    if char in letters:
-        spikes[letters.index(char)] = 1
-    return spikes
+    return entity2spike(char, letters)
 
 
 def adaptive_noise_corpus(size, space_seen_probability=None):

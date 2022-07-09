@@ -44,6 +44,7 @@ class Metrics(Behaviour):
         for attr, value in configure.items():
             setattr(self, attr, self.get_init_attr(attr, value, n))
 
+        self.size = n.size
         self._predictions = []
 
     def reset(self):

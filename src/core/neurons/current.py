@@ -14,7 +14,7 @@ class CurrentStimulus(Behaviour):
 
     __slots__ = ["dopamine_decay", "outputs"]
 
-    def set_variables(self, neurons):
+    def set_variables(self, n):
         configure = {
             "noise_scale_factor": 1,
             "adaptive_noise_scale": 1,
@@ -23,15 +23,15 @@ class CurrentStimulus(Behaviour):
         }
 
         for attr, value in configure.items():
-            setattr(self, attr, self.get_init_attr(attr, value, neurons))
+            setattr(self, attr, self.get_init_attr(attr, value, n))
 
-    def new_iteration(self, neurons):
+    def new_iteration(self, n):
         # NOTE: 🔥 Synapse selection make it specific to first synapse, which might not be proper in bigger network
-        synapse = neurons.afferent_synapses
+        synapse = n.afferent_synapses
         for lens in self.synapse_lens_selector:
             synapse = synapse[lens]
 
-        next_layer_stimulus = np.sum(synapse.W * synapse.src.fire_effect, axis=1)
+        next_layer_stimulus = np.sum(synapse.W * synapse.src_fire_effect, axis=1)
         # shrink the noise scale factor at the beginning of each episode
         if synapse.iteration == 1:
             self.noise_scale_factor *= self.adaptive_noise_scale

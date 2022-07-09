@@ -41,7 +41,6 @@ class SynapsePairWiseSTDP(Behaviour):
         "tau_plus",
         "w_max",
         "w_min",
-        "weight_decay",
         "weight_update_strategy",
     ]
 
@@ -61,7 +60,6 @@ class SynapsePairWiseSTDP(Behaviour):
             "tau_plus": 3.0,
             "w_max": 10.0,
             "w_min": 0.0,
-            "weight_decay": 1.0,
             "max_delay": 1.0,
             "weight_update_strategy": None,
             "delay_update_strategy": None,
@@ -125,10 +123,10 @@ class SynapsePairWiseSTDP(Behaviour):
         # W += dw
         # delay+=dd
         coincidence = (
-            synapse.src.fire_effect.astype(bool) * synapse.dst.fired[:, np.newaxis]
+            synapse.src_fire_effect.astype(bool) * synapse.dst.fired[:, np.newaxis]
         )
         non_coincidence = np.logical_not(coincidence)
-        ltd = synapse.src.fire_effect * synapse.dst.trace[:, 0][:, np.newaxis]
+        ltd = synapse.src_fire_effect * synapse.dst.trace[:, 0][:, np.newaxis]
 
         delay_ranges = synapse.delay.astype(int)
         mantis = synapse.delay % 1.0
@@ -175,23 +173,6 @@ class SynapsePairWiseSTDP(Behaviour):
         selected_weights_plotter.add(synapse.W[rows, cols])
         w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
 
-        # if (self.delay_a_minus * ltd < 0).any():
-        #     abc_active = LET[synapse.src.fire_effect[0].astype(bool)]
-        #     omn_active = LET[synapse.src.fire_effect[1].astype(bool)]
-        #     print("abc:", "".join(abc_active))
-        #     print("omn:", "".join(omn_active))
-        # omn jaq
-        #     print("seen_char:", synapse.src.seen_char.replace(" ", "."))
-        #     print(
-        #         "delay",
-        #         synapse.delay[
-        #             [0] * len(abc_active) + [1] * len(omn_active),
-        #             [letters.index(i) for i in abc_active]
-        #             + [letters.index(i) for i in omn_active],
-        #         ],
-        #     )
-        #     print("Hichi ltd manfi nadarim!!!!!")
-
         """ stop condition for delay learning """
         if not feature_flags.enable_delay_update_in_stdp:
             return
@@ -214,3 +195,83 @@ class SynapsePairWiseSTDP(Behaviour):
 
         if should_update.any():
             synapse.delay += dd * should_update[:, np.newaxis] * self.delay_factor
+
+
+class SynapsePairWiseSTDPWithoutDelay(Behaviour):
+    __slots__ = [
+        "a_minus",
+        "a_plus",
+        "dt",
+        "stdp_factor",
+        "tau_minus",
+        "tau_plus",
+        "w_max",
+        "w_min",
+        "weight_update_strategy",
+    ]
+
+    def set_variables(self, synapse):
+
+        configure = {
+            "a_minus": -0.1,
+            "a_plus": 0.2,
+            "dt": 1.0,
+            "stdp_factor": 1.0,
+            "tau_minus": 3.0,
+            "tau_plus": 3.0,
+            "w_max": 10.0,
+            "w_min": 0.0,
+            "J0": 10,
+            "P": 1,
+            "weight_update_strategy": None,
+        }
+
+        for attr, value in configure.items():
+            setattr(self, attr, self.get_init_attr(attr, value, synapse))
+
+        # Scale W from [0,1) to [w_min, w_max)
+        synapse.W = synapse.get_synapse_mat("ones")
+        synapse.W *= self.J0 / np.sqrt(self.P * synapse.W.size)
+        # Remove random connections
+        synapse.W[np.random.random(synapse.W.shape) < 1 - self.P] = 0
+        synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
+
+        if self.a_minus >= 0:
+            raise AssertionError("a_minus should be negative")
+
+        if self.weight_update_strategy not in (None, "soft-bound", "hard-bound"):
+            raise AssertionError(
+                "weight_update_strategy must be one of soft-bound|hard-bound|None"
+            )
+
+    def new_iteration(self, synapse):
+        # For testing only, we won't update synapse weights in test mode!
+        if not synapse.recording:
+            return
+
+        synapse.src.trace[:, 0] += (
+            -synapse.src.trace[:, 0] / self.tau_plus + synapse.src.fired  # dx
+        ) * self.dt
+
+        synapse.dst.trace[:, 0] += (
+            -synapse.dst.trace[:, 0] / self.tau_minus + synapse.dst.fired  # dy
+        ) * self.dt
+
+        ltd = synapse.src.fired * synapse.dst.trace[:, 0][:, np.newaxis]
+        ltp = synapse.src.trace[:, 0] * synapse.dst.fired[:, np.newaxis]
+
+        # soft bound for both delay and stdp separate
+        dw = (
+            DopamineEnvironment.get()  # from global environment
+            * (self.a_plus * ltp + self.a_minus * ltd)  # stdp mechanism
+            * bounds[self.weight_update_strategy or "none"](
+                self.w_min, synapse.W, self.w_max
+            )
+            * self.stdp_factor  # stdp scale factor
+            * synapse.enabled  # activation of synapse itself
+            * self.dt
+        )
+
+        synapse.W[synapse.W > 0.01] -= 1e-5
+        synapse.W = synapse.W + dw
+        synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
