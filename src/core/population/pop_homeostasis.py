@@ -9,7 +9,7 @@ class PopulationBaseHomeostasis(Behaviour):
         self.updating_rate = self.get_init_attr("updating_rate", 0.001, n)
         population_count = self.get_init_attr("population_count", 1, n)
         self.activity_rate = (
-                self.get_init_attr("activity_rate", 5, n) / population_count
+            self.get_init_attr("activity_rate", 5, n) / population_count
         )
 
     def new_iteration(self, n):

@@ -39,4 +39,4 @@ class ActivityMetrics(Behaviour):
                     predictions.append(self._predictions[key])
 
             accuracy = accuracy_score(outputs, predictions)
-            print(f"\nMetrics ({n.tags[0]}) acc=({accuracy})")
+            print(f"Metrics.{n.tags[0]} acc=({accuracy})")

@@ -8,7 +8,7 @@ def get_base_neuron_config(**kargs):
         "threshold": -55,
         "dt": 1.0,
         "R": 1,
-        "tau": words_spacing_gap,  # 2
+        "tau": max(words_spacing_gap, 1),  # 2
         **kargs,
     }
     return lif_base

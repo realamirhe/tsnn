@@ -1,4 +1,4 @@
-words_spacing_gap = 2
+words_spacing_gap = 0
 # from DATA BI
 words_max_delay = 4
 maximum_length_words = 17
