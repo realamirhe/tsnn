@@ -27,9 +27,11 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
             "stdp_factor": 1.0,
             "tau_minus": 3.0,
             "tau_plus": 3.0,
+            "tau_pop": 3.0,
             "w_max": 10.0,
             "w_min": 0.0,
             "P": 1,
+            "is_inhibitory": False,
             "weight_update_strategy": None,
         }
 
@@ -65,6 +67,12 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
         synapse.dst.trace[:, 0] += (
             -synapse.dst.trace[:, 0] / self.tau_minus + synapse.dst.fired  # dy
         ) * self.dt
+
+        # np.sum(synapse.src.A_history[0] * synapse.src.size)
+        # np.sum(synapse.src.fired) -> activate so soon
+        synapse.dst.alpha[0] = synapse.dst.alpha[0] / self.tau_pop + (
+            (1, -1)[self.is_inhibitory] * synapse.src.A_history[0]
+        )
 
         ltd = synapse.src.fired * synapse.dst.trace[:, 0][:, np.newaxis]
         ltp = synapse.src.trace[:, 0] * synapse.dst.fired[:, np.newaxis]

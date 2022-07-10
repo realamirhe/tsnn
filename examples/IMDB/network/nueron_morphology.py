@@ -5,7 +5,7 @@ def get_base_neuron_config(**kargs):
     lif_base = {
         "v_rest": -65,
         "v_reset": -65,
-        "threshold": -55,
+        "threshold": -60,
         "dt": 1.0,
         "R": 1,
         "tau": max(words_spacing_gap, 1),  # 2

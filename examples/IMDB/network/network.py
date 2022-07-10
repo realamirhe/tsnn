@@ -76,7 +76,7 @@ def network():
     stdp_weights_args = get_weight_stdp()
     stdp_args = get_base_stdp()
     stdp_delay_args = get_base_delay_stdp()
-    balanced_network_args = {"J": 5, "P": 0.5}
+    balanced_network_args = {"J": 100, "P": 0.7, "tau_pop": 10}
     population_window_size = 10
 
     n_episodes = 10
@@ -209,7 +209,11 @@ def network():
         tag="pos:neg",
         behaviour={
             8: SynapsePairWiseSTDPWithoutDelay(
-                **stdp_args, w_min=-stdp_weights_args["w_max"], w_max=0
+                **stdp_args,
+                **balanced_network_args,
+                is_inhibitory=True,
+                w_min=-stdp_weights_args["w_max"],
+                w_max=0
             ),
         },
     )
@@ -221,7 +225,11 @@ def network():
         tag="neg:pos",
         behaviour={
             8: SynapsePairWiseSTDPWithoutDelay(
-                **stdp_args, w_min=-stdp_weights_args["w_max"], w_max=0
+                **stdp_args,
+                **balanced_network_args,
+                is_inhibitory=True,
+                w_min=-stdp_weights_args["w_max"],
+                w_max=0
             ),
         },
     )
