@@ -25,10 +25,15 @@ def test_train_dataset(train_size=100, test_size=20, random_state=None):
         train_test_negative_class.iloc[:test_size],
     ]
 
-    train_set = pd.concat(train_set)
-    test_set = pd.concat(test_set)
+    train_set = pd.concat(train_set).sample(frac=0.9)
+    test_set = pd.concat(test_set).sample(frac=1)
 
-    return train_set.sample(frac=1), test_set.sample(frac=1)
+    print("=== train set ===")
+    print(train_set["sentiment"].value_counts())
+    print("=== test set ===")
+    print(test_set["sentiment"].value_counts())
+
+    return train_set, test_set
 
 
 if __name__ == "__main__":

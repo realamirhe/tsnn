@@ -16,7 +16,7 @@ def get_base_delay():
     }
 
 
-def get_base_stdp():
+def get_base_stdp(**kwargs):
     return {
         "tau_plus": 4.0,
         "tau_minus": 4.0,
@@ -25,6 +25,7 @@ def get_base_stdp():
         "dt": 1.0,
         "weight_update_strategy": None,
         "stdp_factor": 0.02,
+        **kwargs,
     }
 
 

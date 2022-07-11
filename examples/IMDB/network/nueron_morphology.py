@@ -1,7 +1,7 @@
 from examples.IMDB.config import words_spacing_gap
 
 
-def get_base_neuron_config(**kargs):
+def get_base_neuron_config(**kwargs):
     lif_base = {
         "v_rest": -65,
         "v_reset": -65,
@@ -9,13 +9,13 @@ def get_base_neuron_config(**kargs):
         "dt": 1.0,
         "R": 1,
         "tau": max(words_spacing_gap, 1),  # 2
-        **kargs,
+        **kwargs,
     }
     return lif_base
 
 
-def get_base_homeostasis(**kargs):
-    homeostasis_window_size = kargs.get("homeostasis_window_size", 100)
+def get_base_homeostasis(**kwargs):
+    homeostasis_window_size = kwargs.get("homeostasis_window_size", 100)
     homeostasis_base = {
         "window_size": homeostasis_window_size,
         "updating_rate": 0.01,

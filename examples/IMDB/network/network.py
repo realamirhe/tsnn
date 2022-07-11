@@ -51,7 +51,8 @@ Ques: Should we use src.fired or src.fire_effect in the `pop-activity` -> Popula
 Ques: How we should handle the reinforcement for the sentences. they are really long and class based
 Ques: Random connection removing in synapse.W
 Ques: Double check weight initialization J/√PN
-Ques: What does max_word_delay means in the words:pos connection
+Ques: What does max_word_delay means in the words:pos connection Q01
+Ques: How we should fill the gap of decay effect in the words layer Q02
 Ques: Should ActivitySupervisor needs to know how other pop behave or not?
 Ques: Now all words are selected but we might need to trim them in `word_length_threshold`? Should we add -1 in the words layer
 Ques: In neuron morphology `tau` -> max(words_spacing_gap, maximum_length_words), max_length is different from what it should be
@@ -63,16 +64,27 @@ IMPROVE: Resolve and fix the `self.outputs` in the reinforcement
 
 def network():
     network = Network()
-    (train_df, _) = test_train_dataset(train_size=2, random_state=42)
+    # 🔥 NOTE: the farc of train set is not 1 anymore, resolve that before run
+    (train_df, _) = test_train_dataset(train_size=5, random_state=42)
     common_words = extract_words(train_df, word_length_threshold=10)
     words_stream = words2spikes(train_df, common_words)
     sentence_stream = sentence2spikes(train_df)
     joined_corpus = joined_corpus_maker(train_df)
     simulation_iterations = len(words_stream)
 
+    """ validation::
+    list(zip(
+        [common_words.index(w) if w in common_words else -1 for w in joined_corpus],
+        [w.argmax() for w in words_stream]
+    ))
+    """
+
+    # 🔥 NOTE: Initial threshold has been set low for testing purpose
     lif_base = get_base_neuron_config()
     homeostasis_base = get_base_homeostasis()
+    # 🐓: Q01
     delay_args = get_base_delay()
+    # 🐓: Q02
     stdp_weights_args = get_weight_stdp()
     stdp_args = get_base_stdp()
     stdp_delay_args = get_base_delay_stdp()
