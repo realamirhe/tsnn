@@ -20,16 +20,15 @@ from examples.IMDB.network.synapse_morphology import (
     get_base_delay_stdp,
 )
 from src.core.learning.delay import SynapseDelay as FireHistorySynapseDelay
-from src.core.learning.reinforcement import ActivitySupervisor
 from src.core.learning.stdp import SynapsePairWiseSTDP
 from src.core.learning.stdp_delayless import SynapsePairWiseSTDPWithoutDelay
-from src.core.metrics.activity_metrics import ActivityMetrics
+from src.core.neurons.current import CurrentStimulus
 from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.neurons.trace import TraceHistory
+from src.core.population.decision_maker import NetworkDecisionMaker
 from src.core.population.pop_activity import PopulationBaseActivity
-from src.core.population.pop_activity_trace import PopulationTraceHistory
-from src.core.population.pop_current import PopCurrentStimulus
-from src.core.population.pop_homeostasis import PopulationBaseHomeostasis
+from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
+from src.helpers.corpus import replicate_df_rows
 from src.helpers.network import EpisodeTracker
 
 """
@@ -41,7 +40,8 @@ DONE: Add weights initializer with J/N strategies
 
 TODO: Check the inhibitory connection (does it need to be negative, is negative w_min works fine?) 
 TODO: Review Brunel Hakim source code for J setter on the neuron group
-
+TODO: The `dt` in the TraceHistory is removed because it is 1
+ 
 Ques: should n.A be divided by #pop and #pop_items?
 Ques: Supervisor should not be for every connection, they effect dopamine!
 Ques: Different Metrics must also be excluded or combine their reports!
@@ -55,7 +55,9 @@ Ques: What does max_word_delay means in the words:pos connection Q01
 Ques: How we should fill the gap of decay effect in the words layer Q02
 Ques: Should ActivitySupervisor needs to know how other pop behave or not?
 Ques: Now all words are selected but we might need to trim them in `word_length_threshold`? Should we add -1 in the words layer
-Ques: In neuron morphology `tau` -> max(words_spacing_gap, maximum_length_words), max_length is different from what it should be
+
+to end or end/2
+DONE: In neuron morphology `tau` -> max(words_spacing_gap, maximum_length_words), max_length is different from what it should be
 
 IMPROVE: max instead of clip and slice instead of roll
 IMPROVE: Resolve and fix the `self.outputs` in the reinforcement
@@ -67,17 +69,12 @@ def network():
     # 🔥 NOTE: the farc of train set is not 1 anymore, resolve that before run
     (train_df, _) = test_train_dataset(train_size=5, random_state=42)
     common_words = extract_words(train_df, word_length_threshold=10)
+    # duplicate each sentence (inference + learning) step
+    train_df = replicate_df_rows(train_df)
     words_stream = words2spikes(train_df, common_words)
     sentence_stream = sentence2spikes(train_df)
     joined_corpus = joined_corpus_maker(train_df)
     simulation_iterations = len(words_stream)
-
-    """ validation::
-    list(zip(
-        [common_words.index(w) if w in common_words else -1 for w in joined_corpus],
-        [w.argmax() for w in words_stream]
-    ))
-    """
 
     # 🔥 NOTE: Initial threshold has been set low for testing purpose
     lif_base = get_base_neuron_config()
@@ -88,8 +85,7 @@ def network():
     stdp_weights_args = get_weight_stdp()
     stdp_args = get_base_stdp()
     stdp_delay_args = get_base_delay_stdp()
-    balanced_network_args = {"J": 100, "P": 0.7, "tau_pop": 10}
-    population_window_size = 10
+    balanced_network_args = {"J": 100, "P": 0.7}
 
     n_episodes = 10
 
@@ -102,41 +98,26 @@ def network():
             1: StreamableLIFNeurons(
                 stream=words_stream, joined_corpus=joined_corpus, **lif_base
             ),
-            2: TraceHistory(max_delay=words_max_delay),
+            2: TraceHistory(max_delay=words_max_delay, tau=4.0),
         },
     )
-
+    
     # positive population neuron groups
-    pop_ng_behaviours = {
-        3: StreamableLIFNeurons(**lif_base),
-        4: TraceHistory(max_delay=words_max_delay),
-        5: PopulationTraceHistory(window_size=population_window_size),
-        6: PopulationBaseActivity(window_size=population_window_size),
-        7: PopulationBaseHomeostasis(**homeostasis_base),
-    }
     pos_pop_ng = NeuronGroup(
         net=network,
         tag="pos",
         size=population_size,
         behaviour={
-            2: PopCurrentStimulus(
+            2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
                 noise_scale_factor=0.1,
                 stimulus_scale_factor=1,
                 synapse_lens_selector=["words:pos", 0],
             ),
-            8: ActivitySupervisor(
-                dopamine_decay=1 / (words_max_delay + 1),
-                outputs=sentence_stream,
-                class_index=1,
-            ),
-            10: ActivityMetrics(
-                tag="pos:pop-metric",
-                outputs=sentence_stream,
-                class_index=1,
-                episode_iterations=simulation_iterations,
-            ),
-            **pop_ng_behaviours,
+            4: TraceHistory(max_delay=words_max_delay, tau=4.0),
+            3: StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
+            5: ActivityBaseHomeostasis(**homeostasis_base),
+            6: PopulationBaseActivity(tag="pop-activity"),
         },
     )
 
@@ -146,24 +127,16 @@ def network():
         tag="neg",
         size=population_size,
         behaviour={
-            2: PopCurrentStimulus(
+            2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
                 noise_scale_factor=0.1,
                 stimulus_scale_factor=1,
                 synapse_lens_selector=["words:neg", 0],
             ),
-            7: ActivitySupervisor(
-                dopamine_decay=1 / (words_max_delay + 1),
-                outputs=sentence_stream,
-                class_index=0,
-            ),
-            9: ActivityMetrics(
-                tag="neg:pop-metric",
-                outputs=sentence_stream,
-                class_index=0,
-                episode_iterations=simulation_iterations,
-            ),
-            **pop_ng_behaviours,
+            4: TraceHistory(max_delay=words_max_delay, tau=4.0),
+            3: StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
+            5: ActivityBaseHomeostasis(**homeostasis_base),
+            6: PopulationBaseActivity(tag="pop-activity"),
         },
     )
 
@@ -175,7 +148,7 @@ def network():
         tag="words:pos",
         behaviour={
             1: FireHistorySynapseDelay(**delay_args),
-            8: SynapsePairWiseSTDP(**stdp_args, **stdp_delay_args, **stdp_weights_args),
+            7: SynapsePairWiseSTDP(**stdp_args, **stdp_delay_args, **stdp_weights_args),
         },
     )
     # words -> neg_pop_ng
@@ -186,7 +159,7 @@ def network():
         tag="words:neg",
         behaviour={
             1: FireHistorySynapseDelay(**delay_args),
-            8: SynapsePairWiseSTDP(**stdp_args, **stdp_delay_args, **stdp_weights_args),
+            7: SynapsePairWiseSTDP(**stdp_args, **stdp_delay_args, **stdp_weights_args),
         },
     )
     # pos_pop_ng -> pos_pop_ng
@@ -196,7 +169,7 @@ def network():
         dst=pos_pop_ng,
         tag="pos:pos",
         behaviour={
-            8: SynapsePairWiseSTDPWithoutDelay(
+            7: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args, **stdp_weights_args, **balanced_network_args
             ),
         },
@@ -208,7 +181,7 @@ def network():
         dst=neg_pop_ng,
         tag="neg:neg",
         behaviour={
-            8: SynapsePairWiseSTDPWithoutDelay(
+            7: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args, **stdp_weights_args, **balanced_network_args
             ),
         },
@@ -220,7 +193,7 @@ def network():
         dst=neg_pop_ng,
         tag="pos:neg",
         behaviour={
-            8: SynapsePairWiseSTDPWithoutDelay(
+            7: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args,
                 **balanced_network_args,
                 is_inhibitory=True,
@@ -236,12 +209,16 @@ def network():
         dst=pos_pop_ng,
         tag="neg:pos",
         behaviour={
-            8: SynapsePairWiseSTDPWithoutDelay(
+            7: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args,
                 **balanced_network_args,
                 is_inhibitory=True,
                 w_min=-stdp_weights_args["w_max"],
                 w_max=0
+            ),
+            8: NetworkDecisionMaker(
+                outputs=sentence_stream,
+                episode_iterations=simulation_iterations,
             ),
         },
     )
@@ -253,8 +230,6 @@ def network():
         EpisodeTracker.update()
         network.iteration = 0
         network.simulate_iterations(simulation_iterations, measure_block_time=False)
-        for metric_tag in ["neg:pop-metric", "pos:pop-metric"]:
-            network[metric_tag, 0].reset()
 
 
 if __name__ == "__main__":

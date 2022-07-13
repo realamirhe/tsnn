@@ -3,7 +3,12 @@ import numpy as np
 from PymoNNto import Behaviour
 
 # should be after or be
-from src.configs.plotters import activity_plotter, threshold_plotter, dst_firing_plotter
+from src.configs.plotters import (
+    activity_plotter,
+    dst_firing_plotter,
+    pos_threshold_plotter,
+    neg_threshold_plotter,
+)
 
 
 class ActivityBaseHomeostasis(Behaviour):
@@ -14,10 +19,10 @@ class ActivityBaseHomeostasis(Behaviour):
         # activity_rate = np.ceil(self.get_init_attr("activity_rate", 5, n) / n.size)
         activity_rate = self.get_init_attr("activity_rate", 5, n) / n.size
         # NOTE: it might cause an error in the long them
-        if activity_rate * n.size > self.window_size:
-            raise Exception(
-                "Ceiling the activity in this window size cause problem in homeostasis"
-            )
+        # if activity_rate * n.size > self.window_size:
+        #     raise Exception(
+        #         "Ceiling the activity in this window size cause problem in homeostasis"
+        #     )
 
         if not isinstance(activity_rate, (float, int)):
             raise Exception(
@@ -30,8 +35,11 @@ class ActivityBaseHomeostasis(Behaviour):
 
         self.activities = n.get_neuron_vec(mode="zeros")
         self.exhaustion = n.get_neuron_vec(mode="zeros")
+        self.counter = {"pos": 0, "neg": 0}
 
     def new_iteration(self, n):
+        self.counter[n.tags[0]] += np.sum(n.fired)
+
         self.activities += np.where(
             n.fired,
             self.firing_reward,
@@ -49,5 +57,10 @@ class ActivityBaseHomeostasis(Behaviour):
 
             # For: Logic for adaptive updating rate (see old trunks)
             n.threshold -= change
-            threshold_plotter.add(n.threshold)
+            if "pos" in n.tags:
+                pos_threshold_plotter.add(n.threshold)
+            else:
+                neg_threshold_plotter.add(n.threshold)
+
             self.activities *= 0
+            self.counter[n.tags[0]] *= 0

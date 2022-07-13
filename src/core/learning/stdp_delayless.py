@@ -2,6 +2,7 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.core.environement.dopamine import DopamineEnvironment
+from src.core.environement.inferencer import InferenceEnvironment
 from src.core.learning.stdp import bounds
 
 
@@ -27,7 +28,6 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
             "stdp_factor": 1.0,
             "tau_minus": 3.0,
             "tau_plus": 3.0,
-            "tau_pop": 3.0,
             "w_max": 10.0,
             "w_min": 0.0,
             "P": 1,
@@ -40,11 +40,13 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
 
         synapse.J = self.get_init_attr("J", 10, synapse)
         synapse.W = synapse.get_synapse_mat("zeros")
-        synapse.W = np.random.normal(
-            loc=synapse.J / synapse.src.size,  # pre-synaptic
-            scale=1 * self.P,
-            size=synapse.W.shape,  # dst, src
+        probable_connection_mask = np.random.random(synapse.W.shape) <= self.P
+        normal_distribution = np.random.normal(
+            loc=synapse.J / synapse.src.size,
+            scale=1,
+            size=synapse.W.shape,
         )
+        synapse.W += normal_distribution * probable_connection_mask
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
         if self.a_minus >= 0:
@@ -57,22 +59,8 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
 
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
-        if not synapse.recording:
+        if not synapse.recording or InferenceEnvironment.should_freeze_learning():
             return
-
-        synapse.src.trace[:, 0] += (
-            -synapse.src.trace[:, 0] / self.tau_plus + synapse.src.fired  # dx
-        ) * self.dt
-
-        synapse.dst.trace[:, 0] += (
-            -synapse.dst.trace[:, 0] / self.tau_minus + synapse.dst.fired  # dy
-        ) * self.dt
-
-        # np.sum(synapse.src.A_history[0] * synapse.src.size)
-        # np.sum(synapse.src.fired) -> activate so soon
-        synapse.dst.alpha[0] = synapse.dst.alpha[0] / self.tau_pop + (
-            (1, -1)[self.is_inhibitory] * synapse.src.A_history[0]
-        )
 
         ltd = synapse.src.fired * synapse.dst.trace[:, 0][:, np.newaxis]
         ltp = synapse.src.trace[:, 0] * synapse.dst.fired[:, np.newaxis]
@@ -90,5 +78,5 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
         )
 
         synapse.W[synapse.W > 0.01] -= 1e-5
-        synapse.W = synapse.W + dw
+        synapse.W = synapse.W + (1, -1)[self.is_inhibitory] * np.abs(dw)
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)

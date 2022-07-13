@@ -1,14 +1,11 @@
-from examples.IMDB.config import words_spacing_gap
-
-
 def get_base_neuron_config(**kwargs):
     lif_base = {
         "v_rest": -65,
         "v_reset": -65,
-        "threshold": -60,
+        "threshold": -45,
         "dt": 1.0,
         "R": 1,
-        "tau": max(words_spacing_gap, 1),  # 2
+        "tau": 60,  # how long it takes for words to be forgotten (|sentence| / 2)
         **kwargs,
     }
     return lif_base
@@ -19,9 +16,10 @@ def get_base_homeostasis(**kwargs):
     homeostasis_base = {
         "window_size": homeostasis_window_size,
         "updating_rate": 0.01,
-        "population_count": 2,
+        # "population_count": 2,
+        # neuron base non-pop
         # activity must occur every 3 iterations, so we need over each window slide
-        "activity_rate": homeostasis_window_size * 0.3,
+        "activity_rate": 51 * 120,
     }
     return homeostasis_base
 

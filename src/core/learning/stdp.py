@@ -10,6 +10,7 @@ from src.configs.plotters import (
     selected_weights_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
+from src.core.environement.inferencer import InferenceEnvironment
 from src.helpers.base import selected_neurons_from_words
 
 
@@ -100,21 +101,13 @@ class SynapsePairWiseSTDP(Behaviour):
     # TODO: add dw_neutral effect into dw_plus
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
-        if not synapse.recording:
+        if not synapse.recording or InferenceEnvironment.should_freeze_learning():
             return
 
+        #  TODO: coincidence logic detection re-check
         # add new trace to existing src trace history
         # we don't have access to the latest src asar till here
         # should we accumulate it to the previous last layer trace or just replace that with the latest one
-        synapse.src.trace[:, 0] += (
-            -synapse.src.trace[:, 0] / self.tau_plus + synapse.src.fired  # dx
-        ) * self.dt
-
-        synapse.dst.trace[:, 0] += (
-            -synapse.dst.trace[:, 0] / self.tau_minus + synapse.dst.fired  # dy
-        ) * self.dt
-
-        #  TODO: coincidence logic detection re-check
         # ltd -> dw_minus (depression) w- d+
         # ltp -> dw_plus (potentiation) w+ d-
         # coincidence -> w ltd & delay ltp

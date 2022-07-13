@@ -32,11 +32,22 @@ class StreamableLIFNeurons(Behaviour):
 
         for attr, value in configure.items():
             setattr(n, attr, self.get_init_attr(attr, value, n))
+
         # n.v = n.get_neuron_vec(mode="ones") * n.v_rest
         n.v = n.v_rest * n.get_neuron_vec(mode="ones")
+
+        if "word" not in n.tags:
+            n.resets = {
+                "v": n.v_rest * n.get_neuron_vec(mode="ones"),
+                "fired": n.get_neuron_vec(mode="zeros") > 0,
+                "A": 0.0,
+            }
         # NOTE: 🧬 For long term support, will be used in e.g. Homeostasis
         if has_long_term_effect:
-            n.threshold = np.ones_like(n.v) * n.threshold
+            n.threshold = (
+                np.ones_like(n.v) * n.threshold
+                + (np.random.random(n.v.shape) - 0.5) * 10
+            )
 
     def new_iteration(self, n):
         if network_config.is_debug_mode and self.joined_corpus is not None:

@@ -44,5 +44,5 @@ class PopCurrentStimulus(Behaviour):
             * (np.random.random(next_layer_stimulus.shape) - 0.5)
             * 2
         )
-        synapse.dst.I = I_pop + next_layer_stimulus * self.stimulus_scale_factor + noise
+        synapse.dst.I = next_layer_stimulus * self.stimulus_scale_factor + noise
         words_stimulus_plotter.add(synapse.dst.I)

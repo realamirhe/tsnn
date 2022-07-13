@@ -25,7 +25,7 @@ def test_train_dataset(train_size=100, test_size=20, random_state=None):
         train_test_negative_class.iloc[:test_size],
     ]
 
-    train_set = pd.concat(train_set).sample(frac=0.9)
+    train_set = pd.concat(train_set).sample(frac=1)
     test_set = pd.concat(test_set).sample(frac=1)
 
     print("=== train set ===")

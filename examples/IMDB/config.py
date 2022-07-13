@@ -1,6 +1,6 @@
-words_spacing_gap = 0
+words_spacing_gap = 2
 # from DATA BI
-words_max_delay = 4
+words_max_delay = 6  # memoize last 6 words
 maximum_length_words = 17
 average_words_length = 5
 

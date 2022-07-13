@@ -4,10 +4,6 @@ from examples.IMDB.config import words_max_delay, average_words_length
 from examples.IMDB.network.nueron_morphology import get_base_neuron_config
 
 
-def get_base_synapse():
-    ...
-
-
 def get_base_delay():
     return {
         "max_delay": words_max_delay,
@@ -18,8 +14,6 @@ def get_base_delay():
 
 def get_base_stdp(**kwargs):
     return {
-        "tau_plus": 4.0,
-        "tau_minus": 4.0,
         "a_plus": 0.2,  # 0.02
         "a_minus": -0.1,  # 0.01
         "dt": 1.0,
