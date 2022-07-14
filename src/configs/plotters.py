@@ -25,19 +25,19 @@ selected_dw_plotter = HistoryRecorder1D(
     title="selected::dw",
     vertical_history_separator=True,
     window_size=25,
-    enabled=enable_plotter and False,
+    enabled=enable_plotter and True,
 )
 pos_threshold_plotter = HistoryRecorder1D(
     title="pos threshold",
     vertical_history_separator=True,
     should_copy_on_add=True,
-    enabled=enable_plotter and True,
+    enabled=enable_plotter and False,
 )
 neg_threshold_plotter = HistoryRecorder1D(
     title="neg threshold",
     vertical_history_separator=True,
     should_copy_on_add=True,
-    enabled=enable_plotter and True,
+    enabled=enable_plotter and False,
 )
 words_stimulus_plotter = HistoryRecorder1D(
     title="words_stimulus",

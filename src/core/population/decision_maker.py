@@ -3,7 +3,11 @@ import operator
 from sklearn.metrics import accuracy_score
 
 from PymoNNto import Behaviour
-from src.configs.plotters import neg_threshold_plotter, pos_threshold_plotter
+from src.configs.plotters import (
+    neg_threshold_plotter,
+    pos_threshold_plotter,
+    selected_dw_plotter,
+)
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.environement.inferencer import InferenceEnvironment
 
@@ -15,6 +19,7 @@ class NetworkDecisionMaker(Behaviour):
         configure = {
             "outputs": None,
             "episode_iterations": None,
+            "winner_overcome_ratio": 0,
         }
 
         for attr, value in configure.items():
@@ -33,7 +38,10 @@ class NetworkDecisionMaker(Behaviour):
             }
 
             # TODO: make general and refactor
-            if pop_activity["pos"] == pop_activity["neg"]:
+            if (
+                abs(pop_activity["pos"] - pop_activity["neg"])
+                <= self.winner_overcome_ratio
+            ):
                 DopamineEnvironment.set(0.0)
                 winner_class = -1
             else:
@@ -64,3 +72,4 @@ class NetworkDecisionMaker(Behaviour):
 
             pos_threshold_plotter.plot()
             neg_threshold_plotter.plot()
+            # selected_dw_plotter.plot()

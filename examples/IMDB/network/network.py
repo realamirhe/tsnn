@@ -41,6 +41,7 @@ DONE: Add weights initializer with J/N strategies
 TODO: Check the inhibitory connection (does it need to be negative, is negative w_min works fine?) 
 TODO: Review Brunel Hakim source code for J setter on the neuron group
 TODO: The `dt` in the TraceHistory is removed because it is 1
+TODO: Make general decision-maker for more than one in neural population 🔥 
  
 Ques: should n.A be divided by #pop and #pop_items?
 Ques: Supervisor should not be for every connection, they effect dopamine!
@@ -67,7 +68,7 @@ IMPROVE: Resolve and fix the `self.outputs` in the reinforcement
 def network():
     network = Network()
     # 🔥 NOTE: the farc of train set is not 1 anymore, resolve that before run
-    (train_df, _) = test_train_dataset(train_size=5, random_state=42)
+    (train_df, _) = test_train_dataset(train_size=2, random_state=42)
     common_words = extract_words(train_df, word_length_threshold=10)
     # duplicate each sentence (inference + learning) step
     train_df = replicate_df_rows(train_df)
@@ -101,7 +102,7 @@ def network():
             2: TraceHistory(max_delay=words_max_delay, tau=4.0),
         },
     )
-    
+
     # positive population neuron groups
     pos_pop_ng = NeuronGroup(
         net=network,
@@ -219,6 +220,7 @@ def network():
             8: NetworkDecisionMaker(
                 outputs=sentence_stream,
                 episode_iterations=simulation_iterations,
+                winner_overcome_ratio=0.1,
             ),
         },
     )

@@ -155,7 +155,8 @@ class SynapsePairWiseSTDP(Behaviour):
 
         dw_plotter.add_image(dw * 1e5)
         rows, cols = selected_neurons_from_words()
-        selected_dw_plotter.add(dw[rows, cols])
+        # if "words:pos" in synapse.tags:
+        #     selected_dw_plotter.add(dw.flatten())
 
         synapse.W[synapse.W > 0.01] -= 1e-5
         synapse.delay[synapse.delay < self.max_delay - 0.01] += 1e-5
