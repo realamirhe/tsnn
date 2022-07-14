@@ -6,7 +6,6 @@ from src.configs.corpus_config import letters
 from src.configs.plotters import (
     dw_plotter,
     w_plotter,
-    selected_dw_plotter,
     selected_weights_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment

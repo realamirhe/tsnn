@@ -6,7 +6,6 @@ from PymoNNto import Behaviour
 from src.configs.plotters import (
     neg_threshold_plotter,
     pos_threshold_plotter,
-    selected_dw_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.environement.inferencer import InferenceEnvironment
