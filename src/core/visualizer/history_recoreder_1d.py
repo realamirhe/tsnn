@@ -7,7 +7,7 @@ from src.helpers.network import EpisodeTracker
 
 
 class HistoryRecorder1D(HistoryRecorder):
-    def plot(self, scale=None, should_reset=True, legend=None):
+    def plot(self, scale=None, should_reset=True, legend=None, splitters=None):
         if not self.enabled:
             return
 
@@ -32,6 +32,10 @@ class HistoryRecorder1D(HistoryRecorder):
             self.history_steps.append(len(self.history))
             for x in self.history_steps:
                 plt.axvline(x, color="b", linestyle="--", alpha=0.3)
+
+        if splitters is not None:
+            for split in splitters:
+                plt.axvline(split, color="r", linestyle="--", alpha=0.3)
 
         if self.ylim is not None:
             plt.gca().set_ylim(self.ylim)

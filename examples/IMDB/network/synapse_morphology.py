@@ -15,7 +15,7 @@ def get_base_stdp(**kwargs):
         "a_plus": 0.2,  # 0.02
         "a_minus": -0.1,  # 0.01
         "dt": 1.0,
-        "weight_update_strategy": None,
+        "weight_update_strategy": "soft-bound",
         "stdp_factor": 0.02,
         **kwargs,
     }

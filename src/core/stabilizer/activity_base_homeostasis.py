@@ -9,6 +9,7 @@ from src.configs.plotters import (
     pos_threshold_plotter,
     neg_threshold_plotter,
 )
+from src.core.environement.inferencer import PhaseDetectorEnvironment
 
 
 class ActivityBaseHomeostasis(Behaviour):
@@ -34,10 +35,18 @@ class ActivityBaseHomeostasis(Behaviour):
         self.non_firing_penalty = -activity_rate / (self.window_size - activity_rate)
 
         self.activities = n.get_neuron_vec(mode="zeros")
-        self.exhaustion = n.get_neuron_vec(mode="zeros")
         self.counter = {"pos": 0, "neg": 0}
+        self.phase = PhaseDetectorEnvironment.phase
+
+    def reset(self):
+        self.counter = {key: 0 for key in self.counter}
+        self.activities *= 0
 
     def new_iteration(self, n):
+        if self.phase != PhaseDetectorEnvironment.phase:
+            self.reset()
+            self.phase = PhaseDetectorEnvironment.phase
+
         self.counter[n.tags[0]] += np.sum(n.fired)
 
         self.activities += np.where(

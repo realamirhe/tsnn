@@ -9,10 +9,9 @@ from PymoNNto import def_dtype, Behaviour
 
 
 class VoltageBaseHomeostasis(Behaviour):
-    __slots__ = ["max_ta", "min_ta", "eta_ip"]
     """
-        This mechanism can be used to stabilize the neurons activity.
-        https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Homeostasis/
+    This mechanism can be used to stabilize the neurons activity.
+    https://pymonnto.readthedocs.io/en/latest/Complex_Tutorial/Homeostasis/
     """
 
     def set_variables(self, n):

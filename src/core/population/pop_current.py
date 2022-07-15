@@ -5,8 +5,6 @@ from src.configs.plotters import words_stimulus_plotter
 
 
 class PopCurrentStimulus(Behaviour):
-    __slots__ = ["dopamine_decay", "outputs"]
-
     def set_variables(self, n):
         configure = {
             "noise_scale_factor": 1,

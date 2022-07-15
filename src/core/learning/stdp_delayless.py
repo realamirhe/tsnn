@@ -2,23 +2,11 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.core.environement.dopamine import DopamineEnvironment
-from src.core.environement.inferencer import InferenceEnvironment
+from src.core.environement.inferencer import PhaseDetectorEnvironment
 from src.core.learning.stdp import bounds
 
 
 class SynapsePairWiseSTDPWithoutDelay(Behaviour):
-    __slots__ = [
-        "a_minus",
-        "a_plus",
-        "dt",
-        "stdp_factor",
-        "tau_minus",
-        "tau_plus",
-        "w_max",
-        "w_min",
-        "weight_update_strategy",
-    ]
-
     def set_variables(self, synapse):
 
         configure = {
@@ -59,7 +47,7 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
 
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
-        if not synapse.recording or InferenceEnvironment.should_freeze_learning():
+        if not synapse.recording or PhaseDetectorEnvironment.is_phase("inference"):
             return
 
         ltd = synapse.src.fired * synapse.dst.trace[:, 0][:, np.newaxis]

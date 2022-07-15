@@ -5,8 +5,6 @@ from src.core.environement.dopamine import DopamineEnvironment
 
 
 class Supervisor(Behaviour):
-    __slots__ = ["dopamine_decay", "outputs"]
-
     def set_variables(self, n):
         self.dopamine_decay = 1 - self.get_init_attr("dopamine_decay", 0.0, n)
         self.outputs = self.get_init_attr("outputs", [], n)
@@ -38,8 +36,6 @@ class Supervisor(Behaviour):
 
 
 class ActivitySupervisor(Behaviour):
-    __slots__ = ["dopamine_decay", "outputs"]
-
     def set_variables(self, n):
         self.dopamine_decay = 1 - self.get_init_attr("dopamine_decay", 0.0, n)
         self.class_index = self.get_init_attr("class_index", None, n)

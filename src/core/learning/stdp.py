@@ -9,7 +9,7 @@ from src.configs.plotters import (
     selected_weights_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
-from src.core.environement.inferencer import InferenceEnvironment
+from src.core.environement.inferencer import PhaseDetectorEnvironment
 from src.helpers.base import selected_neurons_from_words
 
 
@@ -31,19 +31,6 @@ LET = np.array(list(letters))
 
 
 class SynapsePairWiseSTDP(Behaviour):
-    __slots__ = [
-        "a_minus",
-        "a_plus",
-        "dt",
-        "min_delay_threshold",
-        "stdp_factor",
-        "tau_minus",
-        "tau_plus",
-        "w_max",
-        "w_min",
-        "weight_update_strategy",
-    ]
-
     def set_variables(self, synapse):
 
         configure = {
@@ -100,7 +87,7 @@ class SynapsePairWiseSTDP(Behaviour):
     # TODO: add dw_neutral effect into dw_plus
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
-        if not synapse.recording or InferenceEnvironment.should_freeze_learning():
+        if not synapse.recording or PhaseDetectorEnvironment.is_phase("inference"):
             return
 
         #  TODO: coincidence logic detection re-check

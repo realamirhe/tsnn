@@ -7,10 +7,6 @@ from src.helpers.base import selected_neurons_from_words
 
 
 class SynapseDelay(Behaviour):
-    # fmt: off
-    __slots__ = ["max_delay", "delayed_spikes", "weight_effect", "delay_mask"]
-
-    # fmt: on
     def set_variables(self, synapse):
         self.max_delay = self.get_init_attr("max_delay", 0.0, synapse)
         use_shared_weights = self.get_init_attr("use_shared_weights", False, synapse)

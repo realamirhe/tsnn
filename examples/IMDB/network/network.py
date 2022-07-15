@@ -28,6 +28,7 @@ from src.core.neurons.trace import TraceHistory
 from src.core.population.decision_maker import NetworkDecisionMaker
 from src.core.population.pop_activity import PopulationBaseActivity
 from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
+from src.helpers.base import reset_random_seed
 from src.helpers.corpus import replicate_df_rows
 from src.helpers.network import EpisodeTracker
 
@@ -37,6 +38,10 @@ DONE: For population we don't need winner take all, need activity measuring inst
 DONE: For population we don't need supervisor for activity
 DONE: Remove delay learning for the (pos|neg) recurrent synapse connections
 DONE: Add weights initializer with J/N strategies
+
+TODO: 🥋 Critical, Current might need a change for the population lenses synapse parameter 
+TODO: 🥋 Reset mechanism in delay learning for the sentence layer are specific to their echo system make a copy and use different behvaiours 
+
 
 TODO: Check the inhibitory connection (does it need to be negative, is negative w_min works fine?) 
 TODO: Review Brunel Hakim source code for J setter on the neuron group
@@ -56,6 +61,8 @@ Ques: What does max_word_delay means in the words:pos connection Q01
 Ques: How we should fill the gap of decay effect in the words layer Q02
 Ques: Should ActivitySupervisor needs to know how other pop behave or not?
 Ques: Now all words are selected but we might need to trim them in `word_length_threshold`? Should we add -1 in the words layer
+
+
 
 to end or end/2
 DONE: In neuron morphology `tau` -> max(words_spacing_gap, maximum_length_words), max_length is different from what it should be
@@ -91,6 +98,7 @@ def network():
     n_episodes = 10
 
     # Words neuron group
+    reset_random_seed(1000)
     words_ng = NeuronGroup(
         net=network,
         tag="words",
@@ -104,6 +112,7 @@ def network():
     )
 
     # positive population neuron groups
+    reset_random_seed(1000)
     pos_pop_ng = NeuronGroup(
         net=network,
         tag="pos",
@@ -111,9 +120,13 @@ def network():
         behaviour={
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
-                noise_scale_factor=0.1,
-                stimulus_scale_factor=1,
-                synapse_lens_selector=["words:pos", 0],
+                noise_scale_factor=0.001,
+                stimulus_scale_factor=0.001,
+                synapse_lens_selector=[
+                    {"path": ["words:pos", 0], "type": "delayed"},
+                    {"path": ["pos:pos", 0], "type": "normal"},
+                    {"path": ["neg:pos", 0], "type": "normal"},
+                ],
             ),
             4: TraceHistory(max_delay=words_max_delay, tau=4.0),
             3: StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
@@ -123,6 +136,7 @@ def network():
     )
 
     # negative population neuron groups
+    reset_random_seed(1000)
     neg_pop_ng = NeuronGroup(
         net=network,
         tag="neg",
@@ -131,8 +145,12 @@ def network():
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
                 noise_scale_factor=0.1,
-                stimulus_scale_factor=1,
-                synapse_lens_selector=["words:neg", 0],
+                stimulus_scale_factor=0.001,
+                synapse_lens_selector=[
+                    {"path": ["words:neg", 0], "type": "delayed"},
+                    {"path": ["pos:neg", 0], "type": "normal"},
+                    {"path": ["neg:neg", 0], "type": "normal"},
+                ],
             ),
             4: TraceHistory(max_delay=words_max_delay, tau=4.0),
             3: StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
@@ -142,6 +160,7 @@ def network():
     )
 
     # words -> pos_pop_ng
+    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=words_ng,
@@ -153,6 +172,7 @@ def network():
         },
     )
     # words -> neg_pop_ng
+    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=words_ng,
@@ -164,6 +184,7 @@ def network():
         },
     )
     # pos_pop_ng -> pos_pop_ng
+    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=pos_pop_ng,
@@ -176,6 +197,7 @@ def network():
         },
     )
     # neg_pop_ng -> neg_pop_ng
+    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=neg_pop_ng,
@@ -188,6 +210,7 @@ def network():
         },
     )
     # pos_pop_ng -> neg_pop_ng
+    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=pos_pop_ng,
@@ -196,7 +219,8 @@ def network():
         behaviour={
             7: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args,
-                **balanced_network_args,
+                P=balanced_network_args["P"],
+                J=-100,
                 is_inhibitory=True,
                 w_min=-stdp_weights_args["w_max"],
                 w_max=0
@@ -204,6 +228,7 @@ def network():
         },
     )
     # neg_pop_ng -> pos_pop_ng
+    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=neg_pop_ng,
@@ -212,7 +237,8 @@ def network():
         behaviour={
             7: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args,
-                **balanced_network_args,
+                P=balanced_network_args["P"],
+                J=-100,
                 is_inhibitory=True,
                 w_min=-stdp_weights_args["w_max"],
                 w_max=0
@@ -220,7 +246,7 @@ def network():
             8: NetworkDecisionMaker(
                 outputs=sentence_stream,
                 episode_iterations=simulation_iterations,
-                winner_overcome_ratio=0.1,
+                winner_overcome_ratio=1.5,
             ),
         },
     )

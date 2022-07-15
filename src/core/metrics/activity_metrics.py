@@ -4,10 +4,6 @@ from PymoNNto import Behaviour
 
 
 class ActivityMetrics(Behaviour):
-    # fmt: off
-    __slots__ = ["recording_phase", "outputs", "_predictions", "episode_iterations"]
-
-    # fmt: on
     def set_variables(self, n):
         configure = {
             "recording_phase": None,

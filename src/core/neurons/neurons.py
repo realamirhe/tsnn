@@ -2,11 +2,10 @@ import numpy as np
 
 from PymoNNto import Behaviour
 from src.configs import corpus_config, network_config
+from src.configs.plotters import pos_voltage_plotter, neg_voltage_plotter
 
 
 class StreamableLIFNeurons(Behaviour):
-    __slots__ = ["stream", "dt"]
-
     def set_variables(self, n):
         # NOTE: this is best for scope privilege principle but make code more difficult to config
         self.dt = self.get_init_attr("dt", 0.1, n)
@@ -38,7 +37,7 @@ class StreamableLIFNeurons(Behaviour):
 
         if "word" not in n.tags:
             n.resets = {
-                "v": n.v_rest * n.get_neuron_vec(mode="ones"),
+                "v": n.v_rest,
                 "fired": n.get_neuron_vec(mode="zeros") > 0,
                 "A": 0.0,
             }
@@ -63,6 +62,11 @@ class StreamableLIFNeurons(Behaviour):
         n.v += dv_dt
         if self.capture_old_v:
             n.old_v = n.v.copy()
+
+        if "pos" in n.tags:
+            pos_voltage_plotter.add(n.v)
+        elif "neg" in n.tags:
+            neg_voltage_plotter.add(n.v)
 
         if is_forced_spike:
             n.fired[:] = False

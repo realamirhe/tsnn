@@ -3,14 +3,11 @@ import numpy as np
 from PymoNNto import Behaviour
 from src.configs import feature_flags, corpus_config
 from src.configs.plotters import selected_delay_plotter
+from src.core.environement.inferencer import PhaseDetectorEnvironment
 from src.helpers.base import selected_neurons_from_words
 
 
 class SynapseDelay(Behaviour):
-    # fmt: off
-    __slots__ = ["max_delay", "delayed_spikes", "weight_effect", "delay_mask"]
-
-    # fmt: on
     def set_variables(self, synapse):
         self.max_delay = self.get_init_attr("max_delay", 0.0, synapse)
         use_shared_weights = self.get_init_attr("use_shared_weights", False, synapse)
@@ -45,8 +42,14 @@ class SynapseDelay(Behaviour):
         self.src_fired_indices = np.mgrid[0 : synapse.src.size, 0 : synapse.src.size]
         self.src_fired_indices = self.src_fired_indices[1][: synapse.dst.size, :]
 
+        self.phase = PhaseDetectorEnvironment.phase
+
+    def reset(self):
+        self.fired_history *= 0.0
+
     # NOTE: delay behaviour only update internal vars corresponding to delta delay update.
     def new_iteration(self, synapse):
+
         """
             1. clip the synapse delay between its boundary
             2. for every dst layer connection as `dst_index` do
@@ -62,9 +65,13 @@ class SynapseDelay(Behaviour):
             weight_share_2_firing_pattern:    Every connection in the `t` layer is caused by previous seen character
             (input) in the previous layer so, it only co-occurrence which might cause an issue is when neurons in the
             output layer has same synapse delay (or larger) as the accumulated weight share become strong enough to
-            activate next layer input. So keeping the `t` layer of all output neurons will give us `weight_scale`
+            activate next layer input. So keeping the `t` layer of all  output neurons will give us `weight_scale`
             and the maximum of weight scale in the output axis will give us the firing pattern
         """
+        if self.phase != PhaseDetectorEnvironment.phase:
+            self.reset()
+            self.phase = PhaseDetectorEnvironment.phase
+
         # synapse.delay += 1e-5
         synapse.delay = np.clip(synapse.delay, 0, self.max_delay)
         rows, cols = selected_neurons_from_words()

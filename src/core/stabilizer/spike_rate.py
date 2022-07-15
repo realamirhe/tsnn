@@ -6,8 +6,6 @@ from PymoNNto import Behaviour
 
 
 class SpikeRate(Behaviour):
-    __slots__ = ["interval_size", "outputs"]
-
     def set_variables(self, n):
         self.interval_size = self.get_init_attr("interval_size", 5, n)
         self.outputs = self.get_init_attr("outputs", [], n)

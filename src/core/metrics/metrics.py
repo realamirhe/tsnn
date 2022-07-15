@@ -29,10 +29,6 @@ from src.helpers.network import EpisodeTracker
 
 
 class Metrics(Behaviour):
-    # fmt: off
-    __slots__ = ["recording_phase", "outputs", "_predictions", "words", "episode_iterations"]
-
-    # fmt: on
     def set_variables(self, n):
         configure = {
             "recording_phase": None,
