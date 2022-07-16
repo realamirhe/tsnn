@@ -15,7 +15,7 @@ def get_base_homeostasis(**kwargs):
     homeostasis_window_size = kwargs.get("homeostasis_window_size", 100)
     homeostasis_base = {
         "window_size": homeostasis_window_size,
-        "updating_rate": 0.01,
+        "updating_rate": 0.007,
         # "population_count": 2,
         # neuron base non-pop
         # activity must occur every 3 iterations, so we need over each window slide

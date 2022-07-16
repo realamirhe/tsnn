@@ -15,7 +15,7 @@ delay_plotter = HistoryRecorder2D(
     title="delay", window_size=25, enabled=enable_plotter and False
 )
 activity_plotter = HistoryRecorder1D(
-    title="activity",
+    title="positive activity plotter",
     window_size=25,
     vertical_history_separator=True,
     enabled=enable_plotter and False,
@@ -65,8 +65,8 @@ dst_firing_plotter = HistoryRecorder1D(
     title="dst firing",
     vertical_history_separator=True,
     should_copy_on_add=True,
-    save_as_csv=False,
-    enabled=enable_plotter and False,
+    # save_as_csv=False,
+    enabled=enable_plotter and True,
 )
 
 neural_activity = HistoryRecorder1D(

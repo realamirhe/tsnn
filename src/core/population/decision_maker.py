@@ -1,7 +1,6 @@
 import operator
 
 import matplotlib.pyplot as plt
-import numpy as np
 from sklearn.metrics import accuracy_score
 
 from PymoNNto import Behaviour
@@ -12,6 +11,7 @@ from src.configs.plotters import (
     neural_activity_plotter,
     pos_threshold_plotter,
     neg_threshold_plotter,
+    activity_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.environement.inferencer import PhaseDetectorEnvironment
@@ -79,23 +79,23 @@ class NetworkDecisionMaker(Behaviour):
                 f"Phase={PhaseDetectorEnvironment.phase} => {winner_class=} {true_class=}"
             )
             # reset all the populations n.A files back to zero
-            temp = [
-                {
-                    ngs.tags[0] + "." + key: getattr(ngs, key)
-                    if key == "A"
-                    else np.mean(getattr(ngs, key))
-                    for key in ngs.resets.keys()
-                }
-                for ngs in synapse.network.NeuronGroups
-                if "words" not in ngs.tags
-            ]
-
-            if PhaseDetectorEnvironment.is_phase("learning"):
-                print(
-                    "=== diff ===\n",
-                    [merge_diff(prev, nxt) for prev, nxt in zip(self.temp, temp)],
-                )
-            self.temp = temp
+            # temp = [
+            #     {
+            #         ngs.tags[0] + "." + key: getattr(ngs, key)
+            #         if key == "A"
+            #         else np.mean(getattr(ngs, key))
+            #         for key in ngs.resets.keys()
+            #     }
+            #     for ngs in synapse.network.NeuronGroups
+            #     if "words" not in ngs.tags
+            # ]
+            #
+            # if PhaseDetectorEnvironment.is_phase("learning"):
+            #     print(
+            #         "=== diff ===\n",
+            #         [merge_diff(prev, nxt) for prev, nxt in zip(self.temp, temp)],
+            #     )
+            # self.temp = temp
 
             for ng in synapse.network.NeuronGroups:
                 if "words" not in ng.tags:
@@ -132,6 +132,7 @@ class NetworkDecisionMaker(Behaviour):
             pos_voltage_plotter.plot(splitters=keys)
             neg_voltage_plotter.plot(splitters=keys)
             neural_activity_plotter.plot(splitters=keys)
+            activity_plotter.plot(splitters=keys)
             # selected_dw_plotter.plot()
             plt.title("accuracy")
             plt.plot(self.acc)

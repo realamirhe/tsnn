@@ -5,7 +5,6 @@ from PymoNNto import Behaviour
 # should be after or be
 from src.configs.plotters import (
     activity_plotter,
-    dst_firing_plotter,
     pos_threshold_plotter,
     neg_threshold_plotter,
 )
@@ -36,40 +35,61 @@ class ActivityBaseHomeostasis(Behaviour):
 
         self.activities = n.get_neuron_vec(mode="zeros")
         self.counter = {"pos": 0, "neg": 0}
+        self.counter_fired = {
+            "pos": np.zeros_like(n.threshold),
+            "neg": np.zeros_like(n.threshold),
+        }
         self.phase = PhaseDetectorEnvironment.phase
+        self.threshold_phase = None
+        self.inference_start_threshold = n.threshold.copy()
 
     def reset(self):
         self.counter = {key: 0 for key in self.counter}
         self.activities *= 0
 
     def new_iteration(self, n):
+        if self.threshold_phase != PhaseDetectorEnvironment.phase:
+            new_threshold_phase = PhaseDetectorEnvironment.phase
+            if new_threshold_phase == PhaseDetectorEnvironment.learning:
+                n.threshold = self.inference_start_threshold
+            else:
+                # capture the first threshold
+                self.inference_start_threshold = n.threshold.copy()
+            self.threshold_phase = PhaseDetectorEnvironment.phase
+
         if self.phase != PhaseDetectorEnvironment.phase:
             self.reset()
             self.phase = PhaseDetectorEnvironment.phase
 
         self.counter[n.tags[0]] += np.sum(n.fired)
+        self.counter_fired[n.tags[0]] += n.fired
 
         self.activities += np.where(
             n.fired,
             self.firing_reward,
             self.non_firing_penalty,
         )
-        activity_plotter.add(self.activities)
-        dst_firing_plotter.add(n.fired)
+
+        if "pos" in n.tags:
+            activity_plotter.add(self.activities)
+        # dst_firing_plotter.add(n.fired)
+
         if (n.iteration % self.window_size) == 0:
             self.activities[np.isclose(self.activities, 0)] = 0
             change = (
                 -self.activities
                 * self.updating_rate
-                * 0.99 ** (n.iteration // self.window_size)
+                # NOTE: this going to make a non-similar topological noise object
+                # * 0.99 ** (n.iteration // self.window_size)
             )
-
             # For: Logic for adaptive updating rate (see old trunks)
             n.threshold -= change
-            if "pos" in n.tags:
-                pos_threshold_plotter.add(n.threshold)
-            else:
-                neg_threshold_plotter.add(n.threshold)
 
             self.activities *= 0
             self.counter[n.tags[0]] *= 0
+            self.counter_fired[n.tags[0]] *= 0
+
+        if "pos" in n.tags:
+            pos_threshold_plotter.add(n.threshold)
+        else:
+            neg_threshold_plotter.add(n.threshold)
