@@ -39,8 +39,8 @@ class SynapseDelay(Behaviour):
         self.fired_history = np.zeros(
             (synapse.src.size, self.max_delay + 1), dtype=np.float32
         )
-        self.src_fired_indices = np.mgrid[0 : synapse.src.size, 0 : synapse.src.size]
-        self.src_fired_indices = self.src_fired_indices[1][: synapse.dst.size, :]
+        self.src_fired_indices = np.ones_like(synapse.delay, dtype=int)
+        self.src_fired_indices *= np.arange(synapse.src.size)
 
         self.phase = PhaseDetectorEnvironment.phase
 

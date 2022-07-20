@@ -39,6 +39,10 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
         synapse.W += normal_distribution * probable_connection_mask
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
+        # prevent neuron self recurrent connection
+        if synapse.src is synapse.dst:
+            synapse.W[np.eye(synapse.W.shape[0], dtype=bool)] = 0
+
         if self.a_minus >= 0:
             raise AssertionError("a_minus should be negative")
 
