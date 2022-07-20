@@ -12,7 +12,7 @@ def get_base_delay():
 
 def get_base_stdp(**kwargs):
     return {
-        "a_plus": 0.2,  # 0.02
+        "a_plus": 0.1,  # 0.02
         "a_minus": -0.1,  # 0.01
         "dt": 1.0,
         "weight_update_strategy": "soft-bound",

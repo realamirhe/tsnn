@@ -41,9 +41,8 @@ neg_threshold_plotter = HistoryRecorder1D(
 )
 words_stimulus_plotter = HistoryRecorder1D(
     title="words_stimulus",
-    window_size=25,
     should_copy_on_add=True,
-    enabled=enable_plotter and False,
+    enabled=enable_plotter and True,
 )
 selected_delay_plotter = HistoryRecorder1D(
     title="selected::delay",

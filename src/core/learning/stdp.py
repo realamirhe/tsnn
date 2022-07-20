@@ -83,6 +83,15 @@ class SynapsePairWiseSTDP(Behaviour):
             )
 
         selected_weights_plotter.configure_plot(ylim=[self.w_min, self.w_max + 0.2])
+        print(
+            f"""
+            tags={synapse.tags[0]}
+            W ≈ {np.round(np.average(synapse.W), 1)}
+            -------------
+            W´ = {np.round(np.sum(synapse.W != 0) / synapse.W.size * 100, 1)}
+            W ∈ [{self.w_min}, {self.w_max}] 
+            """
+        )
 
     # TODO: add dw_neutral effect into dw_plus
     def new_iteration(self, synapse):

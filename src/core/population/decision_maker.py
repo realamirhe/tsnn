@@ -1,6 +1,7 @@
 import operator
 
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.metrics import accuracy_score
 
 from PymoNNto import Behaviour
@@ -12,8 +13,10 @@ from src.configs.plotters import (
     pos_threshold_plotter,
     neg_threshold_plotter,
     activity_plotter,
+    words_stimulus_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
+from src.core.environement.homeostasis import HomeostasisEnvironment
 from src.core.environement.inferencer import PhaseDetectorEnvironment
 from src.helpers.base import reset_random_seed
 
@@ -47,17 +50,18 @@ class NetworkDecisionMaker(Behaviour):
             [ng.A for ng in synapse.network.NeuronGroups if "words" not in ng.tags]
         )
 
+        HomeostasisEnvironment.enabled = False
         if iteration in self.outputs:
             if PhaseDetectorEnvironment.is_phase("learning"):
                 self.seed_index += 1  # TODO: bug
             reset_random_seed(self.seed_index)
             true_class = self.outputs[iteration]
 
-            pop_activity = {
-                ng.tags[0]: ng.A
-                for ng in synapse.network.NeuronGroups
-                if "words" not in ng.tags
-            }
+            class_populations = [
+                ng for ng in synapse.network.NeuronGroups if "words" not in ng.tags
+            ]
+            #  NOTE: python 3.7 granted to have ordered dict, GOD please help us
+            pop_activity = {ng.tags[0]: ng.A for ng in class_populations}
 
             # TODO: make general and refactor
             if (
@@ -78,33 +82,26 @@ class NetworkDecisionMaker(Behaviour):
             print(
                 f"Phase={PhaseDetectorEnvironment.phase} => {winner_class=} {true_class=}"
             )
-            # reset all the populations n.A files back to zero
-            # temp = [
-            #     {
-            #         ngs.tags[0] + "." + key: getattr(ngs, key)
-            #         if key == "A"
-            #         else np.mean(getattr(ngs, key))
-            #         for key in ngs.resets.keys()
-            #     }
-            #     for ngs in synapse.network.NeuronGroups
-            #     if "words" not in ngs.tags
-            # ]
-            #
-            # if PhaseDetectorEnvironment.is_phase("learning"):
-            #     print(
-            #         "=== diff ===\n",
-            #         [merge_diff(prev, nxt) for prev, nxt in zip(self.temp, temp)],
-            #     )
-            # self.temp = temp
 
-            for ng in synapse.network.NeuronGroups:
-                if "words" not in ng.tags:
-                    for key, value in ng.resets.items():
-                        if key == "v":
-                            ng.v *= 0
-                            ng.v += value
-                        else:
-                            setattr(ng, key, value)
+            HomeostasisEnvironment.add_pop_activity(
+                np.array(list(pop_activity.values()))
+            )
+
+            # S
+            base_activities = HomeostasisEnvironment.accumulated_activities
+            base_activities /= np.array([ng.size for ng in class_populations])
+            base_activities /= HomeostasisEnvironment.num_sentences
+            # base_activity = np.average(base_activity)
+            HomeostasisEnvironment.enabled = True
+
+            for base_activity, ng in zip(base_activities, class_populations):
+                ng.base_activity = base_activity
+
+                for key, value in ng.resets.items():
+                    if key == "v":
+                        ng.v = np.ones_like(ng.v) * value
+                    else:
+                        setattr(ng, key, value)
 
             if PhaseDetectorEnvironment.is_phase("learning"):
                 self._predictions.append((winner_class, true_class))
@@ -125,7 +122,7 @@ class NetworkDecisionMaker(Behaviour):
             keys = self.outputs.keys()
             pos_threshold_plotter.plot(splitters=keys)
             neg_threshold_plotter.plot(splitters=keys)
-            # words_stimulus_plotter.plot()
+            words_stimulus_plotter.plot(splitters=keys)
             dopamine_plotter.plot(splitters=keys)
             # neural_activity.plot(should_reset=False, legend=("pos", "neg"))
 

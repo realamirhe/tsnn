@@ -34,6 +34,8 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
             scale=1,
             size=synapse.W.shape,
         )
+        # Prevent the distribution clip error. https://stackoverflow.com/a/16312037/10321531
+        normal_distribution = np.sign(synapse.J) * np.abs(normal_distribution)
         synapse.W += normal_distribution * probable_connection_mask
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
 
@@ -45,6 +47,18 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
                 "weight_update_strategy must be one of soft-bound|hard-bound|None"
             )
 
+        print(
+            f"""
+            tags={synapse.tags[0]}
+            W ≈ {np.round(np.average(synapse.W), 1)}
+            J = {synapse.J}
+            P = {self.P}
+            -------------
+            W´ = {np.round(np.sum(synapse.W != 0) / synapse.W.size * 100, 1)}
+            W ∈ [{self.w_min}, {self.w_max}] 
+            """
+        )
+
     def new_iteration(self, synapse):
         # For testing only, we won't update synapse weights in test mode!
         if not synapse.recording or PhaseDetectorEnvironment.is_phase("inference"):
@@ -52,7 +66,6 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
 
         ltd = synapse.src.fired * synapse.dst.trace[:, 0][:, np.newaxis]
         ltp = synapse.src.trace[:, 0] * synapse.dst.fired[:, np.newaxis]
-
         # soft bound for both delay and stdp separate
         dw = (
             DopamineEnvironment.get()  # from global environment
@@ -65,6 +78,11 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
             * self.dt
         )
 
-        synapse.W[synapse.W > 0.01] -= 1e-5
-        synapse.W = synapse.W + (1, -1)[self.is_inhibitory] * np.abs(dw)
+        if self.is_inhibitory:
+            # weight constant decaying term
+            synapse.W[synapse.W < -0.01] += 1e-5
+            synapse.W = synapse.W - np.abs(dw)
+        else:
+            synapse.W[synapse.W > 0.01] -= 1e-5
+            synapse.W = synapse.W + np.abs(dw)
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)

@@ -36,18 +36,27 @@ class CurrentStimulus(Behaviour):
                 I_ext = np.sum(synapse.W * synapse.src_fire_effect, axis=1)
             else:
                 I_ext = np.sum(synapse.W * synapse.src.fired, axis=1)
+            # print(
+            #     f"""
+            # W ≈ {np.average(synapse.W)}
+            # J = {getattr(synapse, 'J', None)}
+            # P = 0.7
+            # -------------
+            # W´ = {np.sum(synapse.W != 0) / synapse.W.size * 100}
+            # W ∈ [-7, 0]
+            # """
+            # )
             next_layer_stimulus += I_ext
 
         # shrink the noise scale factor at the beginning of each episode
         if synapse.iteration == 1:
             self.noise_scale_factor *= self.adaptive_noise_scale
 
-        noise = 0
-        # (
-        #     self.noise_scale_factor
-        #     * (np.random.random(next_layer_stimulus.shape) - 0.5)
-        #     * 2
-        # )
+        noise = (
+            self.noise_scale_factor
+            * (np.random.random(next_layer_stimulus.shape) - 0.5)
+            * 2
+        )
         n.I = next_layer_stimulus * self.stimulus_scale_factor + noise
         if "pos" in n.tags:
             words_stimulus_plotter.add(n.I)

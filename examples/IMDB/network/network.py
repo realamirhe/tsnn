@@ -27,7 +27,9 @@ from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.neurons.trace import TraceHistory
 from src.core.population.decision_maker import NetworkDecisionMaker
 from src.core.population.pop_activity import PopulationBaseActivity
-from src.core.stabilizer.activity_base_homeostasis import ActivityBaseHomeostasis
+from src.core.stabilizer.pop_activity_base_homeostasis import (
+    PopulationActivityBaseHomeostasis,
+)
 from src.helpers.base import reset_random_seed
 from src.helpers.corpus import replicate_df_rows
 from src.helpers.network import EpisodeTracker
@@ -39,20 +41,20 @@ DONE: For population we don't need supervisor for activity
 DONE: Remove delay learning for the (pos|neg) recurrent synapse connections
 DONE: Add weights initializer with J/N strategies
 
-TODO: 🥋 Critical, Current might need a change for the population lenses synapse parameter 
-TODO: 🥋 Reset mechanism in delay learning for the sentence layer are specific to their echo system make a copy and use different behvaiours 
+TODO: 🥋 Critical, Current might need a change for the population lenses synapse parameter
+TODO: 🥋 Reset mechanism in delay learning for the sentence layer are specific to their echo system make a copy and use different behvaiours
 
 
-TODO: Check the inhibitory connection (does it need to be negative, is negative w_min works fine?) 
+TODO: Check the inhibitory connection (does it need to be negative, is negative w_min works fine?)
 TODO: Review Brunel Hakim source code for J setter on the neuron group
 TODO: The `dt` in the TraceHistory is removed because it is 1
-TODO: Make general decision-maker for more than one in neural population 🔥 
- 
+TODO: Make general decision-maker for more than one in neural population 🔥
+
 Ques: should n.A be divided by #pop and #pop_items?
 Ques: Supervisor should not be for every connection, they effect dopamine!
 Ques: Different Metrics must also be excluded or combine their reports!
 Ques: Check the ceiling effect on homeostasis behaviour (PopHomeostasis)
-Ques: Is it meaningful to reduce max weight so we get 51,49 rule of activation in the population of pos or neg?   
+Ques: Is it meaningful to reduce max weight so we get 51,49 rule of activation in the population of pos or neg?
 Ques: Should we use src.fired or src.fire_effect in the `pop-activity` -> PopulationBaseActivity
 Ques: How we should handle the reinforcement for the sentences. they are really long and class based
 Ques: Random connection removing in synapse.W
@@ -75,7 +77,7 @@ IMPROVE: Resolve and fix the `self.outputs` in the reinforcement
 def network():
     network = Network()
     # 🔥 NOTE: the farc of train set is not 1 anymore, resolve that before run
-    (train_df, _) = test_train_dataset(train_size=2, random_state=42)
+    (train_df, _) = test_train_dataset(train_size=10, random_state=42)
     common_words = extract_words(train_df, word_length_threshold=10)
     # duplicate each sentence (inference + learning) step
     train_df = replicate_df_rows(train_df)
@@ -120,17 +122,17 @@ def network():
         behaviour={
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
-                noise_scale_factor=0.001,
-                stimulus_scale_factor=0.001,
+                noise_scale_factor=0.01,
+                stimulus_scale_factor=0.01,
                 synapse_lens_selector=[
                     {"path": ["words:pos", 0], "type": "delayed"},
                     {"path": ["pos:pos", 0], "type": "normal"},
                     {"path": ["neg:pos", 0], "type": "normal"},
                 ],
             ),
-            4: TraceHistory(max_delay=words_max_delay, tau=4.0),
             3: StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
-            5: ActivityBaseHomeostasis(**homeostasis_base),
+            4: TraceHistory(max_delay=words_max_delay, tau=4.0),
+            5: PopulationActivityBaseHomeostasis(**homeostasis_base),
             6: PopulationBaseActivity(tag="pop-activity"),
         },
     )
@@ -144,17 +146,17 @@ def network():
         behaviour={
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
-                noise_scale_factor=0.1,
-                stimulus_scale_factor=0.001,
+                noise_scale_factor=0.01,
+                stimulus_scale_factor=0.01,
                 synapse_lens_selector=[
                     {"path": ["words:neg", 0], "type": "delayed"},
-                    {"path": ["pos:neg", 0], "type": "normal"},
                     {"path": ["neg:neg", 0], "type": "normal"},
+                    {"path": ["pos:neg", 0], "type": "normal"},
                 ],
             ),
-            4: TraceHistory(max_delay=words_max_delay, tau=4.0),
             3: StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
-            5: ActivityBaseHomeostasis(**homeostasis_base),
+            4: TraceHistory(max_delay=words_max_delay, tau=4.0),
+            5: PopulationActivityBaseHomeostasis(**homeostasis_base),
             6: PopulationBaseActivity(tag="pop-activity"),
         },
     )
@@ -246,7 +248,7 @@ def network():
             8: NetworkDecisionMaker(
                 outputs=sentence_stream,
                 episode_iterations=simulation_iterations,
-                winner_overcome_ratio=1.5,
+                winner_overcome_ratio=1.1,
             ),
         },
     )
