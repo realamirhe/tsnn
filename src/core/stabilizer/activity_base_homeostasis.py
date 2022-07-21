@@ -43,6 +43,7 @@ class ActivityBaseHomeostasis(Behaviour):
         self.threshold_phase = None
         self.inference_start_threshold = n.threshold.copy()
 
+    # @deprecated action, please use the ConditionalReset
     def reset(self):
         self.counter = {key: 0 for key in self.counter}
         self.activities *= 0

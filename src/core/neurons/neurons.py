@@ -35,12 +35,6 @@ class StreamableLIFNeurons(Behaviour):
         # n.v = n.get_neuron_vec(mode="ones") * n.v_rest
         n.v = n.v_rest * n.get_neuron_vec(mode="ones")
 
-        if "word" not in n.tags:
-            n.resets = {
-                "v": n.v_rest,
-                "fired": n.get_neuron_vec(mode="zeros") > 0,
-                "A": 0.0,
-            }
         # NOTE: 🧬 For long term support, will be used in e.g. Homeostasis
         if has_long_term_effect:
             n.threshold = (
@@ -58,15 +52,15 @@ class StreamableLIFNeurons(Behaviour):
         if is_forced_spike:
             n.I = self.stream[n.iteration - 1]
 
-        dv_dt = (n.v_rest - n.v) * self.dt / n.tau + n.R * n.I
-        n.v += dv_dt
-        if self.capture_old_v:
-            n.old_v = n.v.copy()
-
         if "pos" in n.tags:
             pos_voltage_plotter.add(n.v)
         elif "neg" in n.tags:
             neg_voltage_plotter.add(n.v)
+
+        dv_dt = (n.v_rest - n.v) * self.dt / n.tau + n.R * n.I
+        n.v += dv_dt
+        if self.capture_old_v:
+            n.old_v = n.v.copy()
 
         if is_forced_spike:
             n.fired[:] = False

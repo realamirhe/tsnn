@@ -18,7 +18,6 @@ from src.configs.plotters import (
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.environement.homeostasis import HomeostasisEnvironment
 from src.core.environement.inferencer import PhaseDetectorEnvironment
-from src.helpers.base import reset_random_seed
 
 labels2class = {"pos": 1, "neg": 0}
 
@@ -40,8 +39,6 @@ class NetworkDecisionMaker(Behaviour):
 
         self._predictions = []
         self.acc = []
-        self.seed_index = 0
-        reset_random_seed(1)
 
     def new_iteration(self, synapse):
         iteration = synapse.iteration - 1
@@ -52,9 +49,6 @@ class NetworkDecisionMaker(Behaviour):
 
         HomeostasisEnvironment.enabled = False
         if iteration in self.outputs:
-            if PhaseDetectorEnvironment.is_phase("learning"):
-                self.seed_index += 1  # TODO: bug
-            reset_random_seed(self.seed_index)
             true_class = self.outputs[iteration]
 
             class_populations = [
@@ -69,8 +63,8 @@ class NetworkDecisionMaker(Behaviour):
                 / (min(pop_activity["pos"], pop_activity["neg"]) or 1.0)
                 <= self.winner_overcome_ratio
             ):
-                DopamineEnvironment.set(0.0)
                 winner_class = -1
+                DopamineEnvironment.set(0.0)
             else:
                 # calculate the true of the prediction
                 winner_pop = max(pop_activity, key=pop_activity.get)
@@ -96,12 +90,6 @@ class NetworkDecisionMaker(Behaviour):
 
             for base_activity, ng in zip(base_activities, class_populations):
                 ng.base_activity = base_activity
-
-                for key, value in ng.resets.items():
-                    if key == "v":
-                        ng.v = np.ones_like(ng.v) * value
-                    else:
-                        setattr(ng, key, value)
 
             if PhaseDetectorEnvironment.is_phase("learning"):
                 self._predictions.append((winner_class, true_class))

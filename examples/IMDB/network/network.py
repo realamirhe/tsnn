@@ -27,6 +27,7 @@ from src.core.neurons.neurons import StreamableLIFNeurons
 from src.core.neurons.trace import TraceHistory
 from src.core.population.decision_maker import NetworkDecisionMaker
 from src.core.population.pop_activity import PopulationBaseActivity
+from src.core.stabilizer.phase_dependent_var_reset import PhaseDependentVarReset
 from src.core.stabilizer.pop_activity_base_homeostasis import (
     PopulationActivityBaseHomeostasis,
 )
@@ -97,7 +98,7 @@ def network():
     stdp_delay_args = get_base_delay_stdp()
     balanced_network_args = {"J": 100, "P": 0.2}
 
-    n_episodes = 10
+    n_episodes = 40
 
     # Words neuron group
     reset_random_seed(1000)
@@ -120,6 +121,7 @@ def network():
         tag="pos",
         size=population_size,
         behaviour={
+            1: PhaseDependentVarReset(),
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
                 noise_scale_factor=0.01,
@@ -144,6 +146,7 @@ def network():
         tag="neg",
         size=population_size,
         behaviour={
+            1: PhaseDependentVarReset(should_reset_seed=True),
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
                 noise_scale_factor=0.01,
