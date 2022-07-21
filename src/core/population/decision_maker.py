@@ -1,5 +1,5 @@
+import logging
 import operator
-import random
 
 import numpy as np
 from sklearn.metrics import accuracy_score
@@ -60,10 +60,10 @@ class NetworkDecisionMaker(Behaviour):
                 <= self.winner_overcome_ratio
             ):
 
-                # winner_class = -1
-                # dopamine = 0.0
-                winner_class = random.choice(list(labels2class.values()))
-                dopamine = (-1.0, 1.0)[winner_class == true_class]
+                winner_class = -1
+                dopamine = 0.0
+                # winner_class = random.choice(list(labels2class.values()))
+                # dopamine = (-1.0, 1.0)[winner_class == true_class]
                 DopamineEnvironment.set(dopamine)
             else:
                 # calculate the true of the prediction
@@ -73,7 +73,7 @@ class NetworkDecisionMaker(Behaviour):
                 dopamine = (-1.0, 1.0)[winner_class == true_class]
                 DopamineEnvironment.set(dopamine)
 
-            print(
+            logging.debug(
                 f"Phase={PhaseDetectorEnvironment.phase} => {winner_class=} {true_class=}"
             )
 
@@ -105,8 +105,8 @@ class NetworkDecisionMaker(Behaviour):
                 predictions = list(map(operator.itemgetter(0), self._predictions))
                 accuracy = accuracy_score(outputs, predictions)
                 acc_plotter.add(accuracy)
-                print(f"Network accuracy={accuracy} (winner_class, true_class)")
-                print(self._predictions)
+                logging.info(f"Network accuracy={accuracy} (winner_class, true_class)")
+                logging.debug(self._predictions)
                 self.acc.append(accuracy)
                 self._predictions.clear()
 
@@ -120,5 +120,8 @@ class NetworkDecisionMaker(Behaviour):
             # pos_voltage_plotter.plot(splitters=keys)
             # neg_voltage_plotter.plot(splitters=keys)
             # neural_activity_plotter.plot(splitters=keys)
-            convergence_plotter.plot(should_reset=False)
+            convergence_plotter.plot(
+                should_reset=False,
+                legend=[syn.tags[0] for syn in synapse.network.SynapseGroups],
+            )
             acc_plotter.plot(should_reset=False)

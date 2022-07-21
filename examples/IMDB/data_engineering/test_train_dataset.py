@@ -3,9 +3,16 @@ from os.path import join, dirname
 import pandas as pd
 
 SHORTEST_SENTENCES = True
+MAGIC_TESTING_PHASE = False
 
 
 def test_train_dataset(train_size=100, test_size=20, random_state=None):
+    if MAGIC_TESTING_PHASE:
+        df = pd.read_csv(
+            join(dirname(__file__), f"../corpus/IMDB_preprocessed_test.csv")
+        )
+        return df, None
+
     df = pd.read_csv(join(dirname(__file__), f"../corpus/IMDB_preprocessed.csv"))
     per_class_chunk_size = train_size + test_size
 

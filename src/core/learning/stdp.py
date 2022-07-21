@@ -151,19 +151,11 @@ class SynapsePairWiseSTDP(Behaviour):
             * self.dt
         )
 
-        dw_plotter.add_image(dw * 1e5)
-        rows, cols = selected_neurons_from_words()
-        # if "words:pos" in synapse.tags:
-        #     selected_dw_plotter.add(dw.flatten())
-
         synapse.W[synapse.W > 0.01] -= 1e-5
         synapse.delay[synapse.delay < self.max_delay - 0.01] += 1e-5
 
         synapse.W = synapse.W + dw
         synapse.W = np.clip(synapse.W, self.w_min, self.w_max)
-
-        selected_weights_plotter.add(synapse.W[rows, cols])
-        w_plotter.add_image(synapse.W, vmin=self.w_min, vmax=self.w_max)
 
         """ stop condition for delay learning """
         if not feature_flags.enable_delay_update_in_stdp:

@@ -13,7 +13,7 @@ def get_base_neuron_config(**kwargs):
 
 def get_base_homeostasis(**kwargs):
     homeostasis_base = {
-        "updating_rate": 0.02,  # 1 / HomeostasisEnvironment.num_sentences,
+        "updating_rate": 0.07,  # 1 / HomeostasisEnvironment.num_sentences,
         **kwargs,
     }
     return homeostasis_base

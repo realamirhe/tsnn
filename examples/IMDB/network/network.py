@@ -1,3 +1,5 @@
+import logging
+
 from tqdm import tqdm
 
 from PymoNNto import Network, NeuronGroup, SynapseGroup
@@ -72,13 +74,20 @@ DONE: In neuron morphology `tau` -> max(words_spacing_gap, maximum_length_words)
 
 IMPROVE: max instead of clip and slice instead of roll
 IMPROVE: Resolve and fix the `self.outputs` in the reinforcement
+
+Pos words, 
+Neg words
+
+-> {select:5} => sentences
 """
 
 
 def network():
+    logging.basicConfig(level=logging.WARNING)
+
     network = Network()
     # 🔥 NOTE: the farc of train set is not 1 anymore, resolve that before run
-    (train_df, _) = test_train_dataset(train_size=15, random_state=42)
+    (train_df, _) = test_train_dataset(train_size=100, random_state=42)
     common_words = extract_words(train_df, word_length_threshold=10)
     # duplicate each sentence (inference + learning) step
     train_df = replicate_df_rows(train_df)
@@ -96,9 +105,9 @@ def network():
     stdp_weights_args = get_weight_stdp()
     stdp_args = get_base_stdp()
     stdp_delay_args = get_base_delay_stdp()
-    balanced_network_args = {"J": 100, "P": 0.4}
+    balanced_network_args = {"J": 100, "P": 0.5}
 
-    n_episodes = 80
+    n_episodes = 1000
 
     # Words neuron group
     reset_random_seed(1000)
@@ -115,7 +124,6 @@ def network():
     )
 
     # positive population neuron groups
-    reset_random_seed(1000)
     pos_pop_ng = NeuronGroup(
         net=network,
         tag="pos",
@@ -140,7 +148,6 @@ def network():
     )
 
     # negative population neuron groups
-    reset_random_seed(1000)
     neg_pop_ng = NeuronGroup(
         net=network,
         tag="neg",
@@ -165,7 +172,6 @@ def network():
     )
 
     # words -> pos_pop_ng
-    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=words_ng,
@@ -177,7 +183,6 @@ def network():
         },
     )
     # words -> neg_pop_ng
-    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=words_ng,
@@ -189,7 +194,6 @@ def network():
         },
     )
     # pos_pop_ng -> pos_pop_ng
-    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=pos_pop_ng,
@@ -202,7 +206,6 @@ def network():
         },
     )
     # neg_pop_ng -> neg_pop_ng
-    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=neg_pop_ng,
@@ -215,7 +218,6 @@ def network():
         },
     )
     # pos_pop_ng -> neg_pop_ng
-    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=pos_pop_ng,
@@ -233,7 +235,6 @@ def network():
         },
     )
     # neg_pop_ng -> pos_pop_ng
-    reset_random_seed(1000)
     SynapseGroup(
         net=network,
         src=neg_pop_ng,
