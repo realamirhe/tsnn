@@ -77,7 +77,7 @@ IMPROVE: Resolve and fix the `self.outputs` in the reinforcement
 def network():
     network = Network()
     # 🔥 NOTE: the farc of train set is not 1 anymore, resolve that before run
-    (train_df, _) = test_train_dataset(train_size=10, random_state=42)
+    (train_df, _) = test_train_dataset(train_size=15, random_state=42)
     common_words = extract_words(train_df, word_length_threshold=10)
     # duplicate each sentence (inference + learning) step
     train_df = replicate_df_rows(train_df)
@@ -95,7 +95,7 @@ def network():
     stdp_weights_args = get_weight_stdp()
     stdp_args = get_base_stdp()
     stdp_delay_args = get_base_delay_stdp()
-    balanced_network_args = {"J": 100, "P": 0.7}
+    balanced_network_args = {"J": 100, "P": 0.2}
 
     n_episodes = 10
 
@@ -123,7 +123,7 @@ def network():
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
                 noise_scale_factor=0.01,
-                stimulus_scale_factor=0.01,
+                stimulus_scale_factor=0.03,
                 synapse_lens_selector=[
                     {"path": ["words:pos", 0], "type": "delayed"},
                     {"path": ["pos:pos", 0], "type": "normal"},
@@ -132,8 +132,8 @@ def network():
             ),
             3: StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
             4: TraceHistory(max_delay=words_max_delay, tau=4.0),
-            5: PopulationActivityBaseHomeostasis(**homeostasis_base),
-            6: PopulationBaseActivity(tag="pop-activity"),
+            5: PopulationBaseActivity(tag="pop-activity"),
+            8: PopulationActivityBaseHomeostasis(**homeostasis_base),
         },
     )
 
@@ -147,7 +147,7 @@ def network():
             2: CurrentStimulus(
                 adaptive_noise_scale=0.9,
                 noise_scale_factor=0.01,
-                stimulus_scale_factor=0.01,
+                stimulus_scale_factor=0.03,
                 synapse_lens_selector=[
                     {"path": ["words:neg", 0], "type": "delayed"},
                     {"path": ["neg:neg", 0], "type": "normal"},
@@ -156,8 +156,8 @@ def network():
             ),
             3: StreamableLIFNeurons(**lif_base, has_long_term_effect=True),
             4: TraceHistory(max_delay=words_max_delay, tau=4.0),
-            5: PopulationActivityBaseHomeostasis(**homeostasis_base),
-            6: PopulationBaseActivity(tag="pop-activity"),
+            5: PopulationBaseActivity(tag="pop-activity"),
+            8: PopulationActivityBaseHomeostasis(**homeostasis_base),
         },
     )
 
@@ -170,7 +170,7 @@ def network():
         tag="words:pos",
         behaviour={
             1: FireHistorySynapseDelay(**delay_args),
-            7: SynapsePairWiseSTDP(**stdp_args, **stdp_delay_args, **stdp_weights_args),
+            6: SynapsePairWiseSTDP(**stdp_args, **stdp_delay_args, **stdp_weights_args),
         },
     )
     # words -> neg_pop_ng
@@ -182,7 +182,7 @@ def network():
         tag="words:neg",
         behaviour={
             1: FireHistorySynapseDelay(**delay_args),
-            7: SynapsePairWiseSTDP(**stdp_args, **stdp_delay_args, **stdp_weights_args),
+            6: SynapsePairWiseSTDP(**stdp_args, **stdp_delay_args, **stdp_weights_args),
         },
     )
     # pos_pop_ng -> pos_pop_ng
@@ -193,7 +193,7 @@ def network():
         dst=pos_pop_ng,
         tag="pos:pos",
         behaviour={
-            7: SynapsePairWiseSTDPWithoutDelay(
+            6: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args, **stdp_weights_args, **balanced_network_args
             ),
         },
@@ -206,7 +206,7 @@ def network():
         dst=neg_pop_ng,
         tag="neg:neg",
         behaviour={
-            7: SynapsePairWiseSTDPWithoutDelay(
+            6: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args, **stdp_weights_args, **balanced_network_args
             ),
         },
@@ -219,7 +219,7 @@ def network():
         dst=neg_pop_ng,
         tag="pos:neg",
         behaviour={
-            7: SynapsePairWiseSTDPWithoutDelay(
+            6: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args,
                 P=balanced_network_args["P"],
                 J=-100,
@@ -237,7 +237,7 @@ def network():
         dst=pos_pop_ng,
         tag="neg:pos",
         behaviour={
-            7: SynapsePairWiseSTDPWithoutDelay(
+            6: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args,
                 P=balanced_network_args["P"],
                 J=-100,
@@ -245,7 +245,7 @@ def network():
                 w_min=-stdp_weights_args["w_max"],
                 w_max=0
             ),
-            8: NetworkDecisionMaker(
+            7: NetworkDecisionMaker(
                 outputs=sentence_stream,
                 episode_iterations=simulation_iterations,
                 winner_overcome_ratio=1.1,
