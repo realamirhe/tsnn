@@ -1,8 +1,9 @@
 import numpy as np
 
 from PymoNNto import Behaviour
-from src.configs import corpus_config, network_config
+from src.configs import network_config
 from src.configs.plotters import pos_voltage_plotter, neg_voltage_plotter
+from src.core.environement.inferencer import PhaseDetectorEnvironment
 
 
 class StreamableLIFNeurons(Behaviour):
@@ -41,11 +42,15 @@ class StreamableLIFNeurons(Behaviour):
                 np.ones_like(n.v) * n.threshold
                 + (np.random.random(n.v.shape) - 0.5) * 2
             )
+        self.phase = PhaseDetectorEnvironment.phase
 
     def new_iteration(self, n):
         if network_config.is_debug_mode and self.joined_corpus is not None:
+            if self.phase != PhaseDetectorEnvironment.phase:
+                self.phase = PhaseDetectorEnvironment.phase
+                n.seen_char.clear()
             n.seen_char.append(self.joined_corpus[n.iteration - 1])
-            n.seen_char = n.seen_char[-corpus_config.words_capture_window_size :]
+            # n.seen_char = n.seen_char[-corpus_config.words_capture_window_size :]
 
         is_forced_spike = self.stream is not None
 

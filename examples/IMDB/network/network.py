@@ -98,7 +98,7 @@ def network():
     stdp_delay_args = get_base_delay_stdp()
     balanced_network_args = {"J": 100, "P": 0.4}
 
-    n_episodes = 40
+    n_episodes = 80
 
     # Words neuron group
     reset_random_seed(1000)
@@ -251,7 +251,7 @@ def network():
             7: NetworkDecisionMaker(
                 outputs=sentence_stream,
                 episode_iterations=simulation_iterations,
-                winner_overcome_ratio=1.2,
+                winner_overcome_ratio=1.5,
             ),
         },
     )

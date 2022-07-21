@@ -98,3 +98,9 @@ neg_base_activity = HistoryRecorder1D(
     title="neg base activity plotter",
     vertical_history_separator=True,
 )
+
+acc_plotter = HistoryRecorder1D(title="accuracy")
+convergence_plotter = HistoryRecorder1D(
+    title="Learning convergence",
+    vertical_history_separator=True,
+)

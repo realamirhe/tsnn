@@ -95,6 +95,9 @@ class SynapsePairWiseSTDP(Behaviour):
 
     # TODO: add dw_neutral effect into dw_plus
     def new_iteration(self, synapse):
+
+        synapse.C = np.average(soft_bound(self.w_min, synapse.W, self.w_max))
+
         # For testing only, we won't update synapse weights in test mode!
         if not synapse.recording or PhaseDetectorEnvironment.is_phase("inference"):
             return
