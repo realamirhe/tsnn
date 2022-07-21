@@ -96,7 +96,7 @@ def network():
     stdp_weights_args = get_weight_stdp()
     stdp_args = get_base_stdp()
     stdp_delay_args = get_base_delay_stdp()
-    balanced_network_args = {"J": 100, "P": 0.2}
+    balanced_network_args = {"J": 100, "P": 0.4}
 
     n_episodes = 40
 
