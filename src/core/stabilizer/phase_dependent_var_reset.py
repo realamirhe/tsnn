@@ -7,7 +7,6 @@ from src.helpers.base import reset_random_seed
 class PhaseDependentVarReset(Behaviour):
     def set_variables(self, n):
         self.phase = None
-        self.initial_inference_threshold = None
 
         self.should_reset_seed = self.get_init_attr("should_reset_seed", False, n)
         if self.should_reset_seed:
@@ -23,12 +22,6 @@ class PhaseDependentVarReset(Behaviour):
                 # Only increase the seed on second and later inference phase!
                 self.repeat_seed += int(PhaseDetectorEnvironment.is_phase("inference"))
                 reset_random_seed(self.repeat_seed)
-
-            # Threshold need to be captured at the beginning of each inference phase and reapply on the learning phase
-            if PhaseDetectorEnvironment.is_phase("inference"):
-                self.initial_inference_threshold = n.threshold.copy()
-            else:
-                n.threshold = self.initial_inference_threshold
 
             # Reset Accumulated population traces
             n.trace *= 0

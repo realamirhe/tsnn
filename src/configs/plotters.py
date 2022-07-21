@@ -40,7 +40,7 @@ neg_threshold_plotter = HistoryRecorder1D(
     enabled=enable_plotter and True,
 )
 words_stimulus_plotter = HistoryRecorder1D(
-    title="words_stimulus",
+    title="pos.I",
     should_copy_on_add=True,
     enabled=enable_plotter and True,
 )
@@ -88,4 +88,13 @@ neural_activity_plotter = HistoryRecorder1D(
     title="neural activity plotter",
     vertical_history_separator=True,
     should_copy_on_add=True,
+)
+
+pos_base_activity = HistoryRecorder1D(
+    title="pos base activity plotter",
+    vertical_history_separator=True,
+)
+neg_base_activity = HistoryRecorder1D(
+    title="neg base activity plotter",
+    vertical_history_separator=True,
 )

@@ -2,7 +2,7 @@ def get_base_neuron_config(**kwargs):
     lif_base = {
         "v_rest": -65,
         "v_reset": -65,
-        "threshold": -55,
+        "threshold": -60,
         "dt": 1.0,
         "R": 1,
         "tau": 60,  # how long it takes for words to be forgotten (|sentence| / 2)

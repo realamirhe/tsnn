@@ -39,7 +39,7 @@ class StreamableLIFNeurons(Behaviour):
         if has_long_term_effect:
             n.threshold = (
                 np.ones_like(n.v) * n.threshold
-                + (np.random.random(n.v.shape) - 0.5) * 10
+                + (np.random.random(n.v.shape) - 0.5) * 2
             )
 
     def new_iteration(self, n):

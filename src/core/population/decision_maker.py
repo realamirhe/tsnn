@@ -12,8 +12,9 @@ from src.configs.plotters import (
     neural_activity_plotter,
     pos_threshold_plotter,
     neg_threshold_plotter,
-    activity_plotter,
     words_stimulus_plotter,
+    pos_base_activity,
+    neg_base_activity,
 )
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.environement.homeostasis import HomeostasisEnvironment
@@ -44,7 +45,7 @@ class NetworkDecisionMaker(Behaviour):
         iteration = synapse.iteration - 1
 
         neural_activity_plotter.add(
-            [ng.A for ng in synapse.network.NeuronGroups if "words" not in ng.tags]
+                [ng.A for ng in synapse.network.NeuronGroups if "words" not in ng.tags]
         )
 
         HomeostasisEnvironment.enabled = False
@@ -59,12 +60,16 @@ class NetworkDecisionMaker(Behaviour):
 
             # TODO: make general and refactor
             if (
-                max(pop_activity["pos"], pop_activity["neg"])
-                / (min(pop_activity["pos"], pop_activity["neg"]) or 1.0)
-                <= self.winner_overcome_ratio
+                    max(pop_activity["pos"], pop_activity["neg"])
+                    / (min(pop_activity["pos"], pop_activity["neg"]) or 1.0)
+                    <= self.winner_overcome_ratio
             ):
+
                 winner_class = -1
-                DopamineEnvironment.set(0.0)
+                dopamine = 0.0
+                # winner_class = random.choice(list(labels2class.values()))
+                # dopamine = (-1.0, 1.0)[winner_class == true_class]
+                DopamineEnvironment.set(dopamine)
             else:
                 # calculate the true of the prediction
                 winner_pop = max(pop_activity, key=pop_activity.get)
@@ -74,11 +79,13 @@ class NetworkDecisionMaker(Behaviour):
                 DopamineEnvironment.set(dopamine)
 
             print(
-                f"Phase={PhaseDetectorEnvironment.phase} => {winner_class=} {true_class=}"
+                    f"Phase={PhaseDetectorEnvironment.phase} => {winner_class=} {true_class=}"
             )
 
+            # Test 19231: Only collect information in leaning phase
+            # if PhaseDetectorEnvironment.is_phase("learning"):
             HomeostasisEnvironment.add_pop_activity(
-                np.array(list(pop_activity.values()))
+                    np.array(list(pop_activity.values()))
             )
 
             # S
@@ -112,6 +119,8 @@ class NetworkDecisionMaker(Behaviour):
             neg_threshold_plotter.plot(splitters=keys)
             words_stimulus_plotter.plot(splitters=keys)
             dopamine_plotter.plot(splitters=keys)
+            pos_base_activity.plot(splitters=keys)
+            neg_base_activity.plot(splitters=keys)
             # neural_activity.plot(should_reset=False, legend=("pos", "neg"))
 
             pos_voltage_plotter.plot(splitters=keys)

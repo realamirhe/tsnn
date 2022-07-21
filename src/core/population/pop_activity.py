@@ -8,4 +8,4 @@ class PopulationBaseActivity(Behaviour):
         n.A = 0.0
 
     def new_iteration(self, n):
-        n.A += np.sum(n.fired) / n.size  # An
+        n.A += np.sum(n.fired)  # / n.size  # An

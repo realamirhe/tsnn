@@ -1,7 +1,13 @@
 from PymoNNto import Behaviour
 
-from src.configs.plotters import pos_threshold_plotter, neg_threshold_plotter
+from src.configs.plotters import (
+    pos_threshold_plotter,
+    neg_threshold_plotter,
+    pos_base_activity,
+    neg_base_activity,
+)
 from src.core.environement.homeostasis import HomeostasisEnvironment
+from src.core.environement.inferencer import PhaseDetectorEnvironment
 
 
 class PopulationActivityBaseHomeostasis(Behaviour):
@@ -12,10 +18,15 @@ class PopulationActivityBaseHomeostasis(Behaviour):
     def new_iteration(self, n):
         if "pos" in n.tags:
             pos_threshold_plotter.add(n.threshold)
+            pos_base_activity.add(getattr(n, "base_activity", 0))
         else:
             neg_threshold_plotter.add(n.threshold)
+            neg_base_activity.add(getattr(n, "base_activity", 0))
 
-        if not HomeostasisEnvironment.has_enough_data:
+        if (
+            not HomeostasisEnvironment.has_enough_data
+            or PhaseDetectorEnvironment.is_phase("inference")
+        ):
             return
 
         self.activities += n.fired.astype(int)

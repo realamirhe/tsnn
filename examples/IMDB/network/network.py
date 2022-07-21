@@ -251,7 +251,7 @@ def network():
             7: NetworkDecisionMaker(
                 outputs=sentence_stream,
                 episode_iterations=simulation_iterations,
-                winner_overcome_ratio=1.1,
+                winner_overcome_ratio=1.2,
             ),
         },
     )
