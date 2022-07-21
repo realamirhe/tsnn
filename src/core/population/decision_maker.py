@@ -117,7 +117,6 @@ class NetworkDecisionMaker(Behaviour):
             pos_voltage_plotter.plot(splitters=keys)
             neg_voltage_plotter.plot(splitters=keys)
             neural_activity_plotter.plot(splitters=keys)
-            activity_plotter.plot(splitters=keys)
             # selected_dw_plotter.plot()
             plt.title("accuracy")
             plt.plot(self.acc)

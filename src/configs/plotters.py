@@ -18,7 +18,7 @@ activity_plotter = HistoryRecorder1D(
     title="positive activity plotter",
     # window_size=25,
     vertical_history_separator=True,
-    enabled=enable_plotter and True,
+    enabled=enable_plotter and False,
     should_copy_on_add=True,
 )
 selected_dw_plotter = HistoryRecorder1D(
