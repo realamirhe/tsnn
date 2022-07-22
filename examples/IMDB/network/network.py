@@ -87,7 +87,7 @@ def network():
 
     network = Network()
     # 🔥 NOTE: the farc of train set is not 1 anymore, resolve that before run
-    (train_df, _) = test_train_dataset(train_size=100, random_state=42)
+    (train_df, _) = test_train_dataset(train_size=20, random_state=42)
     common_words = extract_words(train_df, word_length_threshold=10)
     # duplicate each sentence (inference + learning) step
     train_df = replicate_df_rows(train_df)

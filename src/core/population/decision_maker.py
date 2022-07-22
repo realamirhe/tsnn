@@ -14,6 +14,7 @@ from src.configs.plotters import (
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.environement.homeostasis import HomeostasisEnvironment
 from src.core.environement.inferencer import PhaseDetectorEnvironment
+from src.core.visualizer.words_plotter import wordcloud_plotter
 
 labels2class = {"pos": 1, "neg": 0}
 
@@ -35,6 +36,7 @@ class NetworkDecisionMaker(Behaviour):
 
         self._predictions = []
         self.acc = []
+        self.wordclouds = {1: [], 0: [], -1: []}
 
     def new_iteration(self, synapse):
         iteration = synapse.iteration - 1
@@ -95,6 +97,10 @@ class NetworkDecisionMaker(Behaviour):
 
             if PhaseDetectorEnvironment.is_phase("learning"):
                 self._predictions.append((winner_class, true_class))
+
+                self.wordclouds[winner_class].extend(
+                    synapse.network.NeuronGroups[0].seen_char
+                )
             # toggle the inference phase of the learning
             PhaseDetectorEnvironment.toggle()
 
@@ -125,3 +131,9 @@ class NetworkDecisionMaker(Behaviour):
                 legend=[syn.tags[0] for syn in synapse.network.SynapseGroups],
             )
             acc_plotter.plot(should_reset=False)
+
+            for title, label in [("neg", 0), ("pos", 1), ("unknown", -1)]:
+                sentence = " ".join(list(set(self.wordclouds[label])))
+                if not sentence:
+                    continue
+                wordcloud_plotter(title, sentence)

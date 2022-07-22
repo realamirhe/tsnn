@@ -4,13 +4,10 @@ from PymoNNto import Behaviour
 from src.configs import feature_flags, corpus_config
 from src.configs.corpus_config import letters
 from src.configs.plotters import (
-    dw_plotter,
-    w_plotter,
     selected_weights_plotter,
 )
 from src.core.environement.dopamine import DopamineEnvironment
 from src.core.environement.inferencer import PhaseDetectorEnvironment
-from src.helpers.base import selected_neurons_from_words
 
 
 def soft_bound(a_min, A, a_max):

@@ -49,7 +49,7 @@ class CurrentStimulus(Behaviour):
             next_layer_stimulus += I_ext
 
         # shrink the noise scale factor at the beginning of each episode
-        if synapse.iteration == 1:
+        if n.iteration == 1:
             self.noise_scale_factor *= self.adaptive_noise_scale
 
         noise = (
