@@ -226,8 +226,8 @@ def network():
         behaviour={
             6: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args,
-                P=balanced_network_args["P"],
-                J=-100,
+                P=balanced_network_args["P"] - 0.1,
+                J=-110,
                 is_inhibitory=True,
                 w_min=-stdp_weights_args["w_max"],
                 w_max=0
@@ -243,8 +243,8 @@ def network():
         behaviour={
             6: SynapsePairWiseSTDPWithoutDelay(
                 **stdp_args,
-                P=balanced_network_args["P"],
-                J=-100,
+                P=balanced_network_args["P"] + 0.1,
+                J=-90,
                 is_inhibitory=True,
                 w_min=-stdp_weights_args["w_max"],
                 w_max=0

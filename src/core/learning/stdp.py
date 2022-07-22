@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from PymoNNto import Behaviour
@@ -80,7 +82,7 @@ class SynapsePairWiseSTDP(Behaviour):
             )
 
         selected_weights_plotter.configure_plot(ylim=[self.w_min, self.w_max + 0.2])
-        print(
+        logging.info(
             f"""
             tags={synapse.tags[0]}
             W ≈ {np.round(np.average(synapse.W), 1)}

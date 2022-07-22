@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from PymoNNto import Behaviour
@@ -51,7 +53,7 @@ class SynapsePairWiseSTDPWithoutDelay(Behaviour):
                 "weight_update_strategy must be one of soft-bound|hard-bound|None"
             )
 
-        print(
+        logging.info(
             f"""
             tags={synapse.tags[0]}
             W ≈ {np.round(np.average(synapse.W), 1)}
