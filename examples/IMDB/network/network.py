@@ -1,7 +1,5 @@
 import logging
 
-from tqdm import tqdm
-
 from PymoNNto import Network, NeuronGroup, SynapseGroup
 from examples.IMDB.config import words_max_delay, population_size
 from examples.IMDB.data_engineering.spike_generator import (
@@ -260,7 +258,7 @@ def network():
     network.initialize(info=False)
 
     """ TRAINING """
-    for _ in tqdm(range(n_episodes), "Training..."):
+    for _ in range(n_episodes):
         EpisodeTracker.update()
         network.iteration = 0
         network.simulate_iterations(simulation_iterations, measure_block_time=False)
